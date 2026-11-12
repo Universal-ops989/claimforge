@@ -30,7 +30,7 @@ Legend: `api` = FastAPI backend · `ui` = design system · `web` = main app ·
 ## M1 — Design system (`packages/ui`)
 
 13. UI package scaffold with Vite library build
-14. Storybook 8 setup with theme switcher and a11y addon
+14. Storybook 10 setup with theme switcher and a11y addon
 15. Design tokens: color, spacing, radius, typography, shadows, z-index
 16. Theme provider with light/dark modes and CSS variables
 17. `Button` with variants, sizes, loading and icon slots
