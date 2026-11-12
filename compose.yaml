@@ -1,0 +1,42 @@
+# Local development services. Start with: docker compose up -d
+name: claimforge
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: claimforge
+      POSTGRES_PASSWORD: claimforge
+      POSTGRES_DB: claimforge
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U claimforge -d claimforge"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:v1.21
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+  seaweedfs:
+    # S3-compatible object storage for photos and documents.
+    image: chrislusf/seaweedfs:4.53
+    command: server -dir=/data -s3 -s3.port=8333 -ip.bind=0.0.0.0
+    ports:
+      - "8333:8333" # S3 API
+    volumes:
+      - seaweedfs-data:/data
+
+volumes:
+  postgres-data:
+  seaweedfs-data:
