@@ -27,11 +27,16 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "clean": "rimraf dist coverage"
+    "clean": "rimraf dist coverage",
+    "storybook": "storybook dev -p 6006 --no-open",
+    "build-storybook": "storybook build --quiet"
   },
   "devDependencies": {
     "@claimforge/eslint-config": "workspace:^",
     "@claimforge/tsconfig": "workspace:^",
+    "@storybook/addon-a11y": "^10",
+    "@storybook/addon-docs": "^10",
+    "@storybook/react-vite": "^10",
     "@testing-library/jest-dom": "^7",
     "@testing-library/react": "^16",
     "@testing-library/user-event": "^14",
@@ -43,6 +48,7 @@
     "react": "^19",
     "react-dom": "^19",
     "rimraf": "^6.1.4",
+    "storybook": "^10",
     "typescript": "~5.9.3",
     "vite": "^8",
     "vitest": "^5"
