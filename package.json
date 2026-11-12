@@ -1,0 +1,11 @@
+{
+  "name": "claimforge",
+  "private": true,
+  "description": "Property-damage claims and restoration platform",
+  "license": "MIT",
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {}
+}
