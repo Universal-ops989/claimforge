@@ -1,0 +1,71 @@
+name: API
+
+on:
+  pull_request:
+    paths:
+      - "apps/api/**"
+      - ".github/workflows/api.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/api/**"
+      - ".github/workflows/api.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: apps/api
+
+jobs:
+  lint:
+    name: Lint & typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version-file: apps/api/.python-version
+          cache: pip
+          cache-dependency-path: apps/api/requirements-dev.lock
+      - name: Install
+        run: |
+          pip install -r requirements-dev.lock
+          pip install -e . --no-deps
+      - name: Ruff lint
+        run: ruff check --output-format=github .
+      - name: Ruff format
+        run: ruff format --check .
+      - name: mypy
+        run: mypy
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version-file: apps/api/.python-version
+          cache: pip
+          cache-dependency-path: apps/api/requirements-dev.lock
+      - name: Install
+        run: |
+          pip install -r requirements-dev.lock
+          pip install -e . --no-deps
+      - name: Pytest
+        run: pytest --cov --cov-report=term --cov-report=xml
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-coverage
+          path: apps/api/coverage.xml
+          if-no-files-found: ignore
