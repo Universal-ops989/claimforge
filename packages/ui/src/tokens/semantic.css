@@ -1,0 +1,58 @@
+/*
+ * Semantic tokens: what components consume. Light theme is the default;
+ * themes remap these by setting data-theme on <html> or any ancestor.
+ */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  --cf-color-bg: var(--cf-gray-50);
+  --cf-color-bg-subtle: var(--cf-gray-100);
+  --cf-color-surface: var(--cf-gray-0);
+  --cf-color-surface-raised: var(--cf-gray-0);
+  --cf-color-surface-sunken: var(--cf-gray-100);
+  --cf-color-overlay: rgb(15 23 42 / 0.5);
+
+  --cf-color-border: var(--cf-gray-200);
+  --cf-color-border-strong: var(--cf-gray-300);
+
+  --cf-color-text: var(--cf-gray-900);
+  --cf-color-text-muted: var(--cf-gray-600);
+  --cf-color-text-subtle: var(--cf-gray-500);
+  --cf-color-text-disabled: var(--cf-gray-400);
+  --cf-color-text-inverse: var(--cf-gray-0);
+
+  --cf-color-accent: var(--cf-brand-600);
+  --cf-color-accent-hover: var(--cf-brand-700);
+  --cf-color-accent-active: var(--cf-brand-800);
+  --cf-color-accent-subtle: var(--cf-brand-50);
+  --cf-color-accent-subtle-hover: var(--cf-brand-100);
+  --cf-color-accent-text: var(--cf-brand-700);
+  --cf-color-on-accent: var(--cf-gray-0);
+
+  --cf-color-neutral-subtle: var(--cf-gray-100);
+  --cf-color-neutral-subtle-hover: var(--cf-gray-200);
+
+  --cf-color-success: var(--cf-green-600);
+  --cf-color-success-hover: var(--cf-green-700);
+  --cf-color-success-subtle: var(--cf-green-50);
+  --cf-color-success-text: var(--cf-green-700);
+
+  --cf-color-warning: var(--cf-amber-500);
+  --cf-color-warning-hover: var(--cf-amber-600);
+  --cf-color-warning-subtle: var(--cf-amber-50);
+  --cf-color-warning-text: var(--cf-amber-700);
+
+  --cf-color-danger: var(--cf-red-600);
+  --cf-color-danger-hover: var(--cf-red-700);
+  --cf-color-danger-subtle: var(--cf-red-50);
+  --cf-color-danger-text: var(--cf-red-700);
+
+  --cf-color-info: var(--cf-cyan-600);
+  --cf-color-info-hover: var(--cf-cyan-700);
+  --cf-color-info-subtle: var(--cf-cyan-50);
+  --cf-color-info-text: var(--cf-cyan-700);
+
+  --cf-color-focus-ring: var(--cf-brand-500);
+  --cf-focus-ring: 0 0 0 2px var(--cf-color-surface), 0 0 0 4px var(--cf-color-focus-ring);
+}

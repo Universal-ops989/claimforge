@@ -5,7 +5,7 @@
     "emitDeclarationOnly": false,
     "declaration": false,
     "declarationMap": false,
-    "types": ["vite/client", "@testing-library/jest-dom/vitest"]
+    "types": ["vite/client", "node", "@testing-library/jest-dom/vitest"]
   },
   "include": ["src", ".storybook/**/*", "*.config.ts", "eslint.config.js"]
 }
