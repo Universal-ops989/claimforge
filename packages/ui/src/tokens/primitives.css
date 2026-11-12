@@ -1,0 +1,141 @@
+/*
+ * Primitive tokens: the raw palette and scales. Components never use these
+ * directly; they use the semantic tokens in semantic.css so themes can remap them.
+ */
+:root {
+  /* Neutral (slate) */
+  --cf-gray-0: #ffffff;
+  --cf-gray-50: #f8fafc;
+  --cf-gray-100: #f1f5f9;
+  --cf-gray-200: #e2e8f0;
+  --cf-gray-300: #cbd5e1;
+  --cf-gray-400: #94a3b8;
+  --cf-gray-500: #64748b;
+  --cf-gray-600: #475569;
+  --cf-gray-700: #334155;
+  --cf-gray-800: #1e293b;
+  --cf-gray-900: #0f172a;
+  --cf-gray-950: #070b16;
+
+  /* Brand (indigo-blue) */
+  --cf-brand-50: #eef4ff;
+  --cf-brand-100: #dbe6fe;
+  --cf-brand-200: #bfd3fe;
+  --cf-brand-300: #93b4fd;
+  --cf-brand-400: #608bfa;
+  --cf-brand-500: #3b65f6;
+  --cf-brand-600: #2547eb;
+  --cf-brand-700: #1d36d8;
+  --cf-brand-800: #1e2eaf;
+  --cf-brand-900: #1e2d8a;
+
+  /* Success (green) */
+  --cf-green-50: #effdf4;
+  --cf-green-100: #d9fbe5;
+  --cf-green-500: #22b45a;
+  --cf-green-600: #16924a;
+  --cf-green-700: #15733d;
+  --cf-green-900: #134e2f;
+
+  /* Warning (amber) */
+  --cf-amber-50: #fffbeb;
+  --cf-amber-100: #fef3c7;
+  --cf-amber-500: #f59e0b;
+  --cf-amber-600: #d97706;
+  --cf-amber-700: #b45309;
+  --cf-amber-900: #78350f;
+
+  /* Danger (red) */
+  --cf-red-50: #fef2f2;
+  --cf-red-100: #fee2e2;
+  --cf-red-500: #ef4444;
+  --cf-red-600: #dc2626;
+  --cf-red-700: #b91c1c;
+  --cf-red-900: #7f1d1d;
+
+  /* Info (cyan), used for moisture and water readings */
+  --cf-cyan-50: #ecfeff;
+  --cf-cyan-100: #cffafe;
+  --cf-cyan-500: #06b6d4;
+  --cf-cyan-600: #0891b2;
+  --cf-cyan-700: #0e7490;
+  --cf-cyan-900: #164e63;
+
+  /* Spacing: 4px base grid */
+  --cf-space-0: 0;
+  --cf-space-0-5: 0.125rem;
+  --cf-space-1: 0.25rem;
+  --cf-space-1-5: 0.375rem;
+  --cf-space-2: 0.5rem;
+  --cf-space-3: 0.75rem;
+  --cf-space-4: 1rem;
+  --cf-space-5: 1.25rem;
+  --cf-space-6: 1.5rem;
+  --cf-space-8: 2rem;
+  --cf-space-10: 2.5rem;
+  --cf-space-12: 3rem;
+  --cf-space-16: 4rem;
+
+  /* Radius */
+  --cf-radius-none: 0;
+  --cf-radius-sm: 0.25rem;
+  --cf-radius-md: 0.375rem;
+  --cf-radius-lg: 0.5rem;
+  --cf-radius-xl: 0.75rem;
+  --cf-radius-full: 9999px;
+
+  /* Typography */
+  --cf-font-sans:
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+  --cf-font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+
+  --cf-font-size-xs: 0.75rem;
+  --cf-font-size-sm: 0.875rem;
+  --cf-font-size-md: 1rem;
+  --cf-font-size-lg: 1.125rem;
+  --cf-font-size-xl: 1.25rem;
+  --cf-font-size-2xl: 1.5rem;
+  --cf-font-size-3xl: 1.875rem;
+  --cf-font-size-4xl: 2.25rem;
+
+  --cf-line-height-tight: 1.25;
+  --cf-line-height-snug: 1.375;
+  --cf-line-height-normal: 1.5;
+
+  --cf-font-weight-regular: 400;
+  --cf-font-weight-medium: 500;
+  --cf-font-weight-semibold: 600;
+  --cf-font-weight-bold: 700;
+
+  /* Elevation */
+  --cf-shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+  --cf-shadow-sm: 0 1px 3px 0 rgb(15 23 42 / 0.1), 0 1px 2px -1px rgb(15 23 42 / 0.1);
+  --cf-shadow-md: 0 4px 6px -1px rgb(15 23 42 / 0.1), 0 2px 4px -2px rgb(15 23 42 / 0.1);
+  --cf-shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.1), 0 4px 6px -4px rgb(15 23 42 / 0.1);
+  --cf-shadow-xl: 0 20px 25px -5px rgb(15 23 42 / 0.1), 0 8px 10px -6px rgb(15 23 42 / 0.1);
+
+  /* Layering */
+  --cf-z-dropdown: 1000;
+  --cf-z-sticky: 1100;
+  --cf-z-overlay: 1300;
+  --cf-z-modal: 1400;
+  --cf-z-popover: 1500;
+  --cf-z-toast: 1700;
+  --cf-z-tooltip: 1800;
+
+  /* Motion */
+  --cf-duration-fast: 100ms;
+  --cf-duration-normal: 200ms;
+  --cf-duration-slow: 300ms;
+  --cf-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --cf-ease-emphasized: cubic-bezier(0.3, 0, 0, 1.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --cf-duration-fast: 0ms;
+    --cf-duration-normal: 0ms;
+    --cf-duration-slow: 0ms;
+  }
+}
