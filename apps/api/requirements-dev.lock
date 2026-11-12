@@ -13,6 +13,8 @@ anyio==4.16.0
     #   fastapi
     #   starlette
     #   watchfiles
+ast-serialize==0.13.1
+    # via mypy
 click==8.5.1
     # via uvicorn
 fastapi==0.162.5
@@ -23,8 +25,16 @@ httptools==0.9.0
     # via uvicorn
 idna==3.20
     # via anyio
+librt==0.16.0
+    # via mypy
+mypy==2.4.1
+    # via claimforge-api (pyproject.toml)
+mypy-extensions==1.2.0
+    # via mypy
 opentelemetry-api==1.45.2
     # via fastapi
+pathspec==1.1.1
+    # via mypy
 pydantic==2.14.3
     # via fastapi
 pydantic-core==2.50.4
@@ -33,12 +43,15 @@ python-dotenv==1.2.4
     # via uvicorn
 pyyaml==6.0.3
     # via uvicorn
+ruff==0.17.5
+    # via claimforge-api (pyproject.toml)
 starlette==1.10.0
     # via fastapi
 typing-extensions==4.16.0
     # via
     #   anyio
     #   fastapi
+    #   mypy
     #   opentelemetry-api
     #   pydantic
     #   pydantic-core
