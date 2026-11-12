@@ -56,3 +56,61 @@
   --cf-color-focus-ring: var(--cf-brand-500);
   --cf-focus-ring: 0 0 0 2px var(--cf-color-surface), 0 0 0 4px var(--cf-color-focus-ring);
 }
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --cf-color-bg: var(--cf-gray-950);
+  --cf-color-bg-subtle: var(--cf-gray-900);
+  --cf-color-surface: var(--cf-gray-900);
+  --cf-color-surface-raised: var(--cf-gray-800);
+  --cf-color-surface-sunken: var(--cf-gray-950);
+  --cf-color-overlay: rgb(2 6 23 / 0.7);
+
+  --cf-color-border: var(--cf-gray-800);
+  --cf-color-border-strong: var(--cf-gray-700);
+
+  --cf-color-text: var(--cf-gray-50);
+  --cf-color-text-muted: var(--cf-gray-300);
+  --cf-color-text-subtle: var(--cf-gray-400);
+  --cf-color-text-disabled: var(--cf-gray-600);
+  --cf-color-text-inverse: var(--cf-gray-900);
+
+  --cf-color-accent: var(--cf-brand-500);
+  --cf-color-accent-hover: var(--cf-brand-400);
+  --cf-color-accent-active: var(--cf-brand-300);
+  --cf-color-accent-subtle: rgb(59 101 246 / 0.16);
+  --cf-color-accent-subtle-hover: rgb(59 101 246 / 0.24);
+  --cf-color-accent-text: var(--cf-brand-300);
+  --cf-color-on-accent: var(--cf-gray-0);
+
+  --cf-color-neutral-subtle: var(--cf-gray-800);
+  --cf-color-neutral-subtle-hover: var(--cf-gray-700);
+
+  --cf-color-success: var(--cf-green-500);
+  --cf-color-success-hover: var(--cf-green-600);
+  --cf-color-success-subtle: rgb(34 180 90 / 0.15);
+  --cf-color-success-text: #6ee79c;
+
+  --cf-color-warning: var(--cf-amber-500);
+  --cf-color-warning-hover: var(--cf-amber-600);
+  --cf-color-warning-subtle: rgb(245 158 11 / 0.15);
+  --cf-color-warning-text: #fcd34d;
+
+  --cf-color-danger: var(--cf-red-500);
+  --cf-color-danger-hover: var(--cf-red-600);
+  --cf-color-danger-subtle: rgb(239 68 68 / 0.15);
+  --cf-color-danger-text: #fca5a5;
+
+  --cf-color-info: var(--cf-cyan-500);
+  --cf-color-info-hover: var(--cf-cyan-600);
+  --cf-color-info-subtle: rgb(6 182 212 / 0.15);
+  --cf-color-info-text: #67e8f9;
+
+  --cf-color-focus-ring: var(--cf-brand-400);
+
+  --cf-shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+  --cf-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  --cf-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+  --cf-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
+}

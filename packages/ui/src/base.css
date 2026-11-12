@@ -1,0 +1,42 @@
+/* Minimal, opinionated base layer. Apps opt in by importing @claimforge/ui/styles.css. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--cf-font-sans);
+  font-size: var(--cf-font-size-md);
+  line-height: var(--cf-line-height-normal);
+  color: var(--cf-color-text);
+  background-color: var(--cf-color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--cf-focus-ring);
+}
+
+img,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
