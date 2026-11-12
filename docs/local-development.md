@@ -5,6 +5,15 @@
 - Node.js 22 (see `.nvmrc`) with Corepack enabled (`corepack enable`)
 - Python 3.12
 - Docker Desktop (or another Compose v2-compatible runtime)
+- [just](https://just.systems) (`winget install Casey.Just`, `brew install just`, or `pip install rust-just`)
+
+## First-time setup
+
+```bash
+just install       # pnpm workspace + API virtualenv
+just services-up   # Postgres, Mailpit, SeaweedFS
+just check         # verify everything passes
+```
 
 ## Services
 
