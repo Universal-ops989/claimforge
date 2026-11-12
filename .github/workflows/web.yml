@@ -40,5 +40,5 @@ jobs:
           path: .turbo
           key: turbo-${{ runner.os }}-${{ github.sha }}
           restore-keys: turbo-${{ runner.os }}-
-      - name: Lint, typecheck, test, build
-        run: pnpm turbo run lint typecheck test build --cache-dir=.turbo
+      - name: Lint, typecheck, test, build (incl. Storybook)
+        run: pnpm turbo run lint typecheck test build build-storybook --cache-dir=.turbo
