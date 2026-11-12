@@ -18,14 +18,14 @@ record.
 
 ## Tech stack
 
-| Layer | Technology |
-|-------|-----------|
-| API | Python 3.12, FastAPI, SQLAlchemy 2 (async), Alembic, Pydantic v2 |
-| Database | PostgreSQL 16 |
-| Frontend | React 18, TypeScript, Vite, TanStack Query, React Router, React Hook Form + Zod |
-| Design system | `@claimforge/ui` + Storybook 8 |
-| Tooling | pnpm workspaces, Turborepo, uv, ruff, mypy, Vitest, Pytest, Playwright |
-| CI | GitHub Actions |
+| Layer         | Technology                                                                      |
+| ------------- | ------------------------------------------------------------------------------- |
+| API           | Python 3.12, FastAPI, SQLAlchemy 2 (async), Alembic, Pydantic v2                |
+| Database      | PostgreSQL 16                                                                   |
+| Frontend      | React 18, TypeScript, Vite, TanStack Query, React Router, React Hook Form + Zod |
+| Design system | `@claimforge/ui` + Storybook 8                                                  |
+| Tooling       | pnpm workspaces, Turborepo, uv, ruff, mypy, Vitest, Pytest, Playwright          |
+| CI            | GitHub Actions                                                                  |
 
 ## Repository layout
 

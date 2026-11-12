@@ -1,0 +1,6 @@
+pnpm-lock.yaml
+**/dist
+**/coverage
+**/storybook-static
+**/*.gen.ts
+apps/api
