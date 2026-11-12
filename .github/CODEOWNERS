@@ -1,0 +1,7 @@
+# Default owner for everything in the repository.
+*                       @Universal-ops989
+
+# Areas are listed separately so ownership can be split as the team grows.
+/apps/api/              @Universal-ops989
+/packages/ui/           @Universal-ops989
+/.github/workflows/     @Universal-ops989
