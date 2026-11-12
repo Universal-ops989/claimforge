@@ -16,6 +16,8 @@
     "clean": "turbo run clean"
   },
   "devDependencies": {
-    "turbo": "^2"
+    "prettier": "^3",
+    "turbo": "^2",
+    "typescript": "~5.9.3"
   }
 }
