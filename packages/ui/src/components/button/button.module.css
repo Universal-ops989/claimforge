@@ -1,0 +1,149 @@
+.root {
+  --button-bg: transparent;
+  --button-bg-hover: transparent;
+  --button-bg-active: var(--button-bg-hover);
+  --button-fg: var(--cf-color-text);
+  --button-border: transparent;
+
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cf-space-2);
+  height: var(--button-height);
+  padding-inline: var(--button-padding);
+  border: 1px solid var(--button-border);
+  border-radius: var(--cf-radius-md);
+  background: var(--button-bg);
+  color: var(--button-fg);
+  font-family: var(--cf-font-sans);
+  font-size: var(--button-font-size);
+  font-weight: var(--cf-font-weight-medium);
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color var(--cf-duration-fast) var(--cf-ease-standard),
+    border-color var(--cf-duration-fast) var(--cf-ease-standard),
+    box-shadow var(--cf-duration-fast) var(--cf-ease-standard);
+}
+
+.root:hover:not(:disabled, [aria-disabled="true"]) {
+  background: var(--button-bg-hover);
+}
+
+.root:active:not(:disabled, [aria-disabled="true"]) {
+  background: var(--button-bg-active);
+}
+
+.root:focus-visible {
+  outline: none;
+  box-shadow: var(--cf-focus-ring);
+}
+
+.root:disabled,
+.root[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* Variants */
+.primary {
+  --button-bg: var(--cf-color-accent);
+  --button-bg-hover: var(--cf-color-accent-hover);
+  --button-bg-active: var(--cf-color-accent-active);
+  --button-fg: var(--cf-color-on-accent);
+}
+
+.secondary {
+  --button-bg: var(--cf-color-surface);
+  --button-bg-hover: var(--cf-color-neutral-subtle);
+  --button-bg-active: var(--cf-color-neutral-subtle-hover);
+  --button-border: var(--cf-color-border-strong);
+
+  box-shadow: var(--cf-shadow-xs);
+}
+
+.ghost {
+  --button-bg-hover: var(--cf-color-neutral-subtle);
+  --button-bg-active: var(--cf-color-neutral-subtle-hover);
+  --button-fg: var(--cf-color-text-muted);
+}
+
+.ghost:hover:not(:disabled) {
+  color: var(--cf-color-text);
+}
+
+.danger {
+  --button-bg: var(--cf-color-danger);
+  --button-bg-hover: var(--cf-color-danger-hover);
+  --button-fg: var(--cf-color-on-accent);
+}
+
+/* Sizes */
+.sm {
+  --button-height: 2rem;
+  --button-padding: var(--cf-space-3);
+  --button-font-size: var(--cf-font-size-sm);
+}
+
+.md {
+  --button-height: 2.5rem;
+  --button-padding: var(--cf-space-4);
+  --button-font-size: var(--cf-font-size-sm);
+}
+
+.lg {
+  --button-height: 3rem;
+  --button-padding: var(--cf-space-5);
+  --button-font-size: var(--cf-font-size-md);
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.icon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.icon > svg {
+  width: 1.125em;
+  height: 1.125em;
+}
+
+/* Loading: hide content but keep its width so the layout does not jump. */
+.loading {
+  cursor: progress;
+}
+
+.loading > :not(.spinner) {
+  visibility: hidden;
+}
+
+.spinner {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 1.1em;
+  height: 1.1em;
+  border: 2px solid currentcolor;
+  border-right-color: transparent;
+  border-radius: var(--cf-radius-full);
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 1.5s;
+  }
+}
