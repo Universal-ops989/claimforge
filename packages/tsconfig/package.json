@@ -1,0 +1,8 @@
+{
+  "name": "@claimforge/tsconfig",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared TypeScript configurations for ClaimForge packages",
+  "license": "MIT",
+  "files": ["*.json"]
+}
