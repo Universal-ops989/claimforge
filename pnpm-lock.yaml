@@ -12,6 +12,8 @@ importers:
         specifier: ^2
         version: 2.11.11
 
+  packages/tsconfig: {}
+
 packages:
 
   '@turbo/darwin-64@2.11.11':
