@@ -14,6 +14,10 @@ export default tseslint.config(
     files: ["**/*.{ts,tsx}"],
     ...eslintReact.configs["recommended-type-checked"],
   },
+  {
+    files: ["**/*.{ts,tsx}"],
+    ...eslintReact.configs["disable-conflict-eslint-plugin-react-hooks"],
+  },
   reactHooks.configs.flat["recommended-latest"],
   jsxA11y.flatConfigs.recommended,
   {
