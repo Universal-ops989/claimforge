@@ -39,10 +39,9 @@ and `tsconfig`.
 ## Running checks locally
 
 ```bash
-pnpm format:check && pnpm turbo run lint typecheck test   # TypeScript workspace
-
-cd apps/api
-ruff check . && ruff format --check . && mypy && pytest   # API
+just check        # everything CI runs
+just api-test -k claims   # a subset of API tests
+just              # list all recipes
 ```
 
 See [docs/local-development.md](docs/local-development.md) for environment setup.
