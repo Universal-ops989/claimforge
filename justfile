@@ -74,9 +74,13 @@ web-test:
 
 # Build all frontend packages and apps
 web-build:
-    pnpm turbo run build
+    pnpm turbo run build build-storybook
 
 # ─── Everything ───────────────────────────────────────────────────────────
 
 # Run every check CI runs
 check: web-lint web-test api-lint api-test
+
+# Run Storybook for the design system on :6006
+storybook:
+    pnpm --filter @claimforge/ui storybook
