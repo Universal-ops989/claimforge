@@ -27,10 +27,13 @@ class Item(UUIDPrimaryKeyMixin, _TestBase):
 
     name: Mapped[str] = mapped_column(String(20))
     loss_date: Mapped[date] = mapped_column(Date)
+    closed_on: Mapped[date | None] = mapped_column(Date, default=None)
 
 
 BY_ID = SortKey([Item.id])
 BY_DATE_DESC = SortKey([Item.loss_date, Item.id], direction="desc")
+BY_CLOSED = SortKey([Item.closed_on, Item.id])
+BY_CLOSED_DESC = SortKey([Item.closed_on, Item.id], direction="desc")
 
 
 @pytest.fixture
@@ -43,7 +46,12 @@ async def session(database_url: str) -> AsyncIterator[AsyncSession]:
         start = date(2026, 1, 1)
         # 23 rows; dates repeat every 5 rows so the tiebreaker matters.
         session.add_all(
-            Item(name=f"item-{i:02d}", loss_date=start + timedelta(days=i % 5)) for i in range(23)
+            Item(
+                name=f"item-{i:02d}",
+                loss_date=start + timedelta(days=i % 5),
+                closed_on=None if i % 3 == 0 else start + timedelta(days=i % 4),
+            )
+            for i in range(23)
         )
         await session.commit()
         yield session
@@ -115,3 +123,14 @@ def test_rejects_cursors_from_a_different_sort() -> None:
 
     with pytest.raises(InvalidCursorError, match="different sort"):
         decode_cursor(BY_DATE_DESC, cursor)
+
+
+@pytest.mark.parametrize("sort", [BY_CLOSED, BY_CLOSED_DESC], ids=["asc", "desc"])
+async def test_nullable_sort_columns_keep_every_row(session: AsyncSession, sort: SortKey) -> None:
+    pages = await collect(session, sort, limit=4)
+    rows = [item for page in pages for item in page]
+
+    assert len({item.id for item in rows}) == 23
+    # Missing values sort as larger than any value: last ascending, first descending.
+    keys = [(item.closed_on is None, item.closed_on or date.min, item.id) for item in rows]
+    assert keys == sorted(keys, reverse=sort.direction == "desc")
