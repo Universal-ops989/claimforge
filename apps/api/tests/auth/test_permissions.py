@@ -14,14 +14,22 @@ P = Permission
 
 # The full matrix, written out so any change to who can do what is a visible diff.
 EXPECTED: dict[Role, set[Permission]] = {
-    Role.VIEWER: {P.ORG_READ, P.MEMBERS_READ, P.CLAIMS_READ},
-    Role.TECHNICIAN: {P.ORG_READ, P.MEMBERS_READ, P.CLAIMS_READ, P.FIELD_DATA_WRITE},
+    Role.VIEWER: {P.ORG_READ, P.MEMBERS_READ, P.CLAIMS_READ, P.CONTACTS_READ},
+    Role.TECHNICIAN: {
+        P.ORG_READ,
+        P.MEMBERS_READ,
+        P.CLAIMS_READ,
+        P.CONTACTS_READ,
+        P.FIELD_DATA_WRITE,
+    },
     Role.ADJUSTER: {
         P.ORG_READ,
         P.MEMBERS_READ,
         P.CLAIMS_READ,
+        P.CONTACTS_READ,
         P.FIELD_DATA_WRITE,
         P.CLAIMS_WRITE,
+        P.CONTACTS_WRITE,
         P.ESTIMATES_WRITE,
         P.ESTIMATES_APPROVE,
         P.REPORTS_GENERATE,

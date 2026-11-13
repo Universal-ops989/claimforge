@@ -89,5 +89,5 @@ async def test_me_reports_permissions_per_membership(
 
     assert membership["role"] == "technician"
     assert membership["permissions"] == sorted(
-        ["org:read", "members:read", "claims:read", "field_data:write"]
+        ["org:read", "members:read", "claims:read", "contacts:read", "field_data:write"]
     )
