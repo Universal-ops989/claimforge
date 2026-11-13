@@ -8,8 +8,11 @@ from enum import StrEnum
 from functools import lru_cache
 from typing import Annotated, Self
 
-from pydantic import Field, PostgresDsn, model_validator
+from pydantic import Field, PostgresDsn, SecretStr, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+
+#: Placeholder for local development only; production refuses to start with it.
+DEV_JWT_SECRET = "dev-only-insecure-jwt-secret-change-me"  # noqa: S105
 
 
 class Environment(StrEnum):
@@ -52,6 +55,12 @@ class Settings(BaseSettings):
         description="Comma-separated list of allowed browser origins.",
     )
 
+    jwt_secret: SecretStr = Field(
+        default=SecretStr(DEV_JWT_SECRET),
+        description="HMAC key for signing access tokens (at least 32 random characters).",
+    )
+    access_token_ttl_minutes: int = Field(default=15, ge=1, le=60)
+
     @model_validator(mode="before")
     @classmethod
     def _split_cors_origins(cls, data: object) -> object:
@@ -69,6 +78,12 @@ class Settings(BaseSettings):
                 raise ValueError("CLAIMFORGE_DEBUG must be false in production")
             if "*" in self.cors_origins:
                 raise ValueError("CLAIMFORGE_CORS_ORIGINS must not contain '*' in production")
+            secret = self.jwt_secret.get_secret_value()
+            if secret == DEV_JWT_SECRET or len(secret) < 32:
+                raise ValueError(
+                    "CLAIMFORGE_JWT_SECRET must be set to at least 32 random characters "
+                    "in production"
+                )
         return self
 
     @property

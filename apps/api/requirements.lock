@@ -43,6 +43,8 @@ pydantic-core==2.50.4
     # via pydantic
 pydantic-settings==2.16.2
     # via claimforge-api (pyproject.toml)
+pyjwt==2.15.1
+    # via claimforge-api (pyproject.toml)
 python-dotenv==1.2.4
     # via
     #   pydantic-settings
