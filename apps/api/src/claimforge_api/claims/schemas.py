@@ -117,6 +117,22 @@ class ClaimUpdate(BaseModel):
         return self
 
 
+class ClaimActor(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    full_name: str
+
+
+class ClaimAssignmentRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    user: ClaimActor
+    role: AssignmentRole
+    assigned_by_id: UUID | None
+    assigned_at: datetime = Field(validation_alias="created_at")
+
+
 class ClaimContactRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -139,6 +155,7 @@ class ClaimRead(BaseModel):
     policy_number: str | None
     property: PropertyRead
     contacts: list[ClaimContactRead]
+    assignments: list[ClaimAssignmentRead]
     created_by_id: UUID | None
     created_at: datetime
     updated_at: datetime
@@ -175,6 +192,10 @@ class ClaimListQuery(BaseModel):
     contact_id: UUID | None = Field(
         default=None, description="Claims this contact is linked to, in any role"
     )
+    assigned_to: UUID | None = Field(
+        default=None, description="Claims this member is assigned to, in any role"
+    )
+    has_adjuster: bool | None = Field(default=None, description="`false`: claims nobody owns yet")
     loss_date_from: date | None = Field(default=None, description="Inclusive")
     loss_date_to: date | None = Field(default=None, description="Inclusive")
     q: Annotated[str, StringConstraints(strip_whitespace=True, max_length=200)] | None = Field(
@@ -195,7 +216,7 @@ class ClaimListQuery(BaseModel):
 
 
 class ClaimSummary(BaseModel):
-    """A claim as the list shows it: the property and the person to call first."""
+    """A claim as the list shows it: the property, the person to call first and who owns it."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -209,6 +230,7 @@ class ClaimSummary(BaseModel):
     policy_number: str | None
     property: PropertyRead
     primary_contact: ClaimContactRead | None
+    adjuster: ClaimActor | None
     created_at: datetime
     updated_at: datetime
 
@@ -233,13 +255,6 @@ class ClaimStatusChangeCreate(BaseModel):
         description="The status the client last saw. If the claim has moved on since, the "
         "change is refused with 409 `status_changed` instead of acting on a stale view.",
     )
-
-
-class ClaimActor(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    full_name: str
 
 
 class ClaimStatusChangeRead(BaseModel):

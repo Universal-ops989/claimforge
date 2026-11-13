@@ -407,6 +407,7 @@ async def list_claims(
         .options(
             selectinload(Claim.property),
             selectinload(Claim.primary_contact).selectinload(ClaimContact.contact),
+            selectinload(Claim.adjuster),
         )
         .execution_options(populate_existing=True)
     )
@@ -418,6 +419,13 @@ async def list_claims(
         statement = statement.where(Claim.property_id == query.property_id)
     if query.contact_id is not None:
         statement = statement.where(Claim.contacts.any(ClaimContact.contact_id == query.contact_id))
+    if query.assigned_to is not None:
+        statement = statement.where(
+            Claim.assignments.any(ClaimAssignment.user_id == query.assigned_to)
+        )
+    if query.has_adjuster is not None:
+        has_one = Claim.assignments.any(ClaimAssignment.role == AssignmentRole.ADJUSTER)
+        statement = statement.where(has_one if query.has_adjuster else ~has_one)
     if query.loss_date_from is not None:
         statement = statement.where(Claim.loss_date >= query.loss_date_from)
     if query.loss_date_to is not None:

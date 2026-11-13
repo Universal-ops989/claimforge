@@ -120,6 +120,16 @@ class Claim(UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin, Base):
         lazy="raise",
         order_by="ClaimAssignment.id",
     )
+    # Read-only shortcut for lists: the member who owns the claim.
+    adjuster: Mapped[User | None] = relationship(
+        secondary="claim_assignments",
+        primaryjoin="and_(Claim.id == ClaimAssignment.claim_id, "
+        "ClaimAssignment.role == 'adjuster')",
+        secondaryjoin="ClaimAssignment.user_id == User.id",
+        viewonly=True,
+        uselist=False,
+        lazy="raise",
+    )
     primary_contact: Mapped["ClaimContact | None"] = relationship(
         primaryjoin="and_(Claim.id == ClaimContact.claim_id, ClaimContact.is_primary)",
         viewonly=True,
