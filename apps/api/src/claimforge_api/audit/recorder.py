@@ -3,6 +3,9 @@
 Models opt in with ``__audited__ = True``. After each flush (when primary keys exist), one
 event per inserted, updated or deleted row is written on the same connection, so audit rows
 commit or roll back together with the change itself.
+
+Events are named after the table ("contacts" -> "contact.created"); a model whose table
+name is not a simple plural sets ``__audit_entity__`` ("properties" -> "property").
 """
 
 from collections.abc import Iterable
@@ -40,6 +43,10 @@ def _json(value: object) -> object:
 
 
 def _entity_type(obj: object) -> str:
+    """``__audit_entity__`` if the model sets one, else the table name minus a plural "s"."""
+    explicit = getattr(obj, "__audit_entity__", None)
+    if explicit:
+        return str(explicit)
     return str(getattr(obj, "__tablename__", type(obj).__name__)).removesuffix("s")
 
 

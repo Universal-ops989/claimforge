@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from claimforge_api.audit.models import AuditEvent
-from claimforge_api.audit.recorder import REDACTED, actor_id_var
+from claimforge_api.audit.recorder import REDACTED, _entity_type, actor_id_var
 from claimforge_api.organizations import service as organizations
 from claimforge_api.organizations.schemas import OrganizationCreate, OrganizationUpdate
 from claimforge_api.users import service as users
@@ -112,3 +112,15 @@ async def test_api_changes_carry_actor_and_request_id(
     assert event.actor_user_id == user.id
     assert event.request_id == "trace-77"
     assert actor_id_var.get() is None  # reset after the request
+
+
+def test_entity_names_come_from_the_table_or_an_explicit_name() -> None:
+    class Plain:
+        __tablename__ = "contacts"
+
+    class Irregular:
+        __tablename__ = "properties"
+        __audit_entity__ = "property"
+
+    assert _entity_type(Plain()) == "contact"
+    assert _entity_type(Irregular()) == "property"
