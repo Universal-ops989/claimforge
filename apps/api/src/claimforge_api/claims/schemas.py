@@ -201,3 +201,25 @@ class ClaimSummary(BaseModel):
     primary_contact: ClaimContactRead | None
     created_at: datetime
     updated_at: datetime
+
+
+Reason = Annotated[
+    Annotated[str, StringConstraints(strip_whitespace=True, max_length=1000)] | None, Blankable
+]
+
+
+class ClaimStatusChangeCreate(BaseModel):
+    """Move a claim to another status (see ``claims.workflow`` for the allowed moves)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    status: ClaimStatus
+    reason: Reason = Field(
+        default=None,
+        description="Required to put a claim on hold, cancel it, or reopen or reinstate it",
+    )
+    expected_status: ClaimStatus | None = Field(
+        default=None,
+        description="The status the client last saw. If the claim has moved on since, the "
+        "change is refused with 409 `status_changed` instead of acting on a stale view.",
+    )
