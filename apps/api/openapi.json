@@ -1584,6 +1584,7 @@
           "claims:read",
           "claims:write",
           "claims:delete",
+          "claims:reopen",
           "contacts:read",
           "contacts:write",
           "field_data:write",

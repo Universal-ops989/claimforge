@@ -61,3 +61,7 @@ def test_only_owners_can_delete_the_organization() -> None:
 def test_accepts_role_strings_from_the_database() -> None:
     assert has_permission("technician", P.FIELD_DATA_WRITE)
     assert not has_permission("viewer", P.CLAIMS_WRITE)
+
+
+def test_only_admins_and_owners_reopen_claims() -> None:
+    assert {r for r in Role if has_permission(r, P.CLAIMS_REOPEN)} == {Role.ADMIN, Role.OWNER}

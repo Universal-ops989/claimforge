@@ -9,7 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from claimforge_api.auth.permissions import Permission, authorize
-from claimforge_api.claims.models import Claim, ClaimContact, ClaimStatus
+from claimforge_api.claims import workflow
+from claimforge_api.claims.models import Claim, ClaimContact, ClaimStatus, ClaimStatusChange
 from claimforge_api.claims.numbering import next_claim_number
 from claimforge_api.claims.schemas import (
     ClaimContactLink,
@@ -17,6 +18,7 @@ from claimforge_api.claims.schemas import (
     ClaimCreate,
     ClaimListQuery,
     ClaimSort,
+    ClaimStatusChangeCreate,
     ClaimUpdate,
 )
 from claimforge_api.contacts.models import Contact
@@ -47,6 +49,21 @@ class ContactAlreadyLinkedError(ConflictError):
 class LossDateInFutureError(BusinessRuleError):
     code = "loss_date_in_future"
     title = "Loss date in the future"
+
+
+class InvalidStatusTransitionError(BusinessRuleError):
+    code = "invalid_status_transition"
+    title = "Status change not allowed"
+
+
+class ReasonRequiredError(BusinessRuleError):
+    code = "reason_required"
+    title = "Reason required"
+
+
+class StatusChangedError(ConflictError):
+    code = "status_changed"
+    title = "Status changed"
 
 
 def _live_claims(organization_id: UUID) -> Select[Claim]:
@@ -213,6 +230,97 @@ async def update_claim(
     await session.commit()
     # Reload for the database's new updated_at.
     return await _get_live(session, organization_id, claim_id=claim_id)
+
+
+# ─── Status ───────────────────────────────────────────────────────────────────
+
+
+async def _lock_status(session: AsyncSession, organization_id: UUID, claim_id: UUID) -> str:
+    """The claim's current status, with its row locked until commit.
+
+    Concurrent changes to one claim queue up here, so each one sees the status the
+    previous one left behind instead of both acting on the same starting point.
+    """
+    current = await session.scalar(
+        select(Claim.status)
+        .where(
+            Claim.id == claim_id,
+            Claim.organization_id == organization_id,
+            Claim.not_deleted(),
+        )
+        .with_for_update()
+    )
+    if current is None:
+        raise NotFoundError("Claim not found", claim_id=str(claim_id))
+    return current
+
+
+async def change_status(
+    session: AsyncSession,
+    organization_id: UUID,
+    claim_id: UUID,
+    data: ClaimStatusChangeCreate,
+    *,
+    user: User,
+) -> Claim:
+    await authorize(session, user, organization_id, Permission.CLAIMS_WRITE)
+    current = ClaimStatus(await _lock_status(session, organization_id, claim_id))
+    target = data.status
+
+    if data.expected_status is not None and data.expected_status != current:
+        raise StatusChangedError(
+            f"The claim is {current} now, not {data.expected_status}",
+            current_status=current.value,
+        )
+    if not workflow.is_allowed(current, target):
+        raise InvalidStatusTransitionError(
+            f"A claim that is {current} cannot become {target}",
+            from_status=current.value,
+            to_status=target.value,
+            allowed=[s.value for s in workflow.next_statuses(current)],
+        )
+    needed = workflow.required_permission(current)
+    if needed is not Permission.CLAIMS_WRITE:
+        await authorize(session, user, organization_id, needed)
+    if workflow.needs_reason(current, target) and not data.reason:
+        raise ReasonRequiredError(
+            f"Say why the claim goes from {current} to {target}",
+            from_status=current.value,
+            to_status=target.value,
+        )
+
+    claim = await _get_live(session, organization_id, claim_id=claim_id)
+    claim.status = target
+    session.add(
+        ClaimStatusChange(
+            organization_id=organization_id,
+            claim_id=claim_id,
+            from_status=current,
+            to_status=target,
+            reason=data.reason,
+            changed_by_id=user.id,
+        )
+    )
+    await session.commit()
+    return await _get_live(session, organization_id, claim_id=claim_id)
+
+
+async def status_history(
+    session: AsyncSession, organization_id: UUID, claim_id: UUID, *, user: User
+) -> list[ClaimStatusChange]:
+    """Every status change of a live claim, oldest first."""
+    await authorize(session, user, organization_id, Permission.CLAIMS_READ)
+    await _get_live(session, organization_id, claim_id=claim_id)
+    rows = await session.scalars(
+        select(ClaimStatusChange)
+        .where(
+            ClaimStatusChange.claim_id == claim_id,
+            ClaimStatusChange.organization_id == organization_id,
+        )
+        .options(selectinload(ClaimStatusChange.changed_by))
+        .order_by(ClaimStatusChange.id)
+    )
+    return list(rows)
 
 
 # ─── Listing ──────────────────────────────────────────────────────────────────
