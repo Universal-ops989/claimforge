@@ -93,6 +93,28 @@ class ClaimCreate(BaseModel):
         return self
 
 
+class ClaimUpdate(BaseModel):
+    """Partial update: omitted fields are unchanged, ``null`` (or "") clears optional ones.
+
+    The number never changes; status, property and contacts have their own operations.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    loss_type: LossType | None = None
+    loss_date: date | None = None
+    description: Description = None
+    carrier_name: CarrierName = None
+    carrier_claim_number: CarrierReference = None
+    policy_number: CarrierReference = None
+
+    @model_validator(mode="after")
+    def _loss_type_stays_set(self) -> Self:
+        if "loss_type" in self.model_fields_set and self.loss_type is None:
+            raise ValueError("loss_type cannot be cleared")
+        return self
+
+
 class ClaimContactRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
