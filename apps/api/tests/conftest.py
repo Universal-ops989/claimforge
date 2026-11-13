@@ -12,8 +12,9 @@ calls ``commit()`` (commits become SAVEPOINT releases).
 
 import os
 import tempfile
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from pathlib import Path
+from uuid import UUID
 
 import httpx2
 import pytest
@@ -30,10 +31,14 @@ from claimforge_api.core import passwords
 from claimforge_api.core.settings import Environment, Settings
 from claimforge_api.core.tokens import create_access_token
 from claimforge_api.main import create_app
+from claimforge_api.organizations import service as organizations_service
+from claimforge_api.organizations.schemas import OrganizationCreate
 from claimforge_api.users import service as users_service
-from claimforge_api.users.models import User
+from claimforge_api.users.models import Membership, Role, User
 
 API_ROOT = Path(__file__).resolve().parents[1]
+
+ClientFor = Callable[[Role | None], Awaitable[httpx2.AsyncClient]]
 
 
 def make_alembic_config(database_url: str) -> Config:
@@ -165,3 +170,44 @@ async def auth_client(app: FastAPI, access_token: str) -> AsyncIterator[httpx2.A
         headers={"Authorization": f"Bearer {access_token}"},
     ) as c:
         yield c
+
+
+@pytest.fixture
+async def organization_id(db_session: AsyncSession, user: User) -> UUID:
+    """An organization owned by ``user``."""
+    organization = await organizations_service.create_organization(
+        db_session, OrganizationCreate(name="Rivera Restoration"), owner=user
+    )
+    return organization.id
+
+
+@pytest.fixture
+async def client_for(
+    app: FastAPI, db_session: AsyncSession, settings: Settings, organization_id: UUID
+) -> AsyncIterator[ClientFor]:
+    """Factory: a signed-in client for a new member of ``organization_id`` with ``role``.
+
+    ``None`` gives a signed-in user who is not a member.
+    """
+    clients: list[httpx2.AsyncClient] = []
+
+    async def make(role: Role | None) -> httpx2.AsyncClient:
+        person = await users_service.create_user(
+            db_session, email=f"{role or 'outsider'}@example.com", full_name="Someone"
+        )
+        if role is not None:
+            db_session.add(
+                Membership(organization_id=organization_id, user_id=person.id, role=role)
+            )
+            await db_session.commit()
+        client = httpx2.AsyncClient(
+            transport=httpx2.ASGITransport(app=app),
+            base_url="http://testserver",
+            headers={"Authorization": f"Bearer {create_access_token(person.id, settings).token}"},
+        )
+        clients.append(client)
+        return client
+
+    yield make
+    for client in clients:
+        await client.aclose()

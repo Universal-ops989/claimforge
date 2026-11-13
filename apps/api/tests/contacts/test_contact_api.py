@@ -1,54 +1,18 @@
 """Contacts over HTTP: validation, pagination, roles and the audit trail."""
 
-from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any
 from uuid import UUID
 
 import httpx2
 import pytest
-from fastapi import FastAPI
-from sqlalchemy.ext.asyncio import AsyncSession
+from tests.conftest import ClientFor
 
-from claimforge_api.core.settings import Settings
-from claimforge_api.core.tokens import create_access_token
-from claimforge_api.users import service as users
-from claimforge_api.users.models import Membership, Role
-
-ClientFor = Callable[[Role | None], Awaitable[httpx2.AsyncClient]]
+from claimforge_api.users.models import Role
 
 
 @pytest.fixture
 def url(organization_id: UUID) -> str:
     return f"/v1/organizations/{organization_id}/contacts"
-
-
-@pytest.fixture
-async def client_for(
-    app: FastAPI, db_session: AsyncSession, settings: Settings, organization_id: UUID
-) -> AsyncIterator[ClientFor]:
-    """Factory: a signed-in client for a new member with ``role`` (``None``: not a member)."""
-    clients: list[httpx2.AsyncClient] = []
-
-    async def make(role: Role | None) -> httpx2.AsyncClient:
-        person = await users.create_user(
-            db_session, email=f"{role or 'outsider'}@example.com", full_name="Someone"
-        )
-        if role is not None:
-            db_session.add(
-                Membership(organization_id=organization_id, user_id=person.id, role=role)
-            )
-            await db_session.commit()
-        client = httpx2.AsyncClient(
-            transport=httpx2.ASGITransport(app=app),
-            base_url="http://testserver",
-            headers={"Authorization": f"Bearer {create_access_token(person.id, settings).token}"},
-        )
-        clients.append(client)
-        return client
-
-    yield make
-    for client in clients:
-        await client.aclose()
 
 
 async def create(client: httpx2.AsyncClient, url: str, **body: object) -> dict[str, Any]:
