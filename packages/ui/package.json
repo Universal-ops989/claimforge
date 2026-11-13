@@ -62,8 +62,10 @@
   "dependencies": {
     "@tanstack/react-table": "^8",
     "clsx": "^2",
+    "date-fns": "^4",
     "lucide-react": "^1",
-    "radix-ui": "^1"
+    "radix-ui": "^1",
+    "react-day-picker": "^9"
   },
   "peerDependencies": {
     "react": "^19",

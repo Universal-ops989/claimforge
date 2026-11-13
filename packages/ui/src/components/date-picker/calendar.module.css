@@ -1,0 +1,168 @@
+.root {
+  --cell: 2.25rem;
+
+  position: relative;
+  color: var(--cf-color-text);
+  font-size: var(--cf-font-size-sm);
+}
+
+.months {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cf-space-6);
+}
+
+.month {
+  display: grid;
+  gap: var(--cf-space-2);
+}
+
+.caption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2rem;
+}
+
+.captionLabel {
+  font-weight: var(--cf-font-weight-semibold);
+}
+
+.nav {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  display: flex;
+  justify-content: space-between;
+  height: 2rem;
+  pointer-events: none;
+}
+
+.navButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--cf-radius-md);
+  background: transparent;
+  color: var(--cf-color-text-muted);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.navButton:hover:not(:disabled) {
+  background: var(--cf-color-neutral-subtle);
+  color: var(--cf-color-text);
+}
+
+.navButton:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.navButton:focus-visible {
+  outline: none;
+  box-shadow: var(--cf-focus-ring);
+}
+
+.chevron {
+  width: 1rem;
+  height: 1rem;
+}
+
+.grid {
+  border-collapse: collapse;
+}
+
+.weekday {
+  width: var(--cell);
+  height: 2rem;
+  color: var(--cf-color-text-subtle);
+  font-size: var(--cf-font-size-xs);
+  font-weight: var(--cf-font-weight-medium);
+}
+
+.day {
+  width: var(--cell);
+  height: var(--cell);
+  padding: 0;
+  text-align: center;
+}
+
+.dayButton {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--cf-radius-md);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.dayButton:hover:not(:disabled) {
+  background: var(--cf-color-neutral-subtle);
+}
+
+.dayButton:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: none;
+  box-shadow: var(--cf-focus-ring);
+}
+
+.today .dayButton {
+  color: var(--cf-color-accent-text);
+  font-weight: var(--cf-font-weight-bold);
+}
+
+.outside {
+  color: var(--cf-color-text-subtle);
+}
+
+.disabled .dayButton {
+  color: var(--cf-color-text-disabled);
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+.hidden {
+  visibility: hidden;
+}
+
+.selected .dayButton,
+.selected .dayButton:hover {
+  background: var(--cf-color-accent);
+  color: var(--cf-color-on-accent);
+}
+
+/* Ranges: a continuous band between the start and end caps. */
+.rangeMiddle {
+  background: var(--cf-color-accent-subtle);
+}
+
+.rangeMiddle .dayButton,
+.rangeMiddle .dayButton:hover {
+  border-radius: 0;
+  background: transparent;
+  color: var(--cf-color-accent-text);
+}
+
+.rangeStart {
+  border-radius: var(--cf-radius-md) 0 0 var(--cf-radius-md);
+  background: var(--cf-color-accent-subtle);
+}
+
+.rangeEnd {
+  border-radius: 0 var(--cf-radius-md) var(--cf-radius-md) 0;
+  background: var(--cf-color-accent-subtle);
+}
+
+.rangeStart.rangeEnd {
+  border-radius: var(--cf-radius-md);
+}
