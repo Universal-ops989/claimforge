@@ -6,6 +6,7 @@ export * from "./components/button";
 export * from "./components/card";
 export * from "./components/checkbox";
 export * from "./components/confirm-dialog";
+export * from "./components/data-table";
 export * from "./components/dialog";
 export * from "./components/drawer";
 export * from "./components/field";
