@@ -11,9 +11,13 @@ from sqlalchemy.orm import selectinload
 from claimforge_api.auth.permissions import Permission, authorize
 from claimforge_api.claims.models import Claim, ClaimContact, ClaimStatus
 from claimforge_api.claims.numbering import next_claim_number
-from claimforge_api.claims.schemas import ClaimCreate
+from claimforge_api.claims.schemas import (
+    ClaimContactLink,
+    ClaimContactLinkUpdate,
+    ClaimCreate,
+)
 from claimforge_api.contacts.models import Contact
-from claimforge_api.core.errors import BusinessRuleError, NotFoundError
+from claimforge_api.core.errors import BusinessRuleError, ConflictError, NotFoundError
 from claimforge_api.organizations.models import Organization
 from claimforge_api.properties import service as properties
 from claimforge_api.properties.models import Property
@@ -28,6 +32,11 @@ class UnknownPropertyError(BusinessRuleError):
 class UnknownContactError(BusinessRuleError):
     code = "unknown_contact"
     title = "Unknown contact"
+
+
+class ContactAlreadyLinkedError(ConflictError):
+    code = "contact_already_linked"
+    title = "Contact already linked"
 
 
 class LossDateInFutureError(BusinessRuleError):
@@ -173,3 +182,111 @@ async def get_claim_by_number(
 ) -> Claim:
     await authorize(session, user, organization_id, Permission.CLAIMS_READ)
     return await _get_live(session, organization_id, number=number)
+
+
+# ─── Contacts on a claim ──────────────────────────────────────────────────────
+
+
+def _find_link(claim: Claim, contact_id: UUID) -> ClaimContact | None:
+    return next((link for link in claim.contacts if link.contact_id == contact_id), None)
+
+
+def _linked(claim: Claim, contact_id: UUID) -> ClaimContact:
+    link = _find_link(claim, contact_id)
+    if link is None:
+        raise NotFoundError(
+            "That contact is not linked to this claim",
+            claim_id=str(claim.id),
+            contact_id=str(contact_id),
+        )
+    return link
+
+
+async def _make_primary(session: AsyncSession, claim: Claim, link: ClaimContact) -> None:
+    """Demote the current primary first, so the claim never has two at once."""
+    for other in claim.contacts:
+        if other is not link and other.is_primary:
+            other.is_primary = False
+    await session.flush()
+    link.is_primary = True
+
+
+async def _load_link(
+    session: AsyncSession, organization_id: UUID, claim_id: UUID, contact_id: UUID
+) -> ClaimContact:
+    link = await session.scalar(
+        select(ClaimContact)
+        .where(
+            ClaimContact.organization_id == organization_id,
+            ClaimContact.claim_id == claim_id,
+            ClaimContact.contact_id == contact_id,
+        )
+        .options(selectinload(ClaimContact.contact))
+        .execution_options(populate_existing=True)
+    )
+    if link is None:
+        raise NotFoundError("Contact link not found")
+    return link
+
+
+async def link_contact(
+    session: AsyncSession,
+    organization_id: UUID,
+    claim_id: UUID,
+    data: ClaimContactLink,
+    *,
+    user: User,
+) -> ClaimContact:
+    await authorize(session, user, organization_id, Permission.CLAIMS_WRITE)
+    claim = await _get_live(session, organization_id, claim_id=claim_id)
+    if _find_link(claim, data.contact_id) is not None:
+        raise ContactAlreadyLinkedError(
+            "That contact is already linked to this claim; change its role instead",
+            contact_id=str(data.contact_id),
+        )
+    await _check_contacts(session, organization_id, [data.contact_id])
+
+    link = ClaimContact(
+        organization_id=organization_id,
+        claim_id=claim.id,
+        contact_id=data.contact_id,
+        role=data.role,
+        is_primary=False,
+    )
+    session.add(link)
+    if data.is_primary:
+        await _make_primary(session, claim, link)
+    await session.commit()
+    return await _load_link(session, organization_id, claim.id, data.contact_id)
+
+
+async def update_contact_link(
+    session: AsyncSession,
+    organization_id: UUID,
+    claim_id: UUID,
+    contact_id: UUID,
+    data: ClaimContactLinkUpdate,
+    *,
+    user: User,
+) -> ClaimContact:
+    await authorize(session, user, organization_id, Permission.CLAIMS_WRITE)
+    claim = await _get_live(session, organization_id, claim_id=claim_id)
+    link = _linked(claim, contact_id)
+    if data.role is not None:
+        link.role = data.role
+    if data.is_primary:
+        await _make_primary(session, claim, link)
+    elif data.is_primary is False:
+        link.is_primary = False
+    await session.commit()
+    return await _load_link(session, organization_id, claim.id, contact_id)
+
+
+async def unlink_contact(
+    session: AsyncSession, organization_id: UUID, claim_id: UUID, contact_id: UUID, *, user: User
+) -> None:
+    await authorize(session, user, organization_id, Permission.CLAIMS_WRITE)
+    claim = await _get_live(session, organization_id, claim_id=claim_id)
+    link = _linked(claim, contact_id)
+    await session.delete(link)
+    await session.commit()

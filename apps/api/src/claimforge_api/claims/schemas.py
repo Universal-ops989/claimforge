@@ -44,6 +44,24 @@ class ClaimContactLink(BaseModel):
     is_primary: bool = False
 
 
+class ClaimContactLinkUpdate(BaseModel):
+    """Change a contact's role on a claim, or whether they are the primary contact.
+
+    Promoting a contact to primary demotes the previous primary contact.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    role: ClaimContactRole | None = None
+    is_primary: bool | None = None
+
+    @model_validator(mode="after")
+    def _something_to_change(self) -> Self:
+        if self.role is None and self.is_primary is None:
+            raise ValueError("Give a role, is_primary, or both")
+        return self
+
+
 class ClaimCreate(BaseModel):
     """Give either ``property_id`` or an inline ``property``.
 
