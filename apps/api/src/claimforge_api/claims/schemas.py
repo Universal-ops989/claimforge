@@ -133,8 +133,6 @@ class ClaimSort(StrEnum):
 class ClaimListQuery(BaseModel):
     """Filters for the claim list. Every filter given must match."""
 
-    model_config = ConfigDict(extra="forbid")
-
     status: list[ClaimStatus] = Field(
         default_factory=list, description="Any of these statuses; repeat to give several"
     )
