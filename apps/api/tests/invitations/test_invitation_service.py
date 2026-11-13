@@ -1,15 +1,14 @@
 from datetime import UTC, datetime, timedelta
-from urllib.parse import parse_qs, urlparse
 from uuid import UUID
 
 import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from tests.invitations.conftest import RecordingSender
 
 from claimforge_api.core.errors import NotFoundError, PermissionDeniedError
 from claimforge_api.core.settings import Settings
 from claimforge_api.invitations import service
-from claimforge_api.invitations.delivery import InvitationMessage
 from claimforge_api.invitations.models import Invitation
 from claimforge_api.organizations import service as organizations
 from claimforge_api.organizations.schemas import OrganizationCreate
@@ -17,23 +16,6 @@ from claimforge_api.users import service as users
 from claimforge_api.users.models import Membership, Role, User
 
 PASSWORD = "tile grout and drywall"
-
-
-class RecordingSender:
-    def __init__(self) -> None:
-        self.messages: list[InvitationMessage] = []
-
-    async def send(self, message: InvitationMessage) -> None:
-        self.messages.append(message)
-
-    @property
-    def last_token(self) -> str:
-        return parse_qs(urlparse(self.messages[-1].accept_url).query)["token"][0]
-
-
-@pytest.fixture
-def sender() -> RecordingSender:
-    return RecordingSender()
 
 
 @pytest.fixture

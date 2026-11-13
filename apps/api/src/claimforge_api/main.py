@@ -13,6 +13,7 @@ from claimforge_api.api.router import api_router
 from claimforge_api.core.database import create_engine, create_session_factory
 from claimforge_api.core.logging import configure_logging
 from claimforge_api.core.settings import Settings, get_settings
+from claimforge_api.invitations.delivery import LoggingInvitationSender
 
 
 @asynccontextmanager
@@ -41,6 +42,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Creating the engine does no I/O; connections open lazily on first use.
     app.state.engine = create_engine(settings)
     app.state.session_factory = create_session_factory(app.state.engine)
+    # Replaced by the email sender when notifications land.
+    app.state.invitation_sender = LoggingInvitationSender()
 
     app.add_middleware(
         CORSMiddleware,
