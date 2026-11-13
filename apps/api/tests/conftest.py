@@ -30,7 +30,10 @@ def database_url() -> Iterator[str]:
     # Imported lazily: only needed when no external database is configured.
     from pgserver.postgres_server import get_server
 
-    with tempfile.TemporaryDirectory(prefix="claimforge-pg-") as data_dir:
+    # On Windows the server can briefly keep its log open after stopping.
+    with tempfile.TemporaryDirectory(
+        prefix="claimforge-pg-", ignore_cleanup_errors=True
+    ) as data_dir:
         server = get_server(data_dir, cleanup_mode="stop")
         uri: str = server.get_uri()
         yield uri.replace("postgresql://", "postgresql+asyncpg://", 1)
