@@ -84,3 +84,7 @@ check: web-lint web-test api-lint api-test
 # Run Storybook for the design system on :6006
 storybook:
     pnpm --filter @claimforge/ui storybook
+
+# Run every Storybook story as a browser test (interactions + accessibility)
+storybook-test:
+    pnpm turbo run test-storybook
