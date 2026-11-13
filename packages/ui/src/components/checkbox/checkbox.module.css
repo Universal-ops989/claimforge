@@ -1,0 +1,114 @@
+.root {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--cf-space-2);
+}
+
+.box {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-top: 0.125rem;
+  padding: 0;
+  border: 1px solid var(--cf-color-border-strong);
+  border-radius: var(--cf-radius-sm);
+  background: var(--cf-color-surface);
+  color: var(--cf-color-on-accent);
+  cursor: pointer;
+  transition:
+    background-color var(--cf-duration-fast) var(--cf-ease-standard),
+    border-color var(--cf-duration-fast) var(--cf-ease-standard);
+}
+
+.box:hover:not(:disabled) {
+  border-color: var(--cf-color-accent);
+}
+
+.box:focus-visible {
+  outline: none;
+  box-shadow: var(--cf-focus-ring);
+}
+
+.box[data-state="checked"],
+.box[data-state="indeterminate"] {
+  border-color: var(--cf-color-accent);
+  background: var(--cf-color-accent);
+}
+
+.box:disabled {
+  cursor: not-allowed;
+}
+
+.invalid {
+  border-color: var(--cf-color-danger);
+}
+
+.indicator {
+  display: inline-flex;
+}
+
+.indicator > svg {
+  width: 0.875rem;
+  height: 0.875rem;
+  stroke-width: 3;
+}
+
+.indicator[data-state="checked"] .dash,
+.indicator[data-state="indeterminate"] .check {
+  display: none;
+}
+
+.text {
+  display: grid;
+  gap: var(--cf-space-0-5);
+}
+
+.label {
+  color: var(--cf-color-text);
+  font-size: var(--cf-font-size-sm);
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.description {
+  color: var(--cf-color-text-muted);
+  font-size: var(--cf-font-size-xs);
+}
+
+.disabled {
+  opacity: 0.55;
+}
+
+.disabled .label {
+  cursor: not-allowed;
+}
+
+/* CheckboxGroup */
+.group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  margin-bottom: var(--cf-space-2);
+  padding: 0;
+  color: var(--cf-color-text);
+  font-size: var(--cf-font-size-sm);
+  font-weight: var(--cf-font-weight-medium);
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-2);
+}
+
+.horizontal {
+  flex-flow: row wrap;
+  gap: var(--cf-space-2) var(--cf-space-5);
+}
