@@ -14,7 +14,7 @@ pip install -e . --no-deps
 ## Run
 
 ```bash
-uvicorn claimforge_api.main:app --reload    # http://localhost:8000/docs
+uvicorn claimforge_api.main:create_production_app --factory --reload   # :8000/docs
 ```
 
 ## Database migrations

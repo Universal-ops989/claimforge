@@ -7,8 +7,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from claimforge_api import __version__
+from claimforge_api.api.middleware import REQUEST_ID_HEADER, RequestContextMiddleware
 from claimforge_api.api.router import api_router
 from claimforge_api.core.database import create_engine, create_session_factory
+from claimforge_api.core.logging import configure_logging
 from claimforge_api.core.settings import Settings, get_settings
 
 
@@ -45,9 +47,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        # Let the web app show the request id in error messages for support.
+        expose_headers=[REQUEST_ID_HEADER],
     )
+    # Added last so it is the outermost middleware: every response gets a request id.
+    app.add_middleware(RequestContextMiddleware)
     app.include_router(api_router)
     return app
 
 
-app = create_app()
+def create_production_app() -> FastAPI:
+    """Server entry point: configures process-wide logging, then builds the app.
+
+    Run with ``uvicorn claimforge_api.main:create_production_app --factory`` so nothing
+    happens at import time (tests import this module without side effects).
+    """
+    settings = get_settings()
+    configure_logging(settings)
+    return create_app(settings)

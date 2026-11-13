@@ -38,7 +38,7 @@ services-down *args:
 
 # Run the API with auto-reload on :8000
 api-dev:
-    cd {{ api_dir }} && {{ venv_bin }}/python -m uvicorn claimforge_api.main:app --reload
+    cd {{ api_dir }} && {{ venv_bin }}/python -m uvicorn claimforge_api.main:create_production_app --factory --reload
 
 # Lint and typecheck the API
 api-lint:
