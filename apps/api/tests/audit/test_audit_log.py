@@ -97,6 +97,24 @@ async def test_hard_delete_records_what_was_removed(db_session: AsyncSession) ->
     assert "last_login_at" not in deleted.changes  # nulls are left out, as on creation
 
 
+async def test_rows_removed_from_a_collection_are_recorded(db_session: AsyncSession) -> None:
+    # delete-orphan: the row is deleted because it left its parent's collection, without
+    # session.delete(), so it never shows up in session.deleted.
+    owner = await users.create_user(db_session, email="o@example.com", full_name="Owner")
+    org = await organizations.create_organization(
+        db_session, OrganizationCreate(name="Orphanage"), owner=owner
+    )
+    await db_session.refresh(owner, ["memberships"])
+    (membership,) = owner.memberships
+
+    owner.memberships.remove(membership)
+    await db_session.flush()
+
+    _created, deleted = await events(db_session, membership.id)
+    assert deleted.action == "membership.deleted"
+    assert deleted.changes["organization_id"] == [str(org.id), None]
+
+
 async def test_secrets_are_redacted(db_session: AsyncSession) -> None:
     created = await users.create_user(
         db_session, email="secret@example.com", full_name="S", password="tile grout and drywall"
