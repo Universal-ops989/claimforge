@@ -16,7 +16,7 @@ from pydantic import (
 )
 
 from claimforge_api.claims import workflow
-from claimforge_api.claims.models import ClaimContactRole, ClaimStatus, LossType
+from claimforge_api.claims.models import AssignmentRole, ClaimContactRole, ClaimStatus, LossType
 from claimforge_api.contacts.schemas import ContactRead
 from claimforge_api.properties.schemas import PropertyCreate, PropertyRead
 
@@ -251,3 +251,12 @@ class ClaimStatusChangeRead(BaseModel):
     reason: str | None
     changed_by: ClaimActor | None = Field(description="None once the user is deleted")
     changed_at: datetime
+
+
+class ClaimAssignmentCreate(BaseModel):
+    """Assign a member to a claim. Assigning an adjuster replaces the current one."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    user_id: UUID
+    role: AssignmentRole
