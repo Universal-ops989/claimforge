@@ -9,6 +9,26 @@ import "@claimforge/ui/styles.css";
 import { VisuallyHidden } from "@claimforge/ui";
 ```
 
+## Forms with React Hook Form
+
+Bindings live in a separate entry point, so apps that don't use
+`react-hook-form` never load it:
+
+```tsx
+import { FormProvider, useForm } from "react-hook-form";
+import { FormInput, FormSelect } from "@claimforge/ui/form";
+
+const methods = useForm<NewClaim>({ resolver: zodResolver(schema) });
+
+<FormProvider {...methods}>
+  <FormInput<NewClaim> name="policyNumber" label="Policy number" required />
+  <FormSelect<NewClaim> name="lossType" label="Loss type" options={LOSS_TYPES} />
+</FormProvider>;
+```
+
+Errors from the resolver appear under the matching field and are announced
+through `aria-describedby`.
+
 ## Principles
 
 - **Accessible by default.** Keyboard support, focus management and ARIA come built in.
