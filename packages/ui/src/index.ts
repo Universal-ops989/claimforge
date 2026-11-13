@@ -19,6 +19,7 @@ export * from "./components/select";
 export * from "./components/switch";
 export * from "./components/text";
 export * from "./components/textarea";
+export * from "./components/toast";
 export * from "./components/visually-hidden";
 export * from "./theme";
 export * from "./tokens";
