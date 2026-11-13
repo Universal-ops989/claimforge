@@ -66,6 +66,11 @@ class StatusChangedError(ConflictError):
     title = "Status changed"
 
 
+class ClaimLockedError(ConflictError):
+    code = "claim_locked"
+    title = "Claim is closed"
+
+
 def _live_claims(organization_id: UUID) -> Select[Claim]:
     """Live claims with everything a claim response shows, loaded up front."""
     return (
@@ -220,7 +225,7 @@ async def update_claim(
     now: datetime | None = None,
 ) -> Claim:
     await authorize(session, user, organization_id, Permission.CLAIMS_WRITE)
-    claim = await _get_live(session, organization_id, claim_id=claim_id)
+    claim = await _get_editable(session, organization_id, claim_id)
     changes = data.model_dump(exclude_unset=True)
     if "loss_date" in changes:
         _check_loss_date(data.loss_date, await _local_now(session, organization_id, now))
@@ -253,6 +258,17 @@ async def _lock_status(session: AsyncSession, organization_id: UUID, claim_id: U
     if current is None:
         raise NotFoundError("Claim not found", claim_id=str(claim_id))
     return current
+
+
+async def _get_editable(session: AsyncSession, organization_id: UUID, claim_id: UUID) -> Claim:
+    """The claim, locked against concurrent status changes, if it is not closed or cancelled."""
+    current = await _lock_status(session, organization_id, claim_id)
+    if current in workflow.FINAL:
+        action = "Reinstate" if current == ClaimStatus.CANCELLED else "Reopen"
+        raise ClaimLockedError(
+            f"The claim is {current}. {action} it to make changes.", claim_status=current
+        )
+    return await _get_live(session, organization_id, claim_id=claim_id)
 
 
 async def change_status(
@@ -441,7 +457,7 @@ async def link_contact(
     user: User,
 ) -> ClaimContact:
     await authorize(session, user, organization_id, Permission.CLAIMS_WRITE)
-    claim = await _get_live(session, organization_id, claim_id=claim_id)
+    claim = await _get_editable(session, organization_id, claim_id)
     if _find_link(claim, data.contact_id) is not None:
         raise ContactAlreadyLinkedError(
             "That contact is already linked to this claim; change its role instead",
@@ -473,7 +489,7 @@ async def update_contact_link(
     user: User,
 ) -> ClaimContact:
     await authorize(session, user, organization_id, Permission.CLAIMS_WRITE)
-    claim = await _get_live(session, organization_id, claim_id=claim_id)
+    claim = await _get_editable(session, organization_id, claim_id)
     link = _linked(claim, contact_id)
     if data.role is not None:
         link.role = data.role
@@ -489,7 +505,7 @@ async def unlink_contact(
     session: AsyncSession, organization_id: UUID, claim_id: UUID, contact_id: UUID, *, user: User
 ) -> None:
     await authorize(session, user, organization_id, Permission.CLAIMS_WRITE)
-    claim = await _get_live(session, organization_id, claim_id=claim_id)
+    claim = await _get_editable(session, organization_id, claim_id)
     link = _linked(claim, contact_id)
     await session.delete(link)
     await session.commit()
