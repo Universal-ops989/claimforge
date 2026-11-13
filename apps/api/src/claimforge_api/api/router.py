@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from claimforge_api.api.routes import health
 from claimforge_api.audit.router import router as audit_router
 from claimforge_api.auth.router import router as auth_router
+from claimforge_api.contacts.router import router as contacts_router
 from claimforge_api.invitations.router import accept_router as invitation_accept_router
 from claimforge_api.invitations.router import organization_router as invitations_router
 from claimforge_api.organizations.router import router as organizations_router
@@ -17,6 +18,7 @@ v1_router.include_router(organizations_router)
 v1_router.include_router(invitations_router)
 v1_router.include_router(invitation_accept_router)
 v1_router.include_router(users_router)
+v1_router.include_router(contacts_router)
 v1_router.include_router(audit_router)
 
 api_router = APIRouter()
