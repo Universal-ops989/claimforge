@@ -16,9 +16,11 @@ export default defineConfig({
   },
   build: {
     lib: {
-      entry: "src/index.ts",
+      // Separate entries so optional integrations (react-hook-form) are only
+      // loaded by apps that import them.
+      entry: { index: "src/index.ts", form: "src/form/index.ts" },
       formats: ["es"],
-      fileName: "index",
+      fileName: (_format, entryName) => `${entryName}.js`,
       cssFileName: "claimforge-ui",
     },
     rollupOptions: {

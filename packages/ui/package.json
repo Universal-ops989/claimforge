@@ -15,6 +15,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./form": {
+      "types": "./dist/form/index.d.ts",
+      "import": "./dist/form.js"
+    },
     "./styles.css": "./dist/claimforge-ui.css"
   },
   "files": [
@@ -48,6 +52,7 @@
     "jsdom": "^31",
     "react": "^19",
     "react-dom": "^19",
+    "react-hook-form": "^7",
     "rimraf": "^6.1.4",
     "storybook": "^10",
     "typescript": "~5.9.3",
@@ -61,6 +66,12 @@
   },
   "peerDependencies": {
     "react": "^19",
-    "react-dom": "^19"
+    "react-dom": "^19",
+    "react-hook-form": "^7.50"
+  },
+  "peerDependenciesMeta": {
+    "react-hook-form": {
+      "optional": true
+    }
   }
 }
