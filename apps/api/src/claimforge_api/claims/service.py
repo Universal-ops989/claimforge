@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import Select, select
+from sqlalchemy import ColumnElement, Select, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -15,9 +15,13 @@ from claimforge_api.claims.schemas import (
     ClaimContactLink,
     ClaimContactLinkUpdate,
     ClaimCreate,
+    ClaimListQuery,
+    ClaimSort,
 )
 from claimforge_api.contacts.models import Contact
 from claimforge_api.core.errors import BusinessRuleError, ConflictError, NotFoundError
+from claimforge_api.db.pagination import Page, SortKey, paginate
+from claimforge_api.db.search import icontains
 from claimforge_api.organizations.models import Organization
 from claimforge_api.properties import service as properties
 from claimforge_api.properties.models import Property
@@ -182,6 +186,70 @@ async def get_claim_by_number(
 ) -> Claim:
     await authorize(session, user, organization_id, Permission.CLAIMS_READ)
     return await _get_live(session, organization_id, number=number)
+
+
+# ─── Listing ──────────────────────────────────────────────────────────────────
+
+SORT_KEYS = {
+    ClaimSort.NEWEST: SortKey([Claim.id], direction="desc"),  # UUIDv7: creation order
+    ClaimSort.OLDEST: SortKey([Claim.id]),
+    ClaimSort.RECENTLY_UPDATED: SortKey([Claim.updated_at, Claim.id], direction="desc"),
+    ClaimSort.LOSS_DATE_DESC: SortKey([Claim.loss_date, Claim.id], direction="desc"),
+    ClaimSort.LOSS_DATE_ASC: SortKey([Claim.loss_date, Claim.id]),
+}
+
+
+def _matching(q: str) -> ColumnElement[bool]:
+    return or_(
+        icontains(Claim.number, q),
+        icontains(Claim.carrier_name, q),
+        icontains(Claim.carrier_claim_number, q),
+        icontains(Claim.policy_number, q),
+        Claim.property.has(
+            or_(
+                icontains(Property.address_line1, q),
+                icontains(Property.city, q),
+                icontains(Property.postal_code, q),
+            )
+        ),
+        Claim.contacts.any(ClaimContact.contact.has(icontains(Contact.full_name, q))),
+    )
+
+
+async def list_claims(
+    session: AsyncSession,
+    organization_id: UUID,
+    query: ClaimListQuery,
+    *,
+    user: User,
+    limit: int,
+    cursor: str | None,
+) -> Page[Claim]:
+    await authorize(session, user, organization_id, Permission.CLAIMS_READ)
+    statement = (
+        select(Claim)
+        .where(Claim.organization_id == organization_id, Claim.not_deleted())
+        .options(
+            selectinload(Claim.property),
+            selectinload(Claim.primary_contact).selectinload(ClaimContact.contact),
+        )
+        .execution_options(populate_existing=True)
+    )
+    if query.status:
+        statement = statement.where(Claim.status.in_(query.status))
+    if query.loss_type:
+        statement = statement.where(Claim.loss_type.in_(query.loss_type))
+    if query.property_id is not None:
+        statement = statement.where(Claim.property_id == query.property_id)
+    if query.contact_id is not None:
+        statement = statement.where(Claim.contacts.any(ClaimContact.contact_id == query.contact_id))
+    if query.loss_date_from is not None:
+        statement = statement.where(Claim.loss_date >= query.loss_date_from)
+    if query.loss_date_to is not None:
+        statement = statement.where(Claim.loss_date <= query.loss_date_to)
+    if query.q:
+        statement = statement.where(_matching(query.q))
+    return await paginate(session, statement, SORT_KEYS[query.sort], limit=limit, cursor=cursor)
 
 
 # ─── Contacts on a claim ──────────────────────────────────────────────────────

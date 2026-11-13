@@ -1,6 +1,7 @@
 """Request and response schemas for claims."""
 
 from datetime import date, datetime
+from enum import StrEnum
 from typing import Annotated, Self
 from uuid import UUID
 
@@ -115,5 +116,66 @@ class ClaimRead(BaseModel):
     property: PropertyRead
     contacts: list[ClaimContactRead]
     created_by_id: UUID | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class ClaimSort(StrEnum):
+    """Sort orders for the claim list. A leading "-" means newest/latest first."""
+
+    NEWEST = "-created_at"
+    OLDEST = "created_at"
+    RECENTLY_UPDATED = "-updated_at"
+    LOSS_DATE_DESC = "-loss_date"
+    LOSS_DATE_ASC = "loss_date"
+
+
+class ClaimListQuery(BaseModel):
+    """Filters for the claim list. Every filter given must match."""
+
+    status: list[ClaimStatus] = Field(
+        default_factory=list, description="Any of these statuses; repeat to give several"
+    )
+    loss_type: list[LossType] = Field(
+        default_factory=list, description="Any of these loss types; repeat to give several"
+    )
+    property_id: UUID | None = None
+    contact_id: UUID | None = Field(
+        default=None, description="Claims this contact is linked to, in any role"
+    )
+    loss_date_from: date | None = Field(default=None, description="Inclusive")
+    loss_date_to: date | None = Field(default=None, description="Inclusive")
+    q: Annotated[str, StringConstraints(strip_whitespace=True, max_length=200)] | None = Field(
+        default=None,
+        description="Matches the claim number, carrier name, carrier claim number, policy "
+        "number, the property's street, city or postal code, or a linked contact's name",
+    )
+    sort: ClaimSort = Field(
+        default=ClaimSort.NEWEST,
+        description="Claims with no loss date come last for `loss_date` and first for `-loss_date`",
+    )
+
+    @model_validator(mode="after")
+    def _ordered_range(self) -> Self:
+        if self.loss_date_from and self.loss_date_to and self.loss_date_from > self.loss_date_to:
+            raise ValueError("loss_date_from must not be after loss_date_to")
+        return self
+
+
+class ClaimSummary(BaseModel):
+    """A claim as the list shows it: the property and the person to call first."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    number: str
+    status: ClaimStatus
+    loss_type: LossType
+    loss_date: date | None
+    carrier_name: str | None
+    carrier_claim_number: str | None
+    policy_number: str | None
+    property: PropertyRead
+    primary_contact: ClaimContactRead | None
     created_at: datetime
     updated_at: datetime

@@ -188,3 +188,95 @@ async def test_claim_activity_shows_up_in_the_audit_timeline(
     assert [e["action"] for e in created.json()["items"]] == ["claim.created"]
     assert created.json()["items"][0]["actor"]["full_name"] == "Morgan Member"
     assert [e["changes"]["contact_id"][1] for e in links.json()["items"]] == [dana["id"]]
+
+
+async def test_list_claims(auth_client: httpx2.AsyncClient, base: str) -> None:
+    dana = await post(auth_client, f"{base}/contacts", {"full_name": "Dana Whitfield"})
+    first = await new_claim(
+        auth_client,
+        base,
+        loss_date="2026-10-01",
+        contacts=[{"contact_id": dana["id"], "role": "insured", "is_primary": True}],
+    )
+    second = await new_claim(auth_client, base, loss_type="fire")
+
+    listed = await auth_client.get(f"{base}/claims", params={"limit": 1})
+    assert listed.status_code == 200
+    page = listed.json()
+    assert [c["id"] for c in page["items"]] == [second["id"]]
+    assert page["has_more"] is True
+    row = page["items"][0]
+    assert row["property"]["address"]["formatted"] == "123 N Main St, Austin, TX 78701"
+    assert row["primary_contact"] is None
+    assert "contacts" not in row  # Rows are summaries.
+
+    rest = await auth_client.get(
+        f"{base}/claims", params={"limit": 1, "cursor": page["next_cursor"]}
+    )
+    (row,) = rest.json()["items"]
+    assert row["id"] == first["id"]
+    assert row["primary_contact"]["contact"]["full_name"] == "Dana Whitfield"
+    assert row["primary_contact"]["role"] == "insured"
+
+
+async def test_list_filters_and_sorts_over_http(auth_client: httpx2.AsyncClient, base: str) -> None:
+    water = await new_claim(auth_client, base, loss_date="2026-10-01")
+    fire = await new_claim(auth_client, base, loss_type="fire")
+    await new_claim(auth_client, base, loss_type="mold", loss_date="2026-09-01")
+
+    async def ids(params: dict[str, str | list[str]]) -> list[str]:
+        response = await auth_client.get(f"{base}/claims", params=params)
+        assert response.status_code == 200, response.text
+        return [c["id"] for c in response.json()["items"]]
+
+    both = await ids({"loss_type": ["water", "fire"], "sort": "created_at"})
+    assert both == [water["id"], fire["id"]]
+    assert await ids({"q": water["number"]}) == [water["id"]]
+    assert await ids({"loss_date_from": "2026-09-15"}) == [water["id"]]
+    assert (await ids({"sort": "-loss_date"}))[0] == fire["id"]  # no loss date: first
+
+
+@pytest.mark.parametrize(
+    ("params", "status", "code"),
+    [
+        ({"loss_date_from": "2026-05-02", "loss_date_to": "2026-05-01"}, 422, "validation_failed"),
+        ({"sort": "-number"}, 422, "validation_failed"),
+        ({"status": "lost"}, 422, "validation_failed"),
+        ({"q": "x" * 201}, 422, "validation_failed"),
+    ],
+)
+async def test_list_rejects_bad_parameters(
+    auth_client: httpx2.AsyncClient, base: str, params: dict[str, str], status: int, code: str
+) -> None:
+    response = await auth_client.get(f"{base}/claims", params=params)
+
+    assert response.status_code == status
+    assert response.json()["code"] == code
+
+
+async def test_a_cursor_only_continues_its_own_sort(
+    auth_client: httpx2.AsyncClient, base: str
+) -> None:
+    await new_claim(auth_client, base)
+    await new_claim(auth_client, base)
+    page = (await auth_client.get(f"{base}/claims", params={"limit": 1})).json()
+
+    response = await auth_client.get(
+        f"{base}/claims", params={"limit": 1, "cursor": page["next_cursor"], "sort": "loss_date"}
+    )
+
+    assert response.status_code == 400
+    assert response.json()["code"] == "invalid_cursor"
+
+
+async def test_who_can_list_claims(
+    auth_client: httpx2.AsyncClient, client_for: ClientFor, base: str
+) -> None:
+    await new_claim(auth_client, base)
+    viewer = await client_for(Role.VIEWER)
+    outsider = await client_for(None)
+
+    listed = await viewer.get(f"{base}/claims")
+    assert listed.status_code == 200
+    assert len(listed.json()["items"]) == 1
+    assert (await outsider.get(f"{base}/claims")).status_code == 404

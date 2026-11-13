@@ -3,9 +3,9 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Path, status
+from fastapi import APIRouter, Path, Query, status
 
-from claimforge_api.api.deps import DbSession
+from claimforge_api.api.deps import DbSession, PageParamsDep
 from claimforge_api.api.problems import PROBLEM_RESPONSES
 from claimforge_api.auth.deps import CurrentUser
 from claimforge_api.claims import service
@@ -14,8 +14,11 @@ from claimforge_api.claims.schemas import (
     ClaimContactLinkUpdate,
     ClaimContactRead,
     ClaimCreate,
+    ClaimListQuery,
     ClaimRead,
+    ClaimSummary,
 )
+from claimforge_api.db.pagination import CursorPage
 
 router = APIRouter(
     prefix="/organizations/{organization_id}/claims",
@@ -24,6 +27,24 @@ router = APIRouter(
 )
 
 ClaimNumber = Annotated[str, Path(max_length=20, examples=["2026-00042"])]
+
+
+@router.get("", summary="List claims")
+async def list_claims(
+    organization_id: UUID,
+    session: DbSession,
+    user: CurrentUser,
+    page: PageParamsDep,
+    query: Annotated[ClaimListQuery, Query()],
+) -> CursorPage[ClaimSummary]:
+    result = await service.list_claims(
+        session, organization_id, query, user=user, limit=page.limit, cursor=page.cursor
+    )
+    return CursorPage[ClaimSummary](
+        items=[ClaimSummary.model_validate(c) for c in result.items],
+        next_cursor=result.next_cursor,
+        has_more=result.has_more,
+    )
 
 
 @router.post(

@@ -534,6 +534,18 @@
         "title": "ClaimRead",
         "type": "object"
       },
+      "ClaimSort": {
+        "description": "Sort orders for the claim list. A leading \"-\" means newest/latest first.",
+        "enum": [
+          "-created_at",
+          "created_at",
+          "-updated_at",
+          "-loss_date",
+          "loss_date"
+        ],
+        "title": "ClaimSort",
+        "type": "string"
+      },
       "ClaimStatus": {
         "description": "Lifecycle states. Which transitions are allowed is defined by the status workflow.",
         "enum": [
@@ -547,6 +559,110 @@
         ],
         "title": "ClaimStatus",
         "type": "string"
+      },
+      "ClaimSummary": {
+        "description": "A claim as the list shows it: the property and the person to call first.",
+        "properties": {
+          "carrier_claim_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Carrier Claim Number"
+          },
+          "carrier_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Carrier Name"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "loss_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loss Date"
+          },
+          "loss_type": {
+            "$ref": "#/components/schemas/LossType"
+          },
+          "number": {
+            "title": "Number",
+            "type": "string"
+          },
+          "policy_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy Number"
+          },
+          "primary_contact": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClaimContactRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "property": {
+            "$ref": "#/components/schemas/PropertyRead"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ClaimStatus"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "status",
+          "loss_type",
+          "loss_date",
+          "carrier_name",
+          "carrier_claim_number",
+          "policy_number",
+          "property",
+          "primary_contact",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ClaimSummary",
+        "type": "object"
       },
       "ContactCreate": {
         "additionalProperties": false,
@@ -868,6 +984,39 @@
           "has_more"
         ],
         "title": "CursorPage[AuditEventRead]",
+        "type": "object"
+      },
+      "CursorPage_ClaimSummary_": {
+        "properties": {
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ClaimSummary"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor",
+          "has_more"
+        ],
+        "title": "CursorPage[ClaimSummary]",
         "type": "object"
       },
       "CursorPage_ContactRead_": {
@@ -3094,6 +3243,272 @@
       }
     },
     "/v1/organizations/{organization_id}/claims": {
+      "get": {
+        "operationId": "list_claims",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Organization Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Any of these statuses; repeat to give several",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "description": "Any of these statuses; repeat to give several",
+              "items": {
+                "$ref": "#/components/schemas/ClaimStatus"
+              },
+              "title": "Status",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Any of these loss types; repeat to give several",
+            "in": "query",
+            "name": "loss_type",
+            "required": false,
+            "schema": {
+              "description": "Any of these loss types; repeat to give several",
+              "items": {
+                "$ref": "#/components/schemas/LossType"
+              },
+              "title": "Loss Type",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "property_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Property Id"
+            }
+          },
+          {
+            "description": "Claims this contact is linked to, in any role",
+            "in": "query",
+            "name": "contact_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Claims this contact is linked to, in any role",
+              "title": "Contact Id"
+            }
+          },
+          {
+            "description": "Inclusive",
+            "in": "query",
+            "name": "loss_date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive",
+              "title": "Loss Date From"
+            }
+          },
+          {
+            "description": "Inclusive",
+            "in": "query",
+            "name": "loss_date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive",
+              "title": "Loss Date To"
+            }
+          },
+          {
+            "description": "Matches the claim number, carrier name, carrier claim number, policy number, the property's street, city or postal code, or a linked contact's name",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Matches the claim number, carrier name, carrier claim number, policy number, the property's street, city or postal code, or a linked contact's name",
+              "title": "Q"
+            }
+          },
+          {
+            "description": "Claims with no loss date come last for `loss_date` and first for `-loss_date`",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ClaimSort",
+              "default": "-created_at",
+              "description": "Claims with no loss date come last for `loss_date` and first for `-loss_date`"
+            }
+          },
+          {
+            "description": "Items per page",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "description": "Items per page",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "next_cursor from the previous page",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "next_cursor from the previous page",
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CursorPage_ClaimSummary_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Authentication required"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Permission denied"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Validation failed or business rule violated"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List claims",
+        "tags": [
+          "claims"
+        ]
+      },
       "post": {
         "description": "Give `property_id`, or an inline `property`; an inline address the organization already has reuses that property. The claim number is assigned here.",
         "operationId": "create_claim",
