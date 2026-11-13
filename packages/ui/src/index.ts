@@ -1,5 +1,6 @@
 import "./styles.css";
 
+export * from "./components/app-shell";
 export * from "./components/avatar";
 export * from "./components/badge";
 export * from "./components/breadcrumbs";
