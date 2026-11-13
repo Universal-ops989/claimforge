@@ -96,7 +96,17 @@ def _final_values(obj: object) -> dict[str, list[object]]:
     return changes
 
 
-def _rows(session: Session) -> Iterable[dict[str, Any]]:
+def _deleted(context: UOWTransaction) -> list[object]:
+    """Rows this flush deleted, including orphans removed from a delete-orphan collection,
+    which never appear in ``session.deleted``."""
+    return [
+        state.obj()
+        for state, (is_delete, list_only) in context.states.items()
+        if is_delete and not list_only
+    ]
+
+
+def _rows(session: Session, context: UOWTransaction) -> Iterable[dict[str, Any]]:
     actor = actor_id_var.get()
     request_id = request_id_var.get()
 
@@ -127,13 +137,13 @@ def _rows(session: Session) -> Iterable[dict[str, Any]]:
         if deleted and deleted[0] is not None and deleted[1] is None:
             verb = "restored"
         yield row(obj, verb, changes)
-    for obj in session.deleted:
+    for obj in _deleted(context):
         if getattr(obj, "__audited__", False):
             yield row(obj, "deleted", _final_values(obj))
 
 
-def _after_flush(session: Session, _context: UOWTransaction) -> None:
-    rows = list(_rows(session))
+def _after_flush(session: Session, context: UOWTransaction) -> None:
+    rows = list(_rows(session, context))
     if rows:
         # Same connection and transaction as the change being recorded.
         session.connection().execute(insert(AuditEvent), rows)

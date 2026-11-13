@@ -8,11 +8,19 @@ from sqlalchemy import ColumnElement, Select, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from claimforge_api.auth.permissions import Permission, authorize
+from claimforge_api.auth.permissions import Permission, authorize, has_permission
 from claimforge_api.claims import workflow
-from claimforge_api.claims.models import Claim, ClaimContact, ClaimStatus, ClaimStatusChange
+from claimforge_api.claims.models import (
+    AssignmentRole,
+    Claim,
+    ClaimAssignment,
+    ClaimContact,
+    ClaimStatus,
+    ClaimStatusChange,
+)
 from claimforge_api.claims.numbering import next_claim_number
 from claimforge_api.claims.schemas import (
+    ClaimAssignmentCreate,
     ClaimContactLink,
     ClaimContactLinkUpdate,
     ClaimCreate,
@@ -28,7 +36,7 @@ from claimforge_api.db.search import icontains
 from claimforge_api.organizations.models import Organization
 from claimforge_api.properties import service as properties
 from claimforge_api.properties.models import Property
-from claimforge_api.users.models import User
+from claimforge_api.users.models import Membership, User
 
 
 class UnknownPropertyError(BusinessRuleError):
@@ -71,6 +79,21 @@ class ClaimLockedError(ConflictError):
     title = "Claim is closed"
 
 
+class UnknownAssigneeError(BusinessRuleError):
+    code = "unknown_assignee"
+    title = "Not a member"
+
+
+class AssigneeLacksPermissionError(BusinessRuleError):
+    code = "assignee_lacks_permission"
+    title = "Member can't take this role"
+
+
+class AlreadyAssignedError(ConflictError):
+    code = "already_assigned"
+    title = "Already assigned"
+
+
 def _live_claims(organization_id: UUID) -> Select[Claim]:
     """Live claims with everything a claim response shows, loaded up front."""
     return (
@@ -79,6 +102,7 @@ def _live_claims(organization_id: UUID) -> Select[Claim]:
         .options(
             selectinload(Claim.property),
             selectinload(Claim.contacts).selectinload(ClaimContact.contact),
+            selectinload(Claim.assignments).selectinload(ClaimAssignment.user),
         )
         # Objects created earlier in this session have their relationships unloaded.
         .execution_options(populate_existing=True)
@@ -508,4 +532,102 @@ async def unlink_contact(
     claim = await _get_editable(session, organization_id, claim_id)
     link = _linked(claim, contact_id)
     await session.delete(link)
+    await session.commit()
+
+
+# ─── Assignments ──────────────────────────────────────────────────────────────
+
+#: What a member's organization role must allow for each assignment role.
+ASSIGNMENT_NEEDS = {
+    AssignmentRole.ADJUSTER: Permission.CLAIMS_WRITE,
+    AssignmentRole.CONTRACTOR: Permission.FIELD_DATA_WRITE,
+    AssignmentRole.FIELD_TECHNICIAN: Permission.FIELD_DATA_WRITE,
+}
+
+
+async def _check_assignee(
+    session: AsyncSession, organization_id: UUID, data: ClaimAssignmentCreate
+) -> None:
+    member_role = await session.scalar(
+        select(Membership.role).where(
+            Membership.organization_id == organization_id,
+            Membership.user_id == data.user_id,
+        )
+    )
+    if member_role is None:
+        raise UnknownAssigneeError(
+            "Only members of this organization can be assigned", user_id=str(data.user_id)
+        )
+    needed = ASSIGNMENT_NEEDS[data.role]
+    if not has_permission(member_role, needed):
+        raise AssigneeLacksPermissionError(
+            f"A {member_role} can't be assigned as {data.role}",
+            member_role=str(member_role),
+            assignee_needs=needed.value,
+        )
+
+
+async def _load_assignment(
+    session: AsyncSession, organization_id: UUID, claim_id: UUID, user_id: UUID
+) -> ClaimAssignment:
+    assignment = await session.scalar(
+        select(ClaimAssignment)
+        .where(
+            ClaimAssignment.organization_id == organization_id,
+            ClaimAssignment.claim_id == claim_id,
+            ClaimAssignment.user_id == user_id,
+        )
+        .options(selectinload(ClaimAssignment.user))
+        .execution_options(populate_existing=True)
+    )
+    if assignment is None:
+        raise NotFoundError("That member is not assigned to this claim", user_id=str(user_id))
+    return assignment
+
+
+async def assign(
+    session: AsyncSession,
+    organization_id: UUID,
+    claim_id: UUID,
+    data: ClaimAssignmentCreate,
+    *,
+    user: User,
+) -> ClaimAssignment:
+    """Assign a member. A new adjuster replaces the current one in the same transaction."""
+    await authorize(session, user, organization_id, Permission.CLAIMS_WRITE)
+    claim = await _get_editable(session, organization_id, claim_id)
+    await _check_assignee(session, organization_id, data)
+    existing = next((a for a in claim.assignments if a.user_id == data.user_id), None)
+    if existing is not None:
+        raise AlreadyAssignedError(
+            f"Already assigned to this claim as {existing.role}; unassign first to change roles",
+            user_id=str(data.user_id),
+            current_role=str(existing.role),
+        )
+
+    if data.role == AssignmentRole.ADJUSTER:
+        for previous in [a for a in claim.assignments if a.role == AssignmentRole.ADJUSTER]:
+            claim.assignments.remove(previous)  # delete-orphan: audited as a removal
+        await session.flush()  # free the one-adjuster slot before taking it
+    claim.assignments.append(
+        ClaimAssignment(
+            organization_id=organization_id,
+            user_id=data.user_id,
+            role=data.role,
+            assigned_by_id=user.id,
+        )
+    )
+    await session.commit()
+    return await _load_assignment(session, organization_id, claim.id, data.user_id)
+
+
+async def unassign(
+    session: AsyncSession, organization_id: UUID, claim_id: UUID, user_id: UUID, *, user: User
+) -> None:
+    await authorize(session, user, organization_id, Permission.CLAIMS_WRITE)
+    claim = await _get_editable(session, organization_id, claim_id)
+    assignment = next((a for a in claim.assignments if a.user_id == user_id), None)
+    if assignment is None:
+        raise NotFoundError("That member is not assigned to this claim", user_id=str(user_id))
+    claim.assignments.remove(assignment)
     await session.commit()
