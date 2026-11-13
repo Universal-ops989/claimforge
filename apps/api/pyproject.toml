@@ -60,7 +60,11 @@ select = [
 ignore = []
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101"]  # assert is the point of tests
+"tests/**" = [
+    "S101",  # assert is the point of tests
+    "S105",  # fake credentials in fixtures are not secrets
+    "S106",
+]
 
 [tool.ruff.lint.isort]
 known-first-party = ["claimforge_api"]
