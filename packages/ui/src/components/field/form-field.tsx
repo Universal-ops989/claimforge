@@ -49,6 +49,7 @@ export function FormField({
   const context = useMemo<FieldContextValue>(
     () => ({
       id: controlId,
+      labelId: `${controlId}-label`,
       descriptionId: hasHint ? `${controlId}-hint` : undefined,
       errorId: hasError ? `${controlId}-error` : undefined,
       invalid: hasError,
@@ -61,7 +62,7 @@ export function FormField({
   return (
     <div className={clsx(styles.root, disabled && styles.disabled, className)}>
       <div className={clsx(styles.labelRow, hideLabel && styles.hidden)}>
-        <label htmlFor={controlId} className={styles.label}>
+        <label id={`${controlId}-label`} htmlFor={controlId} className={styles.label}>
           {label}
           {required && (
             <span className={styles.required} aria-hidden="true">
