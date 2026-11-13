@@ -6,6 +6,7 @@ each loss is documented as found; the next claim at the same address starts fres
 """
 
 from decimal import ROUND_HALF_UP, Decimal
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import (
@@ -22,6 +23,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from claimforge_api.db.base import Base
 from claimforge_api.db.mixins import TimestampMixin, UUIDPrimaryKeyMixin
+
+if TYPE_CHECKING:
+    from claimforge_api.damage.models import DamageItem
 
 #: Feet with two decimals (12' 6" is 12.50), up to 9999.99.
 Feet = Numeric(6, 2)
@@ -74,6 +78,13 @@ class Room(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     height_ft: Mapped[Decimal | None] = mapped_column(Feet, default=None)
 
     structure: Mapped[Structure] = relationship(back_populates="rooms", lazy="raise")
+    # Loaded before a room or structure is deleted, so each item's removal is audited.
+    damage_items: Mapped[list["DamageItem"]] = relationship(
+        back_populates="room",
+        cascade="all, delete-orphan",
+        lazy="raise",
+        order_by="DamageItem.id",
+    )
 
     __table_args__ = (
         # Through (claim_id, structure_id), a room can only sit in its own claim's structures.
@@ -82,6 +93,8 @@ class Room(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             ["structures.claim_id", "structures.id"],
             ondelete="CASCADE",
         ),
+        # The target of the damage items' (claim_id, room_id) foreign key.
+        UniqueConstraint("claim_id", "id"),
         Index("uq_rooms_structure_id_name", "structure_id", func.lower(name), unique=True),
         # Every room of a claim, and the cascade from a deleted structure.
         Index("ix_rooms_claim_id_structure_id", "claim_id", "structure_id"),

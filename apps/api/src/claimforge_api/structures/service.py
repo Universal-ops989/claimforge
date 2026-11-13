@@ -65,8 +65,16 @@ async def _check_room_name(
 
 
 async def _find_structure(
-    session: AsyncSession, organization_id: UUID, claim_id: UUID, structure_id: UUID
+    session: AsyncSession,
+    organization_id: UUID,
+    claim_id: UUID,
+    structure_id: UUID,
+    *,
+    with_damage: bool = False,
 ) -> Structure | None:
+    rooms = selectinload(Structure.rooms)
+    if with_damage:
+        rooms = rooms.selectinload(Room.damage_items)
     return await session.scalar(
         select(Structure)
         .where(
@@ -74,33 +82,44 @@ async def _find_structure(
             Structure.claim_id == claim_id,
             Structure.organization_id == organization_id,
         )
-        .options(selectinload(Structure.rooms))
+        .options(rooms)
         # Objects created earlier in this session have their relationships unloaded.
         .execution_options(populate_existing=True)
     )
 
 
 async def _get_structure(
-    session: AsyncSession, organization_id: UUID, claim_id: UUID, structure_id: UUID
+    session: AsyncSession,
+    organization_id: UUID,
+    claim_id: UUID,
+    structure_id: UUID,
+    *,
+    with_damage: bool = False,
 ) -> Structure:
-    structure = await _find_structure(session, organization_id, claim_id, structure_id)
+    structure = await _find_structure(
+        session, organization_id, claim_id, structure_id, with_damage=with_damage
+    )
     if structure is None:
         raise NotFoundError("Structure not found", structure_id=str(structure_id))
     return structure
 
 
 async def _get_room(
-    session: AsyncSession, organization_id: UUID, claim_id: UUID, room_id: UUID
+    session: AsyncSession,
+    organization_id: UUID,
+    claim_id: UUID,
+    room_id: UUID,
+    *,
+    with_damage: bool = False,
 ) -> Room:
-    room = await session.scalar(
-        select(Room)
-        .where(
-            Room.id == room_id,
-            Room.claim_id == claim_id,
-            Room.organization_id == organization_id,
-        )
-        .execution_options(populate_existing=True)
+    statement = select(Room).where(
+        Room.id == room_id,
+        Room.claim_id == claim_id,
+        Room.organization_id == organization_id,
     )
+    if with_damage:
+        statement = statement.options(selectinload(Room.damage_items))
+    room = await session.scalar(statement.execution_options(populate_existing=True))
     if room is None:
         raise NotFoundError("Room not found", room_id=str(room_id))
     return room
@@ -164,11 +183,13 @@ async def update_structure(
 async def delete_structure(
     session: AsyncSession, organization_id: UUID, claim_id: UUID, structure_id: UUID, *, user: User
 ) -> None:
-    """Delete a structure and every room in it."""
+    """Delete a structure and every room and damage item in it."""
     await authorize(session, user, organization_id, Permission.FIELD_DATA_WRITE)
     await claims.lock_for_changes(session, organization_id, claim_id)
-    # Rooms are loaded, so each one's removal is audited, not just the structure's.
-    structure = await _get_structure(session, organization_id, claim_id, structure_id)
+    # Everything under it is loaded, so each removal is audited, not just the structure's.
+    structure = await _get_structure(
+        session, organization_id, claim_id, structure_id, with_damage=True
+    )
     await session.delete(structure)
     await session.commit()
 
@@ -243,6 +264,7 @@ async def delete_room(
 ) -> None:
     await authorize(session, user, organization_id, Permission.FIELD_DATA_WRITE)
     await claims.lock_for_changes(session, organization_id, claim_id)
-    room = await _get_room(session, organization_id, claim_id, room_id)
+    # Its damage items are loaded, so each one's removal is audited.
+    room = await _get_room(session, organization_id, claim_id, room_id, with_damage=True)
     await session.delete(room)
     await session.commit()
