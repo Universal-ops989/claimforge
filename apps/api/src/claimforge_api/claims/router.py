@@ -16,6 +16,8 @@ from claimforge_api.claims.schemas import (
     ClaimCreate,
     ClaimListQuery,
     ClaimRead,
+    ClaimStatusChangeCreate,
+    ClaimStatusChangeRead,
     ClaimSummary,
     ClaimUpdate,
 )
@@ -93,6 +95,33 @@ async def update_claim(
 ) -> ClaimRead:
     claim = await service.update_claim(session, organization_id, claim_id, body, user=user)
     return ClaimRead.model_validate(claim)
+
+
+@router.post(
+    "/{claim_id}/status",
+    summary="Change a claim's status",
+    description="Moves along the status workflow; the claim's `next_statuses` lists where "
+    "it can go. Putting a claim on hold, cancelling, reopening and reinstating need a "
+    "`reason`. Reopening a closed claim or reinstating a cancelled one needs "
+    "`claims:reopen`. Closed and cancelled claims are read-only until then.",
+)
+async def change_claim_status(
+    organization_id: UUID,
+    claim_id: UUID,
+    session: DbSession,
+    user: CurrentUser,
+    body: ClaimStatusChangeCreate,
+) -> ClaimRead:
+    claim = await service.change_status(session, organization_id, claim_id, body, user=user)
+    return ClaimRead.model_validate(claim)
+
+
+@router.get("/{claim_id}/status-history", summary="A claim's status changes, oldest first")
+async def get_claim_status_history(
+    organization_id: UUID, claim_id: UUID, session: DbSession, user: CurrentUser
+) -> list[ClaimStatusChangeRead]:
+    changes = await service.status_history(session, organization_id, claim_id, user=user)
+    return [ClaimStatusChangeRead.model_validate(c) for c in changes]
 
 
 @router.post(

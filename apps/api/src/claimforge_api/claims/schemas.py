@@ -11,9 +11,11 @@ from pydantic import (
     ConfigDict,
     Field,
     StringConstraints,
+    computed_field,
     model_validator,
 )
 
+from claimforge_api.claims import workflow
 from claimforge_api.claims.models import ClaimContactRole, ClaimStatus, LossType
 from claimforge_api.contacts.schemas import ContactRead
 from claimforge_api.properties.schemas import PropertyCreate, PropertyRead
@@ -141,6 +143,14 @@ class ClaimRead(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+    # A plain method: `property` is a field name here, so the decorator would be shadowed.
+    @computed_field(
+        description="Statuses the workflow allows next. Leaving `closed` or `cancelled` "
+        "also needs the `claims:reopen` permission."
+    )
+    def next_statuses(self) -> list[ClaimStatus]:
+        return workflow.next_statuses(self.status)
+
 
 class ClaimSort(StrEnum):
     """Sort orders for the claim list. A leading "-" means newest/latest first."""
@@ -223,3 +233,21 @@ class ClaimStatusChangeCreate(BaseModel):
         description="The status the client last saw. If the claim has moved on since, the "
         "change is refused with 409 `status_changed` instead of acting on a stale view.",
     )
+
+
+class ClaimActor(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    full_name: str
+
+
+class ClaimStatusChangeRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    from_status: ClaimStatus
+    to_status: ClaimStatus
+    reason: str | None
+    changed_by: ClaimActor | None = Field(description="None once the user is deleted")
+    changed_at: datetime
