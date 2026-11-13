@@ -23,8 +23,8 @@ install-web:
 install-api:
     cd {{ api_dir }} && ( test -d .venv || python -m venv .venv )
     cd {{ api_dir }} && {{ venv_bin }}/python -m pip install --quiet --upgrade pip
-    cd {{ api_dir }} && {{ venv_bin }}/pip install --quiet -r requirements-dev.lock
-    cd {{ api_dir }} && {{ venv_bin }}/pip install --quiet -e . --no-deps
+    cd {{ api_dir }} && {{ venv_bin }}/python -m pip install --quiet -r requirements-dev.lock
+    cd {{ api_dir }} && {{ venv_bin }}/python -m pip install --quiet -e . --no-deps
 
 # Start Postgres, Mailpit and SeaweedFS
 services-up:
@@ -38,24 +38,24 @@ services-down *args:
 
 # Run the API with auto-reload on :8000
 api-dev:
-    cd {{ api_dir }} && {{ venv_bin }}/uvicorn claimforge_api.main:app --reload
+    cd {{ api_dir }} && {{ venv_bin }}/python -m uvicorn claimforge_api.main:app --reload
 
 # Lint and typecheck the API
 api-lint:
-    cd {{ api_dir }} && {{ venv_bin }}/ruff check . && {{ venv_bin }}/ruff format --check . && {{ venv_bin }}/mypy
+    cd {{ api_dir }} && {{ venv_bin }}/python -m ruff check . && {{ venv_bin }}/python -m ruff format --check . && {{ venv_bin }}/python -m mypy
 
 # Auto-fix lint issues and format the API
 api-fix:
-    cd {{ api_dir }} && {{ venv_bin }}/ruff check --fix . && {{ venv_bin }}/ruff format .
+    cd {{ api_dir }} && {{ venv_bin }}/python -m ruff check --fix . && {{ venv_bin }}/python -m ruff format .
 
 # Run API tests (pass extra pytest args: just api-test -k health)
 api-test *args:
-    cd {{ api_dir }} && {{ venv_bin }}/pytest {{ args }}
+    cd {{ api_dir }} && {{ venv_bin }}/python -m pytest {{ args }}
 
 # Re-pin API dependencies after editing pyproject.toml
 api-lock:
-    cd {{ api_dir }} && {{ venv_bin }}/pip-compile -q -o requirements.lock pyproject.toml
-    cd {{ api_dir }} && {{ venv_bin }}/pip-compile -q --extra dev -o requirements-dev.lock pyproject.toml
+    cd {{ api_dir }} && {{ venv_bin }}/python -m piptools compile -q -o requirements.lock pyproject.toml
+    cd {{ api_dir }} && {{ venv_bin }}/python -m piptools compile -q --extra dev -o requirements-dev.lock pyproject.toml
 
 # ─── Web ──────────────────────────────────────────────────────────────────
 
