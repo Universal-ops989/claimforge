@@ -79,6 +79,24 @@ async def test_soft_delete_is_recorded_as_deleted(db_session: AsyncSession, as_a
     ]
 
 
+async def test_hard_delete_records_what_was_removed(db_session: AsyncSession) -> None:
+    doomed = await users.create_user(
+        db_session,
+        email="doomed@example.com",
+        full_name="Doomed",
+        password="tile grout and drywall",
+    )
+
+    await db_session.delete(doomed)
+    await db_session.flush()
+
+    _created, deleted = await events(db_session, doomed.id)
+    assert deleted.action == "user.deleted"
+    assert deleted.changes["email"] == ["doomed@example.com", None]
+    assert deleted.changes["password_hash"] == [REDACTED, None]
+    assert "last_login_at" not in deleted.changes  # nulls are left out, as on creation
+
+
 async def test_secrets_are_redacted(db_session: AsyncSession) -> None:
     created = await users.create_user(
         db_session, email="secret@example.com", full_name="S", password="tile grout and drywall"
