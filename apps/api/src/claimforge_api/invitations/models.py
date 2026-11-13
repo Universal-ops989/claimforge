@@ -14,6 +14,7 @@ from claimforge_api.users.models import Role
 
 class Invitation(UUIDPrimaryKeyMixin, Base):
     __tablename__ = "invitations"
+    __audited__ = True
 
     organization_id: Mapped[UUID] = mapped_column(
         ForeignKey("organizations.id", ondelete="CASCADE"), index=True

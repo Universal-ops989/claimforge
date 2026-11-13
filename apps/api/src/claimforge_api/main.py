@@ -10,6 +10,7 @@ from claimforge_api import __version__
 from claimforge_api.api.middleware import REQUEST_ID_HEADER, RequestContextMiddleware
 from claimforge_api.api.problems import register_problem_handlers
 from claimforge_api.api.router import api_router
+from claimforge_api.audit import recorder as audit_recorder
 from claimforge_api.core.database import create_engine, create_session_factory
 from claimforge_api.core.logging import configure_logging
 from claimforge_api.core.settings import Settings, get_settings
@@ -30,6 +31,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     isolated app instances with their own settings and dependency overrides.
     """
     settings = settings or get_settings()
+    audit_recorder.install()
 
     app = FastAPI(
         title="ClaimForge API",

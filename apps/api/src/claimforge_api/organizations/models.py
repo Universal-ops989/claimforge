@@ -11,6 +11,7 @@ SLUG_PATTERN = r"^[a-z0-9]+(-[a-z0-9]+)*$"
 
 class Organization(UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin, Base):
     __tablename__ = "organizations"
+    __audited__ = True
 
     name: Mapped[str] = mapped_column(String(200))
     # Used in URLs and as a human-friendly identifier: "rivera-restoration".

@@ -36,6 +36,7 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin, Base):
     """A person who signs in. Global: one user can belong to many organizations."""
 
     __tablename__ = "users"
+    __audited__ = True
 
     email: Mapped[str] = mapped_column(String(254))
     full_name: Mapped[str] = mapped_column(String(200))
@@ -66,6 +67,7 @@ class Membership(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     """A user's role in one organization."""
 
     __tablename__ = "memberships"
+    __audited__ = True
 
     organization_id: Mapped[UUID] = mapped_column(
         ForeignKey("organizations.id", ondelete="CASCADE")

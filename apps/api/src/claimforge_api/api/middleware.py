@@ -7,6 +7,7 @@ import time
 from starlette.datastructures import MutableHeaders
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
+from claimforge_api.audit.recorder import actor_id_var
 from claimforge_api.core.ids import uuid7
 from claimforge_api.core.logging import request_id_var
 
@@ -35,6 +36,7 @@ class RequestContextMiddleware:
         incoming = _header(scope, REQUEST_ID_HEADER.lower())
         request_id = incoming if incoming and _SAFE_REQUEST_ID.match(incoming) else str(uuid7())
         token = request_id_var.set(request_id)
+        actor_token = actor_id_var.set(None)  # set by authentication, if any
         # Also on the request state: the 500 handler runs in Starlette's outermost
         # middleware, after this context variable has been reset.
         scope.setdefault("state", {})["request_id"] = request_id
@@ -64,6 +66,7 @@ class RequestContextMiddleware:
                 },
             )
             request_id_var.reset(token)
+            actor_id_var.reset(actor_token)
 
 
 def _header(scope: Scope, name: str) -> str | None:
