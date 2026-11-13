@@ -315,3 +315,68 @@ async def test_edit_a_claim(
     outsider = await client_for(None)
     assert (await viewer.patch(url, json={"loss_type": "fire"})).status_code == 403
     assert (await outsider.patch(url, json={"loss_type": "fire"})).status_code == 404
+
+
+async def test_status_workflow_over_http(
+    auth_client: httpx2.AsyncClient, client_for: ClientFor, base: str
+) -> None:
+    claim = await new_claim(auth_client, base)
+    url = f"{base}/claims/{claim['id']}"
+    adjuster = await client_for(Role.ADJUSTER)
+    assert claim["next_statuses"] == ["inspected", "in_progress", "on_hold", "cancelled"]
+
+    async def move(client: httpx2.AsyncClient, **body: Any) -> httpx2.Response:
+        return await client.post(f"{url}/status", json=body)
+
+    moved = await move(adjuster, status="in_progress", expected_status="new")
+    assert moved.status_code == 200, moved.text
+    assert (moved.json()["status"], moved.json()["next_statuses"]) == (
+        "in_progress",
+        ["on_hold", "completed", "cancelled"],
+    )
+
+    stale = await move(adjuster, status="on_hold", reason="Parts", expected_status="new")
+    assert (stale.status_code, stale.json()["current_status"]) == (409, "in_progress")
+    skipped = await move(adjuster, status="closed")
+    assert (skipped.status_code, skipped.json()["code"]) == (422, "invalid_status_transition")
+    assert skipped.json()["allowed"] == ["on_hold", "completed", "cancelled"]
+    unexplained = await move(adjuster, status="on_hold")
+    assert (unexplained.status_code, unexplained.json()["code"]) == (422, "reason_required")
+
+    assert (await move(adjuster, status="completed")).status_code == 200
+    assert (await move(adjuster, status="closed")).status_code == 200
+
+    # Closed: read-only, and only a supervisor can reopen it.
+    edit = await adjuster.patch(url, json={"description": "late note"})
+    assert (edit.status_code, edit.json()["code"]) == (409, "claim_locked")
+    assert edit.json()["claim_status"] == "closed"
+    denied = await move(adjuster, status="in_progress", reason="Supplement")
+    assert (denied.status_code, denied.json()["required_permission"]) == (403, "claims:reopen")
+    assert (await move(auth_client, status="in_progress", reason="Supplement")).status_code == 200
+
+    history = (await adjuster.get(f"{url}/status-history")).json()
+    assert [(h["from_status"], h["to_status"]) for h in history] == [
+        ("new", "in_progress"),
+        ("in_progress", "completed"),
+        ("completed", "closed"),
+        ("closed", "in_progress"),
+    ]
+    assert history[-1]["reason"] == "Supplement"
+    assert history[-1]["changed_by"]["full_name"] == "Morgan Member"
+    assert history[0]["changed_by"]["id"] != history[-1]["changed_by"]["id"]
+
+
+async def test_status_endpoints_respect_roles_and_tenants(
+    auth_client: httpx2.AsyncClient, client_for: ClientFor, base: str
+) -> None:
+    claim = await new_claim(auth_client, base)
+    url = f"{base}/claims/{claim['id']}"
+    viewer = await client_for(Role.VIEWER)
+    outsider = await client_for(None)
+
+    assert (await viewer.get(f"{url}/status-history")).json() == []
+    assert (await viewer.post(f"{url}/status", json={"status": "inspected"})).status_code == 403
+    assert (await outsider.get(f"{url}/status-history")).status_code == 404
+    assert (await outsider.post(f"{url}/status", json={"status": "inspected"})).status_code == 404
+    bad = await auth_client.post(f"{url}/status", json={"status": "archived"})
+    assert (bad.status_code, bad.json()["code"]) == (422, "validation_failed")

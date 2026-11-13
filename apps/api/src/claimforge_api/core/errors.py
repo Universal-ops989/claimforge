@@ -6,6 +6,11 @@ carry no HTTP or framework types, so services stay testable without a web server
 
 from typing import Any, ClassVar
 
+#: Members every problem response already has; ``extra`` must not shadow them.
+RESERVED_PROBLEM_MEMBERS = frozenset(
+    {"type", "title", "status", "detail", "instance", "code", "request_id", "errors"}
+)
+
 
 class AppError(Exception):
     """Base class for expected, client-facing errors."""
@@ -15,6 +20,13 @@ class AppError(Exception):
     title: ClassVar[str] = "Bad request"
 
     def __init__(self, detail: str | None = None, **extra: Any) -> None:
+        # Fail where the error is raised, not later when it is rendered (or, worse, when a
+        # reserved member is silently replaced).
+        clashes = RESERVED_PROBLEM_MEMBERS.intersection(extra)
+        if clashes:
+            raise TypeError(
+                f"{type(self).__name__} extras shadow problem members: {sorted(clashes)}"
+            )
         super().__init__(detail or self.title)
         self.detail = detail or self.title
         # Additional, safe-to-expose context (e.g. {"claim_id": "..."}).

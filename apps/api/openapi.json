@@ -216,6 +216,25 @@
         "title": "AuditEventRead",
         "type": "object"
       },
+      "ClaimActor": {
+        "properties": {
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "full_name"
+        ],
+        "title": "ClaimActor",
+        "type": "object"
+      },
       "ClaimContactLink": {
         "additionalProperties": false,
         "properties": {
@@ -487,6 +506,15 @@
           "loss_type": {
             "$ref": "#/components/schemas/LossType"
           },
+          "next_statuses": {
+            "description": "Statuses the workflow allows next. Leaving `closed` or `cancelled` also needs the `claims:reopen` permission.",
+            "items": {
+              "$ref": "#/components/schemas/ClaimStatus"
+            },
+            "readOnly": true,
+            "title": "Next Statuses",
+            "type": "array"
+          },
           "number": {
             "description": "Unique per organization, e.g. \"2026-00042\"",
             "title": "Number",
@@ -529,7 +557,8 @@
           "contacts",
           "created_by_id",
           "created_at",
-          "updated_at"
+          "updated_at",
+          "next_statuses"
         ],
         "title": "ClaimRead",
         "type": "object"
@@ -559,6 +588,96 @@
         ],
         "title": "ClaimStatus",
         "type": "string"
+      },
+      "ClaimStatusChangeCreate": {
+        "additionalProperties": false,
+        "description": "Move a claim to another status (see ``claims.workflow`` for the allowed moves).",
+        "properties": {
+          "expected_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClaimStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The status the client last saw. If the claim has moved on since, the change is refused with 409 `status_changed` instead of acting on a stale view."
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Required to put a claim on hold, cancel it, or reopen or reinstate it",
+            "title": "Reason"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ClaimStatus"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "ClaimStatusChangeCreate",
+        "type": "object"
+      },
+      "ClaimStatusChangeRead": {
+        "properties": {
+          "changed_at": {
+            "format": "date-time",
+            "title": "Changed At",
+            "type": "string"
+          },
+          "changed_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClaimActor"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "None once the user is deleted"
+          },
+          "from_status": {
+            "$ref": "#/components/schemas/ClaimStatus"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "to_status": {
+            "$ref": "#/components/schemas/ClaimStatus"
+          }
+        },
+        "required": [
+          "id",
+          "from_status",
+          "to_status",
+          "reason",
+          "changed_by",
+          "changed_at"
+        ],
+        "title": "ClaimStatusChangeRead",
+        "type": "object"
       },
       "ClaimSummary": {
         "description": "A claim as the list shows it: the property and the person to call first.",
@@ -4425,6 +4544,249 @@
           }
         ],
         "summary": "Change a contact's role on a claim",
+        "tags": [
+          "claims"
+        ]
+      }
+    },
+    "/v1/organizations/{organization_id}/claims/{claim_id}/status": {
+      "post": {
+        "description": "Moves along the status workflow; the claim's `next_statuses` lists where it can go. Putting a claim on hold, cancelling, reopening and reinstating need a `reason`. Reopening a closed claim or reinstating a cancelled one needs `claims:reopen`. Closed and cancelled claims are read-only until then.",
+        "operationId": "change_claim_status",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Organization Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "claim_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Claim Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimStatusChangeCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Authentication required"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Permission denied"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Validation failed or business rule violated"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Change a claim's status",
+        "tags": [
+          "claims"
+        ]
+      }
+    },
+    "/v1/organizations/{organization_id}/claims/{claim_id}/status-history": {
+      "get": {
+        "operationId": "get_claim_status_history",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Organization Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "claim_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Claim Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ClaimStatusChangeRead"
+                  },
+                  "title": "Response Get Claim Status History",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Authentication required"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Permission denied"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Validation failed or business rule violated"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "A claim's status changes, oldest first",
         "tags": [
           "claims"
         ]

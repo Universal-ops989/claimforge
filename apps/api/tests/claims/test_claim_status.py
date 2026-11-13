@@ -13,8 +13,16 @@ from sqlalchemy.pool import NullPool
 
 from claimforge_api.audit.models import AuditEvent
 from claimforge_api.claims import service
-from claimforge_api.claims.models import Claim, ClaimStatus
-from claimforge_api.claims.schemas import ClaimCreate, ClaimStatusChangeCreate
+from claimforge_api.claims.models import Claim, ClaimContactRole, ClaimStatus
+from claimforge_api.claims.schemas import (
+    ClaimContactLink,
+    ClaimContactLinkUpdate,
+    ClaimCreate,
+    ClaimStatusChangeCreate,
+    ClaimUpdate,
+)
+from claimforge_api.contacts import service as contacts
+from claimforge_api.contacts.schemas import ContactCreate
 from claimforge_api.core.errors import NotFoundError, PermissionDeniedError
 from claimforge_api.organizations import service as organizations
 from claimforge_api.organizations.models import Organization
@@ -181,6 +189,68 @@ async def test_the_status_change_is_audited_on_the_claim(
     )
     assert event is not None
     assert event.changes["status"] == ["new", "inspected"]
+
+
+@pytest.mark.parametrize(
+    ("final", "path"),
+    [
+        ("closed", [("in_progress", None), ("completed", None), ("closed", None)]),
+        ("cancelled", [("cancelled", "Duplicate")]),
+    ],
+)
+async def test_closed_and_cancelled_claims_are_read_only(
+    db_session: AsyncSession,
+    organization_id: UUID,
+    user: User,
+    claim: Claim,
+    final: str,
+    path: list[tuple[str, str | None]],
+) -> None:
+    dana = await contacts.create_contact(
+        db_session, organization_id, ContactCreate(full_name="Dana"), user=user
+    )
+    riley = await contacts.create_contact(
+        db_session, organization_id, ContactCreate(full_name="Riley"), user=user
+    )
+    link = ClaimContactLink(contact_id=dana.id, role=ClaimContactRole.INSURED)
+    await service.link_contact(db_session, organization_id, claim.id, link, user=user)
+    for status, reason in path:
+        await move(db_session, organization_id, user, claim, status=status, reason=reason)
+
+    attempts = [
+        service.update_claim(
+            db_session, organization_id, claim.id, ClaimUpdate(description="x"), user=user
+        ),
+        service.link_contact(
+            db_session,
+            organization_id,
+            claim.id,
+            ClaimContactLink(contact_id=riley.id, role=ClaimContactRole.TENANT),
+            user=user,
+        ),
+        service.update_contact_link(
+            db_session,
+            organization_id,
+            claim.id,
+            dana.id,
+            ClaimContactLinkUpdate(is_primary=True),
+            user=user,
+        ),
+        service.unlink_contact(db_session, organization_id, claim.id, dana.id, user=user),
+    ]
+    for attempt in attempts:
+        with pytest.raises(service.ClaimLockedError) as caught:
+            await attempt
+        assert caught.value.extra["claim_status"] == final
+
+    # Reading still works, and reopening or reinstating unlocks it.
+    assert (await service.get_claim(db_session, organization_id, claim.id, user=user)).contacts
+    back = "in_progress" if final == "closed" else "new"
+    await move(db_session, organization_id, user, claim, status=back, reason="More to do")
+    edited = await service.update_claim(
+        db_session, organization_id, claim.id, ClaimUpdate(description="x"), user=user
+    )
+    assert edited.description == "x"
 
 
 # ─── Concurrency ──────────────────────────────────────────────────────────────
