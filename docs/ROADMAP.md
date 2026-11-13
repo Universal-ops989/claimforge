@@ -8,6 +8,9 @@ Each line below is one pull request (some items are split into several PRs). Eve
 closes a tracking issue in the matching GitHub milestone. PRs are small, reviewable and independently
 mergeable; every PR leaves `main` green.
 
+Items added after the plan was written take a letter suffix (`67a`) so that existing
+numbers, which issues, PRs and code comments refer to, never change.
+
 Legend: `api` = FastAPI backend · `ui` = design system · `web` = main app ·
 `portal` = policyholder portal · `infra` = tooling/CI
 
@@ -92,6 +95,7 @@ Legend: `api` = FastAPI backend · `ui` = design system · `web` = main app ·
 65. Property (loss location) model with address normalization
 66. Claim model + create/read endpoints
 67. Claim list with filtering, sorting, search
+    - 67a. Edit claim details (loss date and type, description, carrier references)
 68. Claim status workflow (state machine + transition rules)
 69. Claim assignments (adjuster, contractor, field tech)
 70. Structures and rooms model
