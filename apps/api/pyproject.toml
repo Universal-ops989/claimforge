@@ -80,7 +80,9 @@ strict = true
 warn_unreachable = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 plugins = ["pydantic.mypy"]
-mypy_path = "src"
+mypy_path = "src,."
+# Resolve test modules by path (tests.invitations.conftest) so nested conftests don't clash.
+explicit_package_bases = true
 files = ["src", "tests", "migrations"]
 
 [[tool.mypy.overrides]]
