@@ -1,6 +1,6 @@
 """Claims: one loss at one property, and the people involved in it."""
 
-from datetime import date
+from datetime import date, datetime
 from enum import StrEnum
 from uuid import UUID
 
@@ -8,6 +8,7 @@ from sqlalchemy import (
     Boolean,
     CheckConstraint,
     Date,
+    DateTime,
     ForeignKey,
     Index,
     Integer,
@@ -16,6 +17,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     false,
+    func,
     text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -24,6 +26,7 @@ from claimforge_api.contacts.models import Contact
 from claimforge_api.db.base import Base
 from claimforge_api.db.mixins import SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 from claimforge_api.properties.models import Property
+from claimforge_api.users.models import User
 
 
 class ClaimStatus(StrEnum):
@@ -184,3 +187,32 @@ class ClaimCounter(Base):
     )
     year: Mapped[int] = mapped_column(SmallInteger, primary_key=True)
     last_number: Mapped[int] = mapped_column(Integer)
+
+
+class ClaimStatusChange(UUIDPrimaryKeyMixin, Base):
+    """One step in a claim's status history. Rows are never changed or removed."""
+
+    __tablename__ = "claim_status_changes"
+
+    # Denormalized from the claim so tenant scoping needs no join.
+    organization_id: Mapped[UUID] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE")
+    )
+    claim_id: Mapped[UUID] = mapped_column(ForeignKey("claims.id", ondelete="CASCADE"))
+    from_status: Mapped[ClaimStatus] = mapped_column(String(20))
+    to_status: Mapped[ClaimStatus] = mapped_column(String(20))
+    reason: Mapped[str | None] = mapped_column(Text, default=None)
+    changed_by_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), default=None
+    )
+    changed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    changed_by: Mapped[User | None] = relationship(lazy="raise")
+
+    __table_args__ = (
+        CheckConstraint(_one_of("from_status", ClaimStatus), name="from_status_valid"),
+        CheckConstraint(_one_of("to_status", ClaimStatus), name="to_status_valid"),
+        CheckConstraint("from_status <> to_status", name="statuses_differ"),
+        # A claim's history in order (UUIDv7 ids follow insert order).
+        Index("ix_claim_status_changes_claim_id", "claim_id", "id"),
+    )
