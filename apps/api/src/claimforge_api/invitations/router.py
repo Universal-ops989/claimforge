@@ -8,8 +8,9 @@ from fastapi import APIRouter, Depends, Request, Response, status
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from claimforge_api.api.deps import DbSession, SettingsDep
-from claimforge_api.api.problems import PROBLEM_RESPONSES
+from claimforge_api.api.problems import PROBLEM_RESPONSES, RATE_LIMITED_RESPONSE
 from claimforge_api.auth.deps import CurrentUser, OptionalCurrentUser
+from claimforge_api.auth.limits import INVITATION_ACCEPT_PER_IP, limit_by_ip
 from claimforge_api.auth.schemas import TokenResponse
 from claimforge_api.auth.sessions import UserAgent, start_session
 from claimforge_api.invitations import service
@@ -101,7 +102,12 @@ async def revoke_invitation(
 accept_router = APIRouter(prefix="/invitations", tags=["invitations"], responses=PROBLEM_RESPONSES)
 
 
-@accept_router.post("/accept", summary="Accept an invitation and sign in")
+@accept_router.post(
+    "/accept",
+    summary="Accept an invitation and sign in",
+    dependencies=[Depends(limit_by_ip("invitation-accept", INVITATION_ACCEPT_PER_IP))],
+    responses=RATE_LIMITED_RESPONSE,
+)
 async def accept_invitation(
     body: InvitationAccept,
     current_user: OptionalCurrentUser,
