@@ -1,0 +1,171 @@
+.root {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.horizontal {
+  align-items: flex-start;
+}
+
+.vertical {
+  flex-direction: column;
+}
+
+.step {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Connector line to the next step. */
+.step:not(:last-child)::after {
+  position: absolute;
+  background: var(--cf-color-border-strong);
+  content: "";
+}
+
+.horizontal .step:not(:last-child)::after {
+  top: 1rem;
+  right: var(--cf-space-2);
+  left: calc(2rem + var(--cf-space-2));
+  height: 2px;
+}
+
+.horizontal .step {
+  padding-right: var(--cf-space-4);
+}
+
+/* Horizontal: marker on top, text underneath, connector beside the marker. */
+.horizontal .button {
+  flex-direction: column;
+  gap: var(--cf-space-2);
+}
+
+.horizontal .text {
+  padding-top: 0;
+}
+
+.vertical .step {
+  padding-bottom: var(--cf-space-6);
+}
+
+.vertical .step:not(:last-child)::after {
+  top: calc(2rem + var(--cf-space-1));
+  bottom: var(--cf-space-1);
+  left: calc(1rem - 1px);
+  width: 2px;
+}
+
+.complete::after {
+  background: var(--cf-color-accent) !important;
+}
+
+.button {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--cf-space-3);
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--cf-radius-md);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+}
+
+button.button {
+  cursor: pointer;
+}
+
+button.button:hover .label {
+  text-decoration: underline;
+}
+
+button.button:focus-visible {
+  outline: none;
+  box-shadow: var(--cf-focus-ring);
+}
+
+.marker {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid var(--cf-color-border-strong);
+  border-radius: var(--cf-radius-full);
+  background: var(--cf-color-surface);
+  color: var(--cf-color-text-muted);
+  font-size: var(--cf-font-size-sm);
+  font-weight: var(--cf-font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.marker > svg {
+  width: 1rem;
+  height: 1rem;
+  stroke-width: 3;
+}
+
+.complete .marker {
+  border-color: var(--cf-color-accent);
+  background: var(--cf-color-accent);
+  color: var(--cf-color-on-accent);
+}
+
+.current .marker {
+  border-color: var(--cf-color-accent);
+  color: var(--cf-color-accent-text);
+  box-shadow: 0 0 0 4px var(--cf-color-accent-subtle);
+}
+
+.error .marker {
+  border-color: var(--cf-color-danger);
+  background: var(--cf-color-danger);
+  color: var(--cf-color-on-accent);
+}
+
+.text {
+  display: grid;
+  gap: var(--cf-space-0-5);
+  min-width: 0;
+  padding-top: 0.3rem;
+}
+
+.label {
+  color: var(--cf-color-text);
+  font-size: var(--cf-font-size-sm);
+  font-weight: var(--cf-font-weight-medium);
+}
+
+.upcoming .label {
+  color: var(--cf-color-text-muted);
+}
+
+.error .label {
+  color: var(--cf-color-danger-text);
+}
+
+.description {
+  color: var(--cf-color-text-muted);
+  font-size: var(--cf-font-size-xs);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+@media (width < 40rem) {
+  .horizontal .description {
+    display: none;
+  }
+}
