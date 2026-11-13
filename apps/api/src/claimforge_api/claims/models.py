@@ -10,6 +10,7 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    ForeignKeyConstraint,
     Index,
     Integer,
     SmallInteger,
@@ -67,6 +68,14 @@ class ClaimContactRole(StrEnum):
     OTHER = "other"
 
 
+class AssignmentRole(StrEnum):
+    """What a member does on a claim. A claim has at most one adjuster."""
+
+    ADJUSTER = "adjuster"
+    CONTRACTOR = "contractor"
+    FIELD_TECHNICIAN = "field_technician"
+
+
 def _one_of(column: str, values: type[StrEnum]) -> str:
     return f"{column} IN ({', '.join(repr(v.value) for v in values)})"
 
@@ -105,6 +114,12 @@ class Claim(UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin, Base):
         order_by="ClaimContact.id",
     )
     # Read-only shortcut for lists, which show only the person to call first.
+    assignments: Mapped[list["ClaimAssignment"]] = relationship(
+        back_populates="claim",
+        cascade="all, delete-orphan",
+        lazy="raise",
+        order_by="ClaimAssignment.id",
+    )
     primary_contact: Mapped["ClaimContact | None"] = relationship(
         primaryjoin="and_(Claim.id == ClaimContact.claim_id, ClaimContact.is_primary)",
         viewonly=True,
@@ -215,4 +230,43 @@ class ClaimStatusChange(UUIDPrimaryKeyMixin, Base):
         CheckConstraint("from_status <> to_status", name="statuses_differ"),
         # A claim's history in order (UUIDv7 ids follow insert order).
         Index("ix_claim_status_changes_claim_id", "claim_id", "id"),
+    )
+
+
+class ClaimAssignment(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """An organization member working a claim in one role."""
+
+    __tablename__ = "claim_assignments"
+    __audited__ = True
+
+    organization_id: Mapped[UUID] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE")
+    )
+    claim_id: Mapped[UUID] = mapped_column(ForeignKey("claims.id", ondelete="CASCADE"))
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    role: Mapped[AssignmentRole] = mapped_column(String(20))
+    assigned_by_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), default=None
+    )
+
+    claim: Mapped[Claim] = relationship(back_populates="assignments", lazy="raise")
+    user: Mapped[User] = relationship(foreign_keys=[user_id], lazy="raise")
+
+    __table_args__ = (
+        # Only members can be assigned, and leaving the organization ends their assignments.
+        ForeignKeyConstraint(
+            ["organization_id", "user_id"],
+            ["memberships.organization_id", "memberships.user_id"],
+            ondelete="CASCADE",
+        ),
+        UniqueConstraint("claim_id", "user_id"),
+        CheckConstraint(_one_of("role", AssignmentRole), name="role_valid"),
+        Index(
+            "uq_claim_assignments_adjuster",
+            "claim_id",
+            unique=True,
+            postgresql_where=text("role = 'adjuster'"),
+        ),
+        # "Claims assigned to me".
+        Index("ix_claim_assignments_organization_id_user_id", "organization_id", "user_id"),
     )
