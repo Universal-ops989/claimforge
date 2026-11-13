@@ -2,6 +2,7 @@ import "./styles.css";
 
 export * from "./components/button";
 export * from "./components/checkbox";
+export * from "./components/field";
 export * from "./components/heading";
 export * from "./components/icon";
 export * from "./components/icon-button";

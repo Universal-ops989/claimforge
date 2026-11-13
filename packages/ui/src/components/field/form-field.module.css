@@ -1,0 +1,64 @@
+.root {
+  display: grid;
+  gap: var(--cf-space-1-5);
+  min-width: 0;
+}
+
+.labelRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--cf-space-2);
+  font-size: var(--cf-font-size-sm);
+}
+
+.label {
+  color: var(--cf-color-text);
+  font-size: var(--cf-font-size-sm);
+  font-weight: var(--cf-font-weight-medium);
+  line-height: var(--cf-line-height-snug);
+}
+
+.required {
+  margin-inline-start: var(--cf-space-0-5);
+  color: var(--cf-color-danger-text);
+}
+
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.hint,
+.error {
+  margin: 0;
+  font-size: var(--cf-font-size-xs);
+  line-height: var(--cf-line-height-normal);
+}
+
+.hint {
+  color: var(--cf-color-text-muted);
+}
+
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--cf-space-1);
+  color: var(--cf-color-danger-text);
+  font-weight: var(--cf-font-weight-medium);
+}
+
+.errorIcon {
+  flex-shrink: 0;
+  width: 0.875rem;
+  height: 0.875rem;
+  margin-top: 0.125rem;
+}
+
+.disabled .label {
+  color: var(--cf-color-text-muted);
+}
