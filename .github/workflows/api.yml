@@ -49,6 +49,22 @@ jobs:
     name: Tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: claimforge
+          POSTGRES_PASSWORD: claimforge
+          POSTGRES_DB: claimforge_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U claimforge -d claimforge_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      CLAIMFORGE_TEST_DATABASE_URL: postgresql+asyncpg://claimforge:claimforge@localhost:5432/claimforge_test
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
