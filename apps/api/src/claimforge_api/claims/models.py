@@ -101,15 +101,36 @@ class Claim(UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin, Base):
         lazy="raise",
         order_by="ClaimContact.id",
     )
+    # Read-only shortcut for lists, which show only the person to call first.
+    primary_contact: Mapped["ClaimContact | None"] = relationship(
+        primaryjoin="and_(Claim.id == ClaimContact.claim_id, ClaimContact.is_primary)",
+        viewonly=True,
+        uselist=False,
+        lazy="raise",
+    )
 
     __table_args__ = (
         UniqueConstraint("organization_id", "number"),
         CheckConstraint(_one_of("status", ClaimStatus), name="status_valid"),
         CheckConstraint(_one_of("loss_type", LossType), name="loss_type_valid"),
-        # Serves newest-first listings of live claims.
+        # Serve the claim list's sort orders over live claims; each is scanned either way.
         Index(
             "ix_claims_organization_id_live",
             "organization_id",
+            "id",
+            postgresql_where=text("deleted_at IS NULL"),
+        ),
+        Index(
+            "ix_claims_organization_id_loss_date_live",
+            "organization_id",
+            "loss_date",
+            "id",
+            postgresql_where=text("deleted_at IS NULL"),
+        ),
+        Index(
+            "ix_claims_organization_id_updated_at_live",
+            "organization_id",
+            "updated_at",
             "id",
             postgresql_where=text("deleted_at IS NULL"),
         ),
