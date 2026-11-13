@@ -57,6 +57,10 @@ api-lock:
     cd {{ api_dir }} && {{ venv_bin }}/python -m piptools compile -q -o requirements.lock pyproject.toml
     cd {{ api_dir }} && {{ venv_bin }}/python -m piptools compile -q --extra dev -o requirements-dev.lock pyproject.toml
 
+# Regenerate the committed OpenAPI contract (apps/api/openapi.json)
+api-openapi:
+    cd {{ api_dir }} && {{ venv_bin }}/python -m claimforge_api.openapi
+
 # Apply database migrations (default: to the latest revision)
 db-upgrade revision="head":
     cd {{ api_dir }} && {{ venv_bin }}/python -m alembic upgrade {{ revision }}
