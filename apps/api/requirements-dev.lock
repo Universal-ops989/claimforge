@@ -84,6 +84,8 @@ pydantic-settings==2.16.2
     # via claimforge-api (pyproject.toml)
 pygments==2.21.0
     # via pytest
+pyjwt==2.15.1
+    # via claimforge-api (pyproject.toml)
 pytest==9.2.0
     # via
     #   claimforge-api (pyproject.toml)
