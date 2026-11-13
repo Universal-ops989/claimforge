@@ -12,6 +12,7 @@ export * from "./components/dialog";
 export * from "./components/drawer";
 export * from "./components/empty-state";
 export * from "./components/field";
+export * from "./components/file-dropzone";
 export * from "./components/heading";
 export * from "./components/icon";
 export * from "./components/icon-button";
