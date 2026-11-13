@@ -31,6 +31,7 @@ class Permission(StrEnum):
     CLAIMS_READ = "claims:read"
     CLAIMS_WRITE = "claims:write"
     CLAIMS_DELETE = "claims:delete"
+    CLAIMS_REOPEN = "claims:reopen"
     CONTACTS_READ = "contacts:read"
     CONTACTS_WRITE = "contacts:write"
     FIELD_DATA_WRITE = "field_data:write"
@@ -60,6 +61,7 @@ _ADMIN = _ADJUSTER | {
     Permission.ORG_UPDATE,
     Permission.MEMBERS_MANAGE,
     Permission.CLAIMS_DELETE,
+    Permission.CLAIMS_REOPEN,
     Permission.AUDIT_READ,
 }
 _OWNER = _ADMIN | {Permission.ORG_DELETE}
