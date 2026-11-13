@@ -19,6 +19,8 @@ class AppError(Exception):
         self.detail = detail or self.title
         # Additional, safe-to-expose context (e.g. {"claim_id": "..."}).
         self.extra = extra
+        # Extra HTTP response headers, e.g. Retry-After (not part of the body).
+        self.headers: dict[str, str] = {}
 
 
 class NotFoundError(AppError):

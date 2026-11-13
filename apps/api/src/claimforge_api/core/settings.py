@@ -62,6 +62,10 @@ class Settings(BaseSettings):
     access_token_ttl_minutes: int = Field(default=15, ge=1, le=60)
     refresh_token_ttl_days: int = Field(default=30, ge=1, le=90)
 
+    rate_limit_enabled: bool = Field(
+        default=True, description="Throttle authentication endpoints (disable only in load tests)."
+    )
+
     web_app_url: str = Field(
         default="http://localhost:5173",
         pattern=r"^https?://",
