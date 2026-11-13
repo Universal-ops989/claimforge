@@ -4,7 +4,8 @@ ClaimForge is a property-damage claims and restoration platform. Adjusters, rest
 contractors and policyholders use it to document losses, track mitigation work, and
 produce estimates and reports.
 
-Each line below is one pull request. PRs are small, reviewable and independently
+Each line below is one pull request (some items are split into several PRs). Every PR
+closes a tracking issue in the matching GitHub milestone. PRs are small, reviewable and independently
 mergeable; every PR leaves `main` green.
 
 Legend: `api` = FastAPI backend · `ui` = design system · `web` = main app ·
@@ -43,11 +44,12 @@ Legend: `api` = FastAPI backend · `ui` = design system · `web` = main app ·
 24. `Checkbox` and `CheckboxGroup`
 25. `Radio` and `RadioGroup`
 26. `Switch`
-27. `FormField` (label, hint, error) + React Hook Form adapters
+27. `FormField` (label, hint, error) + React Hook Form adapters (`@claimforge/ui/form`)
 28. `Badge` and `StatusPill`
 29. `Avatar` and `AvatarGroup`
 30. `Card` with header/body/footer slots
 31. `Dialog` (modal) with focus trap
+    - 31a. `ConfirmDialog` for destructive actions (async confirm with error handling)
 32. `Drawer` (side sheet)
 33. `Toast` system with queue and imperative API
 34. `Tooltip` and `Popover`
