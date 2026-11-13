@@ -3,6 +3,8 @@ import { createContext, use } from "react";
 /** State a form field shares with the control inside it. */
 export interface FieldContextValue {
   id: string;
+  /** Id of the visible label, for controls that compose their name with aria-labelledby. */
+  labelId?: string | undefined;
   descriptionId?: string | undefined;
   errorId?: string | undefined;
   invalid: boolean;
@@ -35,6 +37,7 @@ export function useFieldControl(props: ControlA11yProps) {
 
   return {
     id: props.id ?? field?.id,
+    labelId: field?.labelId,
     disabled: props.disabled ?? field?.disabled,
     required: props.required ?? field?.required,
     invalid,
