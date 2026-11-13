@@ -47,9 +47,7 @@ class Contact(UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin, Base):
     email: Mapped[str | None] = mapped_column(String(254), default=None)
     # E.164, optionally with an RFC 3966 extension: "+15125550142;ext=204".
     phone: Mapped[str | None] = mapped_column(String(32), default=None)
-    preferred_contact_method: Mapped[ContactMethod | None] = mapped_column(
-        String(16), default=None
-    )
+    preferred_contact_method: Mapped[ContactMethod | None] = mapped_column(String(16), default=None)
     notes: Mapped[str | None] = mapped_column(Text, default=None)
 
     __table_args__ = (
