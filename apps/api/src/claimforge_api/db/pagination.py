@@ -17,7 +17,7 @@ from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel
-from sqlalchemy import Select, and_, or_
+from sqlalchemy import ColumnElement, Select, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute
 
@@ -52,7 +52,11 @@ class CursorPage[T](BaseModel):
 
 @dataclass(frozen=True)
 class SortKey:
-    """Columns to order by, ending with a unique column (usually ``id``)."""
+    """Columns to order by, ending with a unique column (usually ``id``).
+
+    Nullable columns are fine: NULLs come last ascending and first descending, as in
+    PostgreSQL's default ordering, so a plain index serves both directions.
+    """
 
     columns: Sequence[InstrumentedAttribute[Any]]
     direction: Literal["asc", "desc"] = "asc"
@@ -106,13 +110,42 @@ def decode_cursor(sort: SortKey, cursor: str) -> list[object]:
         raise InvalidCursorError("Malformed cursor") from exc
 
 
-def _after(sort: SortKey, values: Sequence[object]) -> Any:
-    """Row-value comparison "(a, b, id) > (va, vb, vid)", spelled out to handle any types."""
+def _nullable(column: InstrumentedAttribute[Any]) -> bool:
+    return bool(getattr(column.expression, "nullable", False))
+
+
+def _equal(column: InstrumentedAttribute[Any], value: object) -> ColumnElement[bool]:
+    return column.is_(None) if value is None else column == value
+
+
+def _beyond(
+    column: InstrumentedAttribute[Any], value: object, direction: str
+) -> ColumnElement[bool] | None:
+    """Rows strictly after ``value`` in this column, or None if there can be none.
+
+    NULL counts as larger than any value, matching PostgreSQL's default ordering: it comes
+    last ascending and first descending.
+    """
+    if direction == "asc":
+        if value is None:
+            return None
+        if _nullable(column):
+            return or_(column > value, column.is_(None))
+        return column > value
+    if value is None:
+        return column.is_not(None)
+    return column < value
+
+
+def _after(sort: SortKey, values: Sequence[object]) -> ColumnElement[bool]:
+    """Row-value comparison "(a, b, id) > (va, vb, vid)", spelled out to handle any types
+    and NULLs."""
     clauses = []
     for i, column in enumerate(sort.columns):
-        equal_prefix = [sort.columns[j] == values[j] for j in range(i)]
-        beyond = column > values[i] if sort.direction == "asc" else column < values[i]
-        clauses.append(and_(*equal_prefix, beyond))
+        beyond = _beyond(column, values[i], sort.direction)
+        if beyond is not None:
+            equal_prefix = [_equal(sort.columns[j], values[j]) for j in range(i)]
+            clauses.append(and_(*equal_prefix, beyond))
     return or_(*clauses)
 
 
