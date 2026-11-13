@@ -82,6 +82,20 @@ def _column_changes(obj: object, *, created: bool) -> dict[str, list[object]]:
     return changes
 
 
+def _final_values(obj: object) -> dict[str, list[object]]:
+    """A hard-deleted row's last values as ``[value, None]``, so the log still says what
+    was removed after the row itself is gone."""
+    changes: dict[str, list[object]] = {}
+    for attr in inspect(obj).mapper.column_attrs:
+        key = attr.key
+        if key in _IGNORED or key == "id":
+            continue
+        value = getattr(obj, key)
+        if value is not None:
+            changes[key] = [REDACTED if key in _SENSITIVE else _json(value), None]
+    return changes
+
+
 def _rows(session: Session) -> Iterable[dict[str, Any]]:
     actor = actor_id_var.get()
     request_id = request_id_var.get()
@@ -115,7 +129,7 @@ def _rows(session: Session) -> Iterable[dict[str, Any]]:
         yield row(obj, verb, changes)
     for obj in session.deleted:
         if getattr(obj, "__audited__", False):
-            yield row(obj, "deleted", {})
+            yield row(obj, "deleted", _final_values(obj))
 
 
 def _after_flush(session: Session, _context: UOWTransaction) -> None:
