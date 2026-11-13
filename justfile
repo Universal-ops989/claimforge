@@ -57,6 +57,18 @@ api-lock:
     cd {{ api_dir }} && {{ venv_bin }}/python -m piptools compile -q -o requirements.lock pyproject.toml
     cd {{ api_dir }} && {{ venv_bin }}/python -m piptools compile -q --extra dev -o requirements-dev.lock pyproject.toml
 
+# Apply database migrations (default: to the latest revision)
+db-upgrade revision="head":
+    cd {{ api_dir }} && {{ venv_bin }}/python -m alembic upgrade {{ revision }}
+
+# Roll back database migrations (default: one step)
+db-downgrade revision="-1":
+    cd {{ api_dir }} && {{ venv_bin }}/python -m alembic downgrade {{ revision }}
+
+# Generate a migration from model changes: just db-revision "add claims table"
+db-revision message:
+    cd {{ api_dir }} && {{ venv_bin }}/python -m alembic revision --autogenerate -m "{{ message }}"
+
 # ─── Web ──────────────────────────────────────────────────────────────────
 
 # Run all frontend dev servers

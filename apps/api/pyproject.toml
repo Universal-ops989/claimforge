@@ -11,6 +11,8 @@ dependencies = [
     "pydantic-settings>=2.6",
     "sqlalchemy[asyncio]>=2.0.36",
     "asyncpg>=0.30",
+    "alembic>=1.14",
+    "tzdata>=2024.2",
 ]
 
 [project.optional-dependencies]
@@ -73,7 +75,7 @@ warn_unreachable = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 plugins = ["pydantic.mypy"]
 mypy_path = "src"
-files = ["src", "tests"]
+files = ["src", "tests", "migrations"]
 
 [[tool.mypy.overrides]]
 module = ["pgserver", "pgserver.*", "asyncpg", "asyncpg.*"]
