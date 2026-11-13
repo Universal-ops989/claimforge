@@ -35,6 +35,9 @@ class RequestContextMiddleware:
         incoming = _header(scope, REQUEST_ID_HEADER.lower())
         request_id = incoming if incoming and _SAFE_REQUEST_ID.match(incoming) else str(uuid7())
         token = request_id_var.set(request_id)
+        # Also on the request state: the 500 handler runs in Starlette's outermost
+        # middleware, after this context variable has been reset.
+        scope.setdefault("state", {})["request_id"] = request_id
         started = time.perf_counter()
         status_code = 500
 

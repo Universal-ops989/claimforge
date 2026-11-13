@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from claimforge_api import __version__
 from claimforge_api.api.middleware import REQUEST_ID_HEADER, RequestContextMiddleware
+from claimforge_api.api.problems import register_problem_handlers
 from claimforge_api.api.router import api_router
 from claimforge_api.core.database import create_engine, create_session_factory
 from claimforge_api.core.logging import configure_logging
@@ -52,6 +53,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     # Added last so it is the outermost middleware: every response gets a request id.
     app.add_middleware(RequestContextMiddleware)
+    register_problem_handlers(app)
     app.include_router(api_router)
     return app
 
