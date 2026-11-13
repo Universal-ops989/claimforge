@@ -72,12 +72,20 @@ def problem_response(
 async def handle_app_error(request: Request, exc: Exception) -> JSONResponse:
     # Starlette only routes matching exception types to each handler.
     error = cast("AppError", exc)
+    headers = None
+    if error.status == 401:
+        # RFC 6750: tell clients which scheme to use and whether the token was the problem.
+        challenge = "Bearer"
+        if error.code in {"invalid_token", "token_expired"}:
+            challenge += f' error="invalid_token", error_description="{error.title}"'
+        headers = {"WWW-Authenticate": challenge}
     return problem_response(
         request,
         status=error.status,
         code=error.code,
         title=error.title,
         detail=error.detail,
+        headers=headers,
         **error.extra,
     )
 
