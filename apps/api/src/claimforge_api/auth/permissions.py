@@ -6,7 +6,7 @@ Roles are coarse and cumulative (each includes everything below it); code only e
     viewer      read everything in the organization
     technician  + record field data (photos, moisture readings, equipment)
     adjuster    + create and edit claims, write and approve estimates, generate reports
-    admin       + manage members and organization settings, delete claims
+    admin       + manage members and organization settings, delete claims, read the audit log
     owner       + delete the organization
 """
 
@@ -34,6 +34,7 @@ class Permission(StrEnum):
     ESTIMATES_WRITE = "estimates:write"
     ESTIMATES_APPROVE = "estimates:approve"
     REPORTS_GENERATE = "reports:generate"
+    AUDIT_READ = "audit:read"
 
 
 _VIEWER = frozenset({Permission.ORG_READ, Permission.MEMBERS_READ, Permission.CLAIMS_READ})
@@ -44,7 +45,12 @@ _ADJUSTER = _TECHNICIAN | {
     Permission.ESTIMATES_APPROVE,
     Permission.REPORTS_GENERATE,
 }
-_ADMIN = _ADJUSTER | {Permission.ORG_UPDATE, Permission.MEMBERS_MANAGE, Permission.CLAIMS_DELETE}
+_ADMIN = _ADJUSTER | {
+    Permission.ORG_UPDATE,
+    Permission.MEMBERS_MANAGE,
+    Permission.CLAIMS_DELETE,
+    Permission.AUDIT_READ,
+}
 _OWNER = _ADMIN | {Permission.ORG_DELETE}
 
 ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
