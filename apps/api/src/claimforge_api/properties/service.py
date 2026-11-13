@@ -2,12 +2,13 @@
 
 from uuid import UUID
 
-from sqlalchemy import Select, or_, select
+from sqlalchemy import Select, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from claimforge_api.auth.permissions import Permission, authorize
-from claimforge_api.core.errors import ConflictError, NotFoundError
+from claimforge_api.claims.models import Claim
+from claimforge_api.core.errors import BusinessRuleError, ConflictError, NotFoundError
 from claimforge_api.db.pagination import Page, SortKey, paginate
 from claimforge_api.db.search import icontains
 from claimforge_api.properties.models import Property
@@ -20,6 +21,11 @@ NEWEST_FIRST = SortKey([Property.id], direction="desc")
 class PropertyExistsError(ConflictError):
     code = "property_exists"
     title = "Property already exists"
+
+
+class PropertyHasClaimsError(BusinessRuleError):
+    code = "property_has_claims"
+    title = "Property has claims"
 
 
 def _live_properties(organization_id: UUID) -> Select[Property]:
@@ -45,8 +51,8 @@ def _exists_error(existing_id: UUID | None) -> PropertyExistsError:
     return PropertyExistsError("A property at this address already exists", **extra)
 
 
-async def _save(session: AsyncSession, prop: Property) -> None:
-    """Commit, turning a lost race on the unique address index into a 409."""
+async def _flush(session: AsyncSession, prop: Property) -> None:
+    """Flush, turning a lost race on the unique address index into a 409."""
     organization_id, address_key = prop.organization_id, prop.address_key
     try:
         await session.flush()
@@ -54,7 +60,17 @@ async def _save(session: AsyncSession, prop: Property) -> None:
         await session.rollback()
         existing = await _existing_at(session, organization_id, address_key)
         raise _exists_error(existing) from exc
+
+
+async def _save(session: AsyncSession, prop: Property) -> None:
+    await _flush(session, prop)
     await session.commit()
+
+
+def _new_property(organization_id: UUID, data: PropertyCreate) -> Property:
+    prop = Property(organization_id=organization_id, **data.model_dump(exclude={"address"}))
+    prop.address = data.address.to_address()
+    return prop
 
 
 async def _get_live(session: AsyncSession, organization_id: UUID, property_id: UUID) -> Property:
@@ -72,10 +88,30 @@ async def create_property(
     if existing := await _existing_at(session, organization_id, address.key):
         raise _exists_error(existing)
 
-    prop = Property(organization_id=organization_id, **data.model_dump(exclude={"address"}))
-    prop.address = address
+    prop = _new_property(organization_id, data)
     session.add(prop)
     await _save(session, prop)
+    return prop
+
+
+async def find_or_add_property(
+    session: AsyncSession, organization_id: UUID, data: PropertyCreate
+) -> Property:
+    """The live property at ``data``'s address, or a new one, without committing.
+
+    For callers creating a property as part of a larger unit of work (a new claim at a
+    new address); the caller authorizes and commits. An existing property is reused as is:
+    its details are not overwritten by ``data``.
+    """
+    address_key = data.address.to_address().key
+    existing = await session.scalar(
+        _live_properties(organization_id).where(Property.address_key == address_key)
+    )
+    if existing is not None:
+        return existing
+    prop = _new_property(organization_id, data)
+    session.add(prop)
+    await _flush(session, prop)
     return prop
 
 
@@ -145,5 +181,15 @@ async def delete_property(
     # Deleting is an admin action: a property holds the history of every claim there.
     await authorize(session, user, organization_id, Permission.CLAIMS_DELETE)
     prop = await _get_live(session, organization_id, property_id)
+    open_claims = await session.scalar(
+        select(func.count())
+        .select_from(Claim)
+        .where(Claim.property_id == prop.id, Claim.not_deleted())
+    )
+    if open_claims:
+        raise PropertyHasClaimsError(
+            f"This property has {open_claims} live claim(s) and cannot be deleted",
+            claim_count=open_claims,
+        )
     prop.soft_delete()
     await session.commit()
