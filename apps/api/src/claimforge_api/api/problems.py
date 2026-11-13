@@ -72,13 +72,13 @@ def problem_response(
 async def handle_app_error(request: Request, exc: Exception) -> JSONResponse:
     # Starlette only routes matching exception types to each handler.
     error = cast("AppError", exc)
-    headers = None
+    headers = dict(error.headers)
     if error.status == 401:
         # RFC 6750: tell clients which scheme to use and whether the token was the problem.
         challenge = "Bearer"
         if error.code in {"invalid_token", "token_expired"}:
             challenge += f' error="invalid_token", error_description="{error.title}"'
-        headers = {"WWW-Authenticate": challenge}
+        headers["WWW-Authenticate"] = challenge
     return problem_response(
         request,
         status=error.status,
@@ -140,6 +140,16 @@ def register_problem_handlers(app: FastAPI) -> None:
     app.add_exception_handler(StarletteHTTPException, handle_http_exception)
     app.add_exception_handler(Exception, handle_unexpected_error)
 
+
+#: For rate-limited routes: `responses=RATE_LIMITED_RESPONSE`.
+RATE_LIMITED_RESPONSE: dict[int | str, dict[str, Any]] = {
+    429: {
+        "model": Problem,
+        "content": {PROBLEM_MEDIA_TYPE: {}},
+        "description": "Too many requests; retry after the Retry-After header's seconds",
+        "headers": {"Retry-After": {"schema": {"type": "integer"}}},
+    }
+}
 
 # Shared OpenAPI documentation for routers: `responses=PROBLEM_RESPONSES`.
 PROBLEM_RESPONSES: dict[int | str, dict[str, Any]] = {
