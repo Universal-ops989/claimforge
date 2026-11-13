@@ -15,3 +15,15 @@ async def test_healthz_is_documented_in_openapi(client: httpx2.AsyncClient) -> N
 
     assert response.status_code == 200
     assert "/healthz" in response.json()["paths"]
+
+
+async def test_cors_allows_configured_origins(client: httpx2.AsyncClient) -> None:
+    response = await client.options(
+        "/healthz",
+        headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
