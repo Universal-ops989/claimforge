@@ -4,19 +4,39 @@ Database tests run against real PostgreSQL:
 - CI provides one through ``CLAIMFORGE_TEST_DATABASE_URL`` (a service container);
 - locally, when that variable is unset, an embedded server from ``pgserver`` is started
   once per test session, so no Docker is needed.
+
+The schema is migrated once per session. Each test then runs inside a transaction that is
+rolled back afterwards, so tests never see each other's data even when code under test
+calls ``commit()`` (commits become SAVEPOINT releases).
 """
 
 import os
 import tempfile
 from collections.abc import AsyncIterator, Iterator
+from pathlib import Path
 
 import httpx2
 import pytest
+from alembic import command
+from alembic.config import Config
 from fastapi import FastAPI
 from pydantic import PostgresDsn
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.pool import NullPool
 
+from claimforge_api.api.deps import get_db_session
 from claimforge_api.core.settings import Environment, Settings
 from claimforge_api.main import create_app
+
+API_ROOT = Path(__file__).resolve().parents[1]
+
+
+def make_alembic_config(database_url: str) -> Config:
+    config = Config(str(API_ROOT / "alembic.ini"))
+    config.set_main_option("script_location", str(API_ROOT / "migrations"))
+    config.set_main_option("sqlalchemy.url", database_url)
+    config.attributes["configure_logger"] = False
+    return config
 
 
 @pytest.fixture(scope="session")
@@ -41,6 +61,37 @@ def database_url() -> Iterator[str]:
 
 
 @pytest.fixture
+def alembic_config(database_url: str) -> Config:
+    return make_alembic_config(database_url)
+
+
+@pytest.fixture(scope="session")
+def migrated_database_url(database_url: str) -> str:
+    """The test database, upgraded to the latest migration once per session."""
+    command.upgrade(make_alembic_config(database_url), "head")
+    return database_url
+
+
+@pytest.fixture
+async def db_session(migrated_database_url: str) -> AsyncIterator[AsyncSession]:
+    """A session inside a transaction that is rolled back after the test."""
+    engine = create_async_engine(migrated_database_url, poolclass=NullPool)
+    async with engine.connect() as connection:
+        transaction = await connection.begin()
+        session = AsyncSession(
+            bind=connection,
+            join_transaction_mode="create_savepoint",
+            expire_on_commit=False,
+        )
+        try:
+            yield session
+        finally:
+            await session.close()
+            await transaction.rollback()
+    await engine.dispose()
+
+
+@pytest.fixture
 def settings(database_url: str) -> Settings:
     """Test settings, independent of any developer .env file."""
     return Settings(
@@ -51,9 +102,14 @@ def settings(database_url: str) -> Settings:
 
 
 @pytest.fixture
-async def app(settings: Settings) -> AsyncIterator[FastAPI]:
-    """A fresh application instance per test so dependency overrides never leak."""
+async def app(settings: Settings, db_session: AsyncSession) -> AsyncIterator[FastAPI]:
+    """A fresh app per test, whose requests share the test's rolled-back session."""
     application = create_app(settings)
+
+    async def test_session() -> AsyncIterator[AsyncSession]:
+        yield db_session
+
+    application.dependency_overrides[get_db_session] = test_session
     yield application
     await application.state.engine.dispose()
 
