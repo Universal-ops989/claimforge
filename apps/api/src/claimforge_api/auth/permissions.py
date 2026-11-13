@@ -5,7 +5,8 @@ Roles are coarse and cumulative (each includes everything below it); code only e
 
     viewer      read everything in the organization
     technician  + record field data (photos, moisture readings, equipment)
-    adjuster    + create and edit claims, write and approve estimates, generate reports
+    adjuster    + create and edit claims and contacts, write and approve estimates,
+                  generate reports
     admin       + manage members and organization settings, delete claims, read the audit log
     owner       + delete the organization
 """
@@ -30,6 +31,8 @@ class Permission(StrEnum):
     CLAIMS_READ = "claims:read"
     CLAIMS_WRITE = "claims:write"
     CLAIMS_DELETE = "claims:delete"
+    CONTACTS_READ = "contacts:read"
+    CONTACTS_WRITE = "contacts:write"
     FIELD_DATA_WRITE = "field_data:write"
     ESTIMATES_WRITE = "estimates:write"
     ESTIMATES_APPROVE = "estimates:approve"
@@ -37,10 +40,18 @@ class Permission(StrEnum):
     AUDIT_READ = "audit:read"
 
 
-_VIEWER = frozenset({Permission.ORG_READ, Permission.MEMBERS_READ, Permission.CLAIMS_READ})
+_VIEWER = frozenset(
+    {
+        Permission.ORG_READ,
+        Permission.MEMBERS_READ,
+        Permission.CLAIMS_READ,
+        Permission.CONTACTS_READ,
+    }
+)
 _TECHNICIAN = _VIEWER | {Permission.FIELD_DATA_WRITE}
 _ADJUSTER = _TECHNICIAN | {
     Permission.CLAIMS_WRITE,
+    Permission.CONTACTS_WRITE,
     Permission.ESTIMATES_WRITE,
     Permission.ESTIMATES_APPROVE,
     Permission.REPORTS_GENERATE,
