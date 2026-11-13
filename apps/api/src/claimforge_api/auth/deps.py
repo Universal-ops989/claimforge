@@ -6,6 +6,7 @@ from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from claimforge_api.api.deps import DbSession, SettingsDep
+from claimforge_api.audit.recorder import actor_id_var
 from claimforge_api.core.errors import AuthenticationRequiredError
 from claimforge_api.core.tokens import InvalidTokenError, decode_access_token
 from claimforge_api.users.models import User
@@ -28,6 +29,8 @@ async def get_current_user(
     # Access tokens live for minutes, but deactivation must take effect immediately.
     if user is None or user.is_deleted or not user.is_active:
         raise InvalidTokenError("This account is no longer active")
+    # Attribute audit events written during this request to the signed-in user.
+    actor_id_var.set(user.id)
     return user
 
 
