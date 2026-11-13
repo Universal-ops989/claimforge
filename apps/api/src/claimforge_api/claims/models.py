@@ -113,7 +113,6 @@ class Claim(UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin, Base):
         lazy="raise",
         order_by="ClaimContact.id",
     )
-    # Read-only shortcut for lists, which show only the person to call first.
     assignments: Mapped[list["ClaimAssignment"]] = relationship(
         back_populates="claim",
         cascade="all, delete-orphan",
@@ -130,6 +129,7 @@ class Claim(UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin, Base):
         uselist=False,
         lazy="raise",
     )
+    # Read-only shortcut for lists, which show only the person to call first.
     primary_contact: Mapped["ClaimContact | None"] = relationship(
         primaryjoin="and_(Claim.id == ClaimContact.claim_id, ClaimContact.is_primary)",
         viewonly=True,
