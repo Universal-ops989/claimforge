@@ -115,13 +115,14 @@
   height: 1.125em;
 }
 
-/* Loading: hide content but keep its width so the layout does not jump. */
+/* Loading: hide content but keep its width so the layout does not jump. Use opacity
+   rather than visibility so the label stays the button's accessible name. */
 .loading {
   cursor: progress;
 }
 
 .loading > :not(.spinner) {
-  visibility: hidden;
+  opacity: 0;
 }
 
 .spinner {

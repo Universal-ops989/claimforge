@@ -118,7 +118,7 @@ function ClaimPage() {
       <Grid minChildWidth="16rem" gap={4}>
         {["Rooms 4", "Photos 48", "Readings 112", "Equipment 9"].map((stat) => (
           <Card key={stat}>
-            <CardHeader title={stat} />
+            <CardHeader title={stat} headingLevel={2} />
             <CardBody>
               <Text size="sm" tone="muted">
                 Updated 2h ago

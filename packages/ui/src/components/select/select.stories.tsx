@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { expect, fn, userEvent, within } from "storybook/test";
+import { expect, fn, screen, userEvent, waitFor, within } from "storybook/test";
 
 import { Text } from "../text/text";
 import { Select } from "./select";
@@ -82,5 +82,7 @@ export const KeyboardInteraction: Story = {
     await userEvent.keyboard("{Enter}");
     await userEvent.keyboard("{ArrowDown}{ArrowDown}{Enter}");
     await expect(args.onValueChange).toHaveBeenCalledWith("wind");
+    // Let the listbox close (and Radix restore aria-hidden) before the a11y check runs.
+    await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
   },
 };

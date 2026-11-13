@@ -46,7 +46,8 @@
 .success {
   --badge-fg: var(--cf-color-success-text);
   --badge-bg: var(--cf-color-success-subtle);
-  --badge-solid: var(--cf-color-success);
+  /* green-700: white text needs 4.5:1, which green-600 does not reach. */
+  --badge-solid: var(--cf-green-700);
 }
 
 .warning {

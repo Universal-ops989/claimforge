@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { expect, userEvent, within, screen } from "storybook/test";
+import { expect, screen, userEvent, waitFor, within } from "storybook/test";
 
 import { Button } from "../button/button";
 import { FormField } from "../field/form-field";
@@ -66,7 +66,9 @@ export const AddRoom: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole("button", { name: "Add room" }));
-    await expect(await screen.findByRole("dialog", { name: "Add room" })).toBeVisible();
+    const dialog = await screen.findByRole("dialog", { name: "Add room" });
+    // The dialog fades in; wait for the animation instead of checking the first frame.
+    await waitFor(() => expect(dialog).toBeVisible());
   },
 };
 

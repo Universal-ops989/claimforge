@@ -41,7 +41,14 @@ export const SingleDocument: Story = {
   },
 };
 
-export const Disabled: Story = { args: { disabled: true } };
+export const Disabled: Story = {
+  args: { disabled: true },
+  parameters: {
+    // WCAG 1.4.3 exempts inactive (disabled) components from contrast requirements;
+    // axe cannot tell that the dimmed text belongs to a disabled control.
+    a11y: { config: { rules: [{ id: "color-contrast", enabled: false }] } },
+  },
+};
 
 /** Simulated uploads: progress advances, one fails and can be retried. */
 export const WithUploadList: Story = {
