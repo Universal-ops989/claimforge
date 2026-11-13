@@ -3,27 +3,13 @@
 These are synchronous on purpose: Alembic's env.py runs its own event loop.
 """
 
-from pathlib import Path
-
-import pytest
 from alembic import command
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 
-API_ROOT = Path(__file__).resolve().parents[2]
 
-
-@pytest.fixture
-def alembic_config(database_url: str) -> Config:
-    config = Config(str(API_ROOT / "alembic.ini"))
-    config.set_main_option("script_location", str(API_ROOT / "migrations"))
-    config.set_main_option("sqlalchemy.url", database_url)
-    config.attributes["configure_logger"] = False
-    return config
-
-
-def test_single_head() -> None:
-    script = ScriptDirectory(str(API_ROOT / "migrations"))
+def test_single_head(alembic_config: Config) -> None:
+    script = ScriptDirectory.from_config(alembic_config)
 
     assert len(script.get_heads()) <= 1, "Merge migration branches before merging the PR"
 
