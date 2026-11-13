@@ -1,0 +1,142 @@
+.root {
+  --avatar-bg: var(--cf-brand-100);
+  --avatar-fg: var(--cf-brand-800);
+
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  overflow: hidden;
+  border-radius: var(--cf-radius-full);
+  background: var(--avatar-bg);
+  color: var(--avatar-fg);
+  font-family: var(--cf-font-sans);
+  font-size: calc(var(--avatar-size) * 0.4);
+  font-weight: var(--cf-font-weight-semibold);
+  line-height: 1;
+  user-select: none;
+  vertical-align: middle;
+}
+
+.xs {
+  --avatar-size: 1.25rem;
+}
+
+.sm {
+  --avatar-size: 1.75rem;
+}
+
+.md {
+  --avatar-size: 2.25rem;
+}
+
+.lg {
+  --avatar-size: 3rem;
+}
+
+.xl {
+  --avatar-size: 4rem;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Fallback palette: dark text on light tints in light mode, inverted in dark mode. */
+.brand {
+  --avatar-bg: var(--cf-brand-100);
+  --avatar-fg: var(--cf-brand-800);
+}
+
+.green {
+  --avatar-bg: var(--cf-green-100);
+  --avatar-fg: var(--cf-green-900);
+}
+
+.amber {
+  --avatar-bg: var(--cf-amber-100);
+  --avatar-fg: var(--cf-amber-900);
+}
+
+.red {
+  --avatar-bg: var(--cf-red-100);
+  --avatar-fg: var(--cf-red-900);
+}
+
+.cyan {
+  --avatar-bg: var(--cf-cyan-100);
+  --avatar-fg: var(--cf-cyan-900);
+}
+
+.violet {
+  --avatar-bg: #ede9fe;
+  --avatar-fg: #4c1d95;
+}
+
+:global([data-theme="dark"]) .root {
+  --avatar-bg: var(--cf-gray-800);
+  --avatar-fg: var(--cf-gray-100);
+}
+
+:global([data-theme="dark"]) .brand {
+  --avatar-bg: var(--cf-brand-900);
+  --avatar-fg: var(--cf-brand-100);
+}
+
+:global([data-theme="dark"]) .green {
+  --avatar-bg: var(--cf-green-900);
+  --avatar-fg: var(--cf-green-100);
+}
+
+:global([data-theme="dark"]) .amber {
+  --avatar-bg: var(--cf-amber-900);
+  --avatar-fg: var(--cf-amber-100);
+}
+
+:global([data-theme="dark"]) .red {
+  --avatar-bg: var(--cf-red-900);
+  --avatar-fg: var(--cf-red-100);
+}
+
+:global([data-theme="dark"]) .cyan {
+  --avatar-bg: var(--cf-cyan-900);
+  --avatar-fg: var(--cf-cyan-100);
+}
+
+:global([data-theme="dark"]) .violet {
+  --avatar-bg: #4c1d95;
+  --avatar-fg: #ede9fe;
+}
+
+.group {
+  display: inline-flex;
+  align-items: center;
+}
+
+.group > .root {
+  box-shadow: 0 0 0 2px var(--cf-color-surface);
+}
+
+.group > .root + .root {
+  margin-inline-start: calc(var(--avatar-size) * -0.25);
+}
+
+.overflow {
+  --avatar-bg: var(--cf-color-neutral-subtle);
+  --avatar-fg: var(--cf-color-text-muted);
+
+  font-size: calc(var(--avatar-size) * 0.34);
+}
