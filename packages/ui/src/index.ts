@@ -9,6 +9,7 @@ export * from "./components/input";
 export * from "./components/layout";
 export * from "./components/radio-group";
 export * from "./components/select";
+export * from "./components/switch";
 export * from "./components/text";
 export * from "./components/textarea";
 export * from "./components/visually-hidden";
