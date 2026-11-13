@@ -280,3 +280,38 @@ async def test_who_can_list_claims(
     assert listed.status_code == 200
     assert len(listed.json()["items"]) == 1
     assert (await outsider.get(f"{base}/claims")).status_code == 404
+
+
+async def test_edit_a_claim(
+    auth_client: httpx2.AsyncClient, client_for: ClientFor, base: str
+) -> None:
+    claim = await new_claim(auth_client, base, description="Burst pipe")
+    url = f"{base}/claims/{claim['id']}"
+
+    response = await auth_client.patch(
+        url, json={"carrier_claim_number": "LSM-88213", "description": None}
+    )
+    assert response.status_code == 200, response.text
+    edited = response.json()
+    assert edited["carrier_claim_number"] == "LSM-88213"
+    assert edited["description"] is None
+    assert edited["number"] == claim["number"]
+    assert (await auth_client.get(url)).json() == edited
+
+    events = await auth_client.get(
+        f"{base}/audit-events", params={"entity_type": "claim", "entity_id": claim["id"]}
+    )
+    updated = events.json()["items"][0]
+    assert updated["action"] == "claim.updated"
+    assert updated["actor"]["full_name"] == "Morgan Member"
+    assert updated["changes"]["carrier_claim_number"] == [None, "LSM-88213"]
+
+    future = await auth_client.patch(url, json={"loss_date": "2999-01-01"})
+    assert (future.status_code, future.json()["code"]) == (422, "loss_date_in_future")
+    status = await auth_client.patch(url, json={"status": "closed"})
+    assert (status.status_code, status.json()["code"]) == (422, "validation_failed")
+
+    viewer = await client_for(Role.VIEWER)
+    outsider = await client_for(None)
+    assert (await viewer.patch(url, json={"loss_type": "fire"})).status_code == 403
+    assert (await outsider.patch(url, json={"loss_type": "fire"})).status_code == 404
