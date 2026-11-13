@@ -3,6 +3,7 @@ import "./styles.css";
 export * from "./components/avatar";
 export * from "./components/badge";
 export * from "./components/button";
+export * from "./components/card";
 export * from "./components/checkbox";
 export * from "./components/field";
 export * from "./components/heading";
