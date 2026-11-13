@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.routing import APIRoute
 
 from claimforge_api import __version__
 from claimforge_api.api.middleware import REQUEST_ID_HEADER, RequestContextMiddleware
@@ -15,6 +16,11 @@ from claimforge_api.core.database import create_engine, create_session_factory
 from claimforge_api.core.logging import configure_logging
 from claimforge_api.core.settings import Settings, get_settings
 from claimforge_api.invitations.delivery import LoggingInvitationSender
+
+
+def _operation_id(route: APIRoute) -> str:
+    """Handler names as operation ids: generated clients get ``listOrganizations()``."""
+    return route.name
 
 
 @asynccontextmanager
@@ -39,6 +45,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         description="Property-damage claims and restoration platform.",
         debug=settings.debug,
         lifespan=lifespan,
+        generate_unique_id_function=_operation_id,
     )
     app.state.settings = settings
     # Creating the engine does no I/O; connections open lazily on first use.

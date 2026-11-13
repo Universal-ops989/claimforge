@@ -44,6 +44,8 @@ jobs:
         run: ruff format --check .
       - name: mypy
         run: mypy
+      - name: OpenAPI contract is up to date
+        run: python -m claimforge_api.openapi --check
 
   test:
     name: Tests
