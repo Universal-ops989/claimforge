@@ -60,6 +60,7 @@ class Settings(BaseSettings):
         description="HMAC key for signing access tokens (at least 32 random characters).",
     )
     access_token_ttl_minutes: int = Field(default=15, ge=1, le=60)
+    refresh_token_ttl_days: int = Field(default=30, ge=1, le=90)
 
     @model_validator(mode="before")
     @classmethod
