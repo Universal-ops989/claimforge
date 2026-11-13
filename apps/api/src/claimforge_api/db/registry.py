@@ -6,6 +6,7 @@ so every new model module must be imported here.
 
 from claimforge_api.audit import models as audit_models
 from claimforge_api.auth import models as auth_models
+from claimforge_api.contacts import models as contacts_models
 from claimforge_api.db.base import Base
 from claimforge_api.invitations import models as invitations_models
 from claimforge_api.organizations import models as organizations_models
@@ -16,6 +17,7 @@ metadata = Base.metadata
 __all__ = [
     "audit_models",
     "auth_models",
+    "contacts_models",
     "invitations_models",
     "metadata",
     "organizations_models",
