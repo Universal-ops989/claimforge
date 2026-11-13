@@ -27,7 +27,10 @@ from sqlalchemy.pool import NullPool
 from claimforge_api.api.deps import get_db_session
 from claimforge_api.core import passwords
 from claimforge_api.core.settings import Environment, Settings
+from claimforge_api.core.tokens import create_access_token
 from claimforge_api.main import create_app
+from claimforge_api.users import service as users_service
+from claimforge_api.users.models import User
 
 API_ROOT = Path(__file__).resolve().parents[1]
 
@@ -126,4 +129,32 @@ async def client(app: FastAPI) -> AsyncIterator[httpx2.AsyncClient]:
     """An async HTTP client bound to the in-process ASGI app (no network)."""
     transport = httpx2.ASGITransport(app=app)
     async with httpx2.AsyncClient(transport=transport, base_url="http://testserver") as c:
+        yield c
+
+
+@pytest.fixture
+async def user(db_session: AsyncSession) -> User:
+    """A signed-up user (no organization yet)."""
+    return await users_service.create_user(
+        db_session,
+        email="member@example.com",
+        full_name="Morgan Member",
+        password="tile grout and drywall",
+    )
+
+
+@pytest.fixture
+def access_token(user: User, settings: Settings) -> str:
+    return create_access_token(user.id, settings).token
+
+
+@pytest.fixture
+async def auth_client(app: FastAPI, access_token: str) -> AsyncIterator[httpx2.AsyncClient]:
+    """Like ``client``, but signed in as ``user``."""
+    transport = httpx2.ASGITransport(app=app)
+    async with httpx2.AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+        headers={"Authorization": f"Bearer {access_token}"},
+    ) as c:
         yield c
