@@ -31,4 +31,16 @@ async def get_current_user(
     return user
 
 
+async def get_optional_current_user(
+    session: DbSession,
+    settings: SettingsDep,
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)],
+) -> User | None:
+    """The signed-in user, or None when no token was sent. A bad token is still a 401."""
+    if credentials is None:
+        return None
+    return await get_current_user(session, settings, credentials)
+
+
 CurrentUser = Annotated[User, Depends(get_current_user)]
+OptionalCurrentUser = Annotated[User | None, Depends(get_optional_current_user)]
