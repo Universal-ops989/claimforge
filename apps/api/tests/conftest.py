@@ -6,13 +6,20 @@ import httpx2
 import pytest
 from fastapi import FastAPI
 
+from claimforge_api.core.settings import Environment, Settings
 from claimforge_api.main import create_app
 
 
 @pytest.fixture
-def app() -> FastAPI:
+def settings() -> Settings:
+    """Test settings, independent of any developer .env file."""
+    return Settings(_env_file=None, environment=Environment.TEST)
+
+
+@pytest.fixture
+def app(settings: Settings) -> FastAPI:
     """A fresh application instance per test so dependency overrides never leak."""
-    return create_app()
+    return create_app(settings)
 
 
 @pytest.fixture
