@@ -8,6 +8,7 @@ from sqlalchemy import Select, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from claimforge_api.auth.permissions import Permission, authorize
 from claimforge_api.core.errors import ConflictError, NotFoundError
 from claimforge_api.db.pagination import Page, SortKey, paginate
 from claimforge_api.organizations.models import Organization
@@ -104,6 +105,7 @@ async def list_organizations(
 async def update_organization(
     session: AsyncSession, organization_id: UUID, data: OrganizationUpdate, *, user: User
 ) -> Organization:
+    await authorize(session, user, organization_id, Permission.ORG_UPDATE)
     organization = await get_organization(session, organization_id, user=user)
     for field, value in data.model_dump(exclude_unset=True).items():
         if value is not None:
@@ -114,6 +116,7 @@ async def update_organization(
 
 
 async def delete_organization(session: AsyncSession, organization_id: UUID, *, user: User) -> None:
+    await authorize(session, user, organization_id, Permission.ORG_DELETE)
     organization = await get_organization(session, organization_id, user=user)
     organization.soft_delete()
     await session.commit()
