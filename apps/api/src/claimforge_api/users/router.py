@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 from claimforge_api.api.deps import DbSession
 from claimforge_api.api.problems import PROBLEM_RESPONSES
 from claimforge_api.auth.deps import CurrentUser
+from claimforge_api.auth.permissions import Permission, permissions_for
 from claimforge_api.organizations.models import Organization
 from claimforge_api.users.models import Membership, Role
 
@@ -25,6 +26,7 @@ class MembershipOrganization(BaseModel):
 class MembershipRead(BaseModel):
     organization: MembershipOrganization
     role: Role
+    permissions: list[Permission]
 
 
 class MeResponse(BaseModel):
@@ -53,6 +55,7 @@ async def me(user: CurrentUser, session: DbSession) -> MeResponse:
                     id=m.organization.id, name=m.organization.name, slug=m.organization.slug
                 ),
                 role=Role(m.role),
+                permissions=sorted(permissions_for(m.role)),
             )
             for m in memberships
         ],
