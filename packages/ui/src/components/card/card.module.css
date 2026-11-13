@@ -1,0 +1,104 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: var(--cf-radius-lg);
+  background: var(--cf-color-surface);
+  color: var(--cf-color-text);
+  text-decoration: none;
+}
+
+.outlined {
+  border: 1px solid var(--cf-color-border);
+}
+
+.elevated {
+  border: 1px solid transparent;
+  box-shadow: var(--cf-shadow-md);
+}
+
+.padding-sm {
+  --card-padding: var(--cf-space-3);
+}
+
+.padding-md {
+  --card-padding: var(--cf-space-5);
+}
+
+.padding-lg {
+  --card-padding: var(--cf-space-6);
+}
+
+.interactive {
+  cursor: pointer;
+  transition:
+    border-color var(--cf-duration-fast) var(--cf-ease-standard),
+    box-shadow var(--cf-duration-fast) var(--cf-ease-standard),
+    transform var(--cf-duration-fast) var(--cf-ease-standard);
+}
+
+.interactive:hover {
+  border-color: var(--cf-color-border-strong);
+  box-shadow: var(--cf-shadow-md);
+}
+
+.interactive:focus-visible {
+  outline: none;
+  box-shadow: var(--cf-focus-ring);
+}
+
+.interactive:active {
+  transform: translateY(1px);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--cf-space-3);
+  padding: var(--card-padding) var(--card-padding) 0;
+}
+
+.headerText {
+  display: grid;
+  gap: var(--cf-space-1);
+  min-width: 0;
+}
+
+.description {
+  margin: 0;
+  color: var(--cf-color-text-muted);
+  font-size: var(--cf-font-size-sm);
+}
+
+.actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--cf-space-2);
+}
+
+.body {
+  flex: 1;
+  padding: var(--card-padding);
+}
+
+/* Header followed directly by footer still gets breathing room. */
+.header + .footer {
+  margin-top: var(--card-padding);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--cf-space-2);
+  padding: 0 var(--card-padding) var(--card-padding);
+}
+
+.divided {
+  padding-top: var(--cf-space-3);
+  padding-bottom: var(--cf-space-3);
+  border-top: 1px solid var(--cf-color-border);
+  background: var(--cf-color-bg-subtle);
+}
