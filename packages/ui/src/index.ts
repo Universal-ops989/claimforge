@@ -7,6 +7,7 @@ export * from "./components/card";
 export * from "./components/checkbox";
 export * from "./components/confirm-dialog";
 export * from "./components/data-table";
+export * from "./components/date-picker";
 export * from "./components/dialog";
 export * from "./components/drawer";
 export * from "./components/empty-state";
