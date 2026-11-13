@@ -10,6 +10,8 @@ from claimforge_api.api.problems import PROBLEM_RESPONSES
 from claimforge_api.auth.deps import CurrentUser
 from claimforge_api.claims import service
 from claimforge_api.claims.schemas import (
+    ClaimAssignmentCreate,
+    ClaimAssignmentRead,
     ClaimContactLink,
     ClaimContactLinkUpdate,
     ClaimContactRead,
@@ -122,6 +124,36 @@ async def get_claim_status_history(
 ) -> list[ClaimStatusChangeRead]:
     changes = await service.status_history(session, organization_id, claim_id, user=user)
     return [ClaimStatusChangeRead.model_validate(c) for c in changes]
+
+
+@router.post(
+    "/{claim_id}/assignments",
+    status_code=status.HTTP_201_CREATED,
+    summary="Assign a member to a claim",
+    description="Adjusters need `claims:write` in the organization; contractors and field "
+    "technicians need `field_data:write`. A claim has one adjuster: assigning another "
+    "replaces the current one.",
+)
+async def assign_claim_member(
+    organization_id: UUID,
+    claim_id: UUID,
+    session: DbSession,
+    user: CurrentUser,
+    body: ClaimAssignmentCreate,
+) -> ClaimAssignmentRead:
+    assignment = await service.assign(session, organization_id, claim_id, body, user=user)
+    return ClaimAssignmentRead.model_validate(assignment)
+
+
+@router.delete(
+    "/{claim_id}/assignments/{user_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Unassign a member from a claim",
+)
+async def unassign_claim_member(
+    organization_id: UUID, claim_id: UUID, user_id: UUID, session: DbSession, user: CurrentUser
+) -> None:
+    await service.unassign(session, organization_id, claim_id, user_id, user=user)
 
 
 @router.post(

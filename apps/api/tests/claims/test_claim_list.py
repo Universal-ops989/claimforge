@@ -9,14 +9,21 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from claimforge_api.claims import service
-from claimforge_api.claims.models import Claim, ClaimStatus
+from claimforge_api.claims.models import AssignmentRole, Claim, ClaimStatus
 from claimforge_api.claims.models import ClaimContactRole as Role
-from claimforge_api.claims.schemas import ClaimCreate, ClaimListQuery, ClaimSort
+from claimforge_api.claims.schemas import (
+    ClaimAssignmentCreate,
+    ClaimCreate,
+    ClaimListQuery,
+    ClaimSort,
+)
 from claimforge_api.contacts import service as contacts
 from claimforge_api.contacts.models import Contact
 from claimforge_api.contacts.schemas import ContactCreate
 from claimforge_api.db.pagination import InvalidCursorError
-from claimforge_api.users.models import User
+from claimforge_api.users import service as users
+from claimforge_api.users.models import Membership, User
+from claimforge_api.users.models import Role as MemberRole
 
 AUSTIN = {"line1": "123 Main St", "city": "Austin", "region": "TX", "postal_code": "78701"}
 DALLAS = {"line1": "9 Elm Ave", "city": "Dallas", "region": "TX", "postal_code": "75201"}
@@ -230,3 +237,55 @@ def test_query_defaults() -> None:
 
     assert query.sort is ClaimSort.NEWEST
     assert (query.status, query.loss_type, query.q) == ([], [], "")
+
+
+async def test_who_owns_what(book: Book) -> None:
+    async def member(role: MemberRole, name: str) -> User:
+        person = await users.create_user(
+            book.session, email=f"{name.lower()}@example.com", full_name=name
+        )
+        book.session.add(
+            Membership(organization_id=book.organization_id, user_id=person.id, role=role)
+        )
+        await book.session.commit()
+        return person
+
+    avery = await member(MemberRole.ADJUSTER, "Avery")
+    toni = await member(MemberRole.TECHNICIAN, "Toni")
+    owned = await book.claim()  # 1: Avery adjusts, Toni works it
+    worked = await book.claim()  # 2: Toni works it, nobody owns it
+    await book.claim()  # 3: nobody at all
+    for claim, person, role in [
+        (owned, avery, AssignmentRole.ADJUSTER),
+        (owned, toni, AssignmentRole.FIELD_TECHNICIAN),
+        (worked, toni, AssignmentRole.CONTRACTOR),
+    ]:
+        await service.assign(
+            book.session,
+            book.organization_id,
+            claim.id,
+            ClaimAssignmentCreate(user_id=person.id, role=role),
+            user=book.user,
+        )
+
+    async def found(**filters: Any) -> set[int]:
+        return {tail(n) for n in await book.numbers(**filters)}
+
+    assert await found(assigned_to=avery.id) == {1}
+    assert await found(assigned_to=toni.id) == {1, 2}
+    assert await found(has_adjuster=False) == {2, 3}
+    assert await found(has_adjuster=True, assigned_to=toni.id) == {1}
+
+    page = await service.list_claims(
+        book.session,
+        book.organization_id,
+        ClaimListQuery(sort=ClaimSort.OLDEST),
+        user=book.user,
+        limit=10,
+        cursor=None,
+    )
+    assert [c.adjuster.full_name if c.adjuster else None for c in page.items] == [
+        "Avery",
+        None,
+        None,
+    ]

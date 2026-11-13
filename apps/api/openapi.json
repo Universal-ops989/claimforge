@@ -132,6 +132,16 @@
         "title": "AddressRead",
         "type": "object"
       },
+      "AssignmentRole": {
+        "description": "What a member does on a claim. A claim has at most one adjuster.",
+        "enum": [
+          "adjuster",
+          "contractor",
+          "field_technician"
+        ],
+        "title": "AssignmentRole",
+        "type": "string"
+      },
       "AuditActor": {
         "properties": {
           "full_name": {
@@ -233,6 +243,61 @@
           "full_name"
         ],
         "title": "ClaimActor",
+        "type": "object"
+      },
+      "ClaimAssignmentCreate": {
+        "additionalProperties": false,
+        "description": "Assign a member to a claim. Assigning an adjuster replaces the current one.",
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/AssignmentRole"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "role"
+        ],
+        "title": "ClaimAssignmentCreate",
+        "type": "object"
+      },
+      "ClaimAssignmentRead": {
+        "properties": {
+          "assigned_at": {
+            "format": "date-time",
+            "title": "Assigned At",
+            "type": "string"
+          },
+          "assigned_by_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned By Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/AssignmentRole"
+          },
+          "user": {
+            "$ref": "#/components/schemas/ClaimActor"
+          }
+        },
+        "required": [
+          "user",
+          "role",
+          "assigned_by_id",
+          "assigned_at"
+        ],
+        "title": "ClaimAssignmentRead",
         "type": "object"
       },
       "ClaimContactLink": {
@@ -429,6 +494,13 @@
       },
       "ClaimRead": {
         "properties": {
+          "assignments": {
+            "items": {
+              "$ref": "#/components/schemas/ClaimAssignmentRead"
+            },
+            "title": "Assignments",
+            "type": "array"
+          },
           "carrier_claim_number": {
             "anyOf": [
               {
@@ -555,6 +627,7 @@
           "policy_number",
           "property",
           "contacts",
+          "assignments",
           "created_by_id",
           "created_at",
           "updated_at",
@@ -680,8 +753,18 @@
         "type": "object"
       },
       "ClaimSummary": {
-        "description": "A claim as the list shows it: the property and the person to call first.",
+        "description": "A claim as the list shows it: the property, the person to call first and who owns it.",
         "properties": {
+          "adjuster": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClaimActor"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "carrier_claim_number": {
             "anyOf": [
               {
@@ -777,6 +860,7 @@
           "policy_number",
           "property",
           "primary_contact",
+          "adjuster",
           "created_at",
           "updated_at"
         ],
@@ -3519,6 +3603,43 @@
             }
           },
           {
+            "description": "Claims this member is assigned to, in any role",
+            "in": "query",
+            "name": "assigned_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Claims this member is assigned to, in any role",
+              "title": "Assigned To"
+            }
+          },
+          {
+            "description": "`false`: claims nobody owns yet",
+            "in": "query",
+            "name": "has_adjuster",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "`false`: claims nobody owns yet",
+              "title": "Has Adjuster"
+            }
+          },
+          {
             "description": "Inclusive",
             "in": "query",
             "name": "loss_date_from",
@@ -4170,6 +4291,248 @@
           }
         ],
         "summary": "Edit a claim's details",
+        "tags": [
+          "claims"
+        ]
+      }
+    },
+    "/v1/organizations/{organization_id}/claims/{claim_id}/assignments": {
+      "post": {
+        "description": "Adjusters need `claims:write` in the organization; contractors and field technicians need `field_data:write`. A claim has one adjuster: assigning another replaces the current one.",
+        "operationId": "assign_claim_member",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Organization Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "claim_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Claim Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimAssignmentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimAssignmentRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Authentication required"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Permission denied"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Validation failed or business rule violated"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Assign a member to a claim",
+        "tags": [
+          "claims"
+        ]
+      }
+    },
+    "/v1/organizations/{organization_id}/claims/{claim_id}/assignments/{user_id}": {
+      "delete": {
+        "operationId": "unassign_claim_member",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Organization Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "claim_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Claim Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Authentication required"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Permission denied"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Validation failed or business rule violated"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Unassign a member from a claim",
         "tags": [
           "claims"
         ]
