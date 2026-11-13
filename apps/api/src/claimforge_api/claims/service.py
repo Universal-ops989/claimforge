@@ -1,6 +1,6 @@
 """Claim use cases. Every query is scoped to one organization the user belongs to."""
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
@@ -17,6 +17,7 @@ from claimforge_api.claims.schemas import (
     ClaimCreate,
     ClaimListQuery,
     ClaimSort,
+    ClaimUpdate,
 )
 from claimforge_api.contacts.models import Contact
 from claimforge_api.core.errors import BusinessRuleError, ConflictError, NotFoundError
@@ -72,6 +73,14 @@ async def _local_now(
     return (now or datetime.now(UTC)).astimezone(ZoneInfo(timezone or "UTC"))
 
 
+def _check_loss_date(loss_date: date | None, local_now: datetime) -> None:
+    if loss_date is not None and loss_date > local_now.date():
+        raise LossDateInFutureError(
+            f"The loss date {loss_date} is after today ({local_now.date()})",
+            loss_date=loss_date.isoformat(),
+        )
+
+
 async def _resolve_property(
     session: AsyncSession, organization_id: UUID, data: ClaimCreate
 ) -> UUID:
@@ -121,11 +130,7 @@ async def create_claim(
 ) -> Claim:
     await authorize(session, user, organization_id, Permission.CLAIMS_WRITE)
     local_now = await _local_now(session, organization_id, now)
-    if data.loss_date is not None and data.loss_date > local_now.date():
-        raise LossDateInFutureError(
-            f"The loss date {data.loss_date} is after today ({local_now.date()})",
-            loss_date=data.loss_date.isoformat(),
-        )
+    _check_loss_date(data.loss_date, local_now)
     await _check_contacts(session, organization_id, [c.contact_id for c in data.contacts])
     property_id = await _resolve_property(session, organization_id, data)
 
@@ -186,6 +191,28 @@ async def get_claim_by_number(
 ) -> Claim:
     await authorize(session, user, organization_id, Permission.CLAIMS_READ)
     return await _get_live(session, organization_id, number=number)
+
+
+async def update_claim(
+    session: AsyncSession,
+    organization_id: UUID,
+    claim_id: UUID,
+    data: ClaimUpdate,
+    *,
+    user: User,
+    now: datetime | None = None,
+) -> Claim:
+    await authorize(session, user, organization_id, Permission.CLAIMS_WRITE)
+    claim = await _get_live(session, organization_id, claim_id=claim_id)
+    changes = data.model_dump(exclude_unset=True)
+    if "loss_date" in changes:
+        _check_loss_date(data.loss_date, await _local_now(session, organization_id, now))
+    for field, value in changes.items():
+        setattr(claim, field, value)
+    # Unchanged values leave no history, so a no-op writes neither a row nor an audit event.
+    await session.commit()
+    # Reload for the database's new updated_at.
+    return await _get_live(session, organization_id, claim_id=claim_id)
 
 
 # ─── Listing ──────────────────────────────────────────────────────────────────

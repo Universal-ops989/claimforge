@@ -17,6 +17,7 @@ from claimforge_api.claims.schemas import (
     ClaimListQuery,
     ClaimRead,
     ClaimSummary,
+    ClaimUpdate,
 )
 from claimforge_api.db.pagination import CursorPage
 
@@ -74,6 +75,23 @@ async def get_claim(
     organization_id: UUID, claim_id: UUID, session: DbSession, user: CurrentUser
 ) -> ClaimRead:
     claim = await service.get_claim(session, organization_id, claim_id, user=user)
+    return ClaimRead.model_validate(claim)
+
+
+@router.patch(
+    "/{claim_id}",
+    summary="Edit a claim's details",
+    description="Omitted fields are unchanged; `null` clears an optional field. The number "
+    "never changes, and status, property and contacts have their own endpoints.",
+)
+async def update_claim(
+    organization_id: UUID,
+    claim_id: UUID,
+    session: DbSession,
+    user: CurrentUser,
+    body: ClaimUpdate,
+) -> ClaimRead:
+    claim = await service.update_claim(session, organization_id, claim_id, body, user=user)
     return ClaimRead.model_validate(claim)
 
 
