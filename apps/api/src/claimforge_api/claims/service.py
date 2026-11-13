@@ -284,14 +284,35 @@ async def _lock_status(session: AsyncSession, organization_id: UUID, claim_id: U
     return current
 
 
-async def _get_editable(session: AsyncSession, organization_id: UUID, claim_id: UUID) -> Claim:
-    """The claim, locked against concurrent status changes, if it is not closed or cancelled."""
+async def lock_for_changes(session: AsyncSession, organization_id: UUID, claim_id: UUID) -> None:
+    """Lock a live claim against concurrent changes, refusing if it is closed or cancelled.
+
+    Anything that changes a claim or a record under it (contacts, assignments, rooms) calls
+    this first. Writers to one claim then take turns, so checks such as "is this name free"
+    stay true until commit, and nothing slips in while the claim is being closed.
+    """
     current = await _lock_status(session, organization_id, claim_id)
     if current in workflow.FINAL:
         action = "Reinstate" if current == ClaimStatus.CANCELLED else "Reopen"
         raise ClaimLockedError(
             f"The claim is {current}. {action} it to make changes.", claim_status=current
         )
+
+
+async def require_live(session: AsyncSession, organization_id: UUID, claim_id: UUID) -> None:
+    """404 unless the claim exists in the organization and is not deleted."""
+    found = await session.scalar(
+        select(Claim.id).where(
+            Claim.id == claim_id, Claim.organization_id == organization_id, Claim.not_deleted()
+        )
+    )
+    if found is None:
+        raise NotFoundError("Claim not found", claim_id=str(claim_id))
+
+
+async def _get_editable(session: AsyncSession, organization_id: UUID, claim_id: UUID) -> Claim:
+    """The claim, locked against concurrent changes, if it is not closed or cancelled."""
+    await lock_for_changes(session, organization_id, claim_id)
     return await _get_live(session, organization_id, claim_id=claim_id)
 
 
@@ -350,7 +371,7 @@ async def status_history(
 ) -> list[ClaimStatusChange]:
     """Every status change of a live claim, oldest first."""
     await authorize(session, user, organization_id, Permission.CLAIMS_READ)
-    await _get_live(session, organization_id, claim_id=claim_id)
+    await require_live(session, organization_id, claim_id)
     rows = await session.scalars(
         select(ClaimStatusChange)
         .where(
