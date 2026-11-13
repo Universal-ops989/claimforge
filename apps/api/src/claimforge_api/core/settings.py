@@ -62,6 +62,12 @@ class Settings(BaseSettings):
     access_token_ttl_minutes: int = Field(default=15, ge=1, le=60)
     refresh_token_ttl_days: int = Field(default=30, ge=1, le=90)
 
+    web_app_url: str = Field(
+        default="http://localhost:5173",
+        pattern=r"^https?://",
+        description="Base URL of the web app, used in links sent by email.",
+    )
+
     @model_validator(mode="before")
     @classmethod
     def _split_cors_origins(cls, data: object) -> object:
