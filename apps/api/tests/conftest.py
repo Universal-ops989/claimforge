@@ -25,6 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from claimforge_api.api.deps import get_db_session
+from claimforge_api.core import passwords
 from claimforge_api.core.settings import Environment, Settings
 from claimforge_api.main import create_app
 
@@ -37,6 +38,12 @@ def make_alembic_config(database_url: str) -> Config:
     config.set_main_option("sqlalchemy.url", database_url)
     config.attributes["configure_logger"] = False
     return config
+
+
+@pytest.fixture(autouse=True)
+def fast_password_hashing(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Production scrypt takes ~0.3s per hash; tests use a cheap cost."""
+    monkeypatch.setattr(passwords, "hasher", passwords.PasswordHasher(log_n=10))
 
 
 @pytest.fixture(scope="session")

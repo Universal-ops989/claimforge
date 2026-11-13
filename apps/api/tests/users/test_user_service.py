@@ -7,12 +7,6 @@ from claimforge_api.users import service
 PASSWORD = "tile grout and drywall"
 
 
-@pytest.fixture(autouse=True)
-def fast_hasher(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Production scrypt cost is ~0.3s per hash; tests use a cheap one."""
-    monkeypatch.setattr(passwords, "hasher", passwords.PasswordHasher(log_n=10))
-
-
 async def test_create_user_normalizes_email_and_hashes_password(db_session: AsyncSession) -> None:
     user = await service.create_user(
         db_session, email="  Ana@Example.COM ", full_name=" Ana Rivera ", password=PASSWORD
