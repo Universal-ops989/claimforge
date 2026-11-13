@@ -380,3 +380,55 @@ async def test_status_endpoints_respect_roles_and_tenants(
     assert (await outsider.post(f"{url}/status", json={"status": "inspected"})).status_code == 404
     bad = await auth_client.post(f"{url}/status", json={"status": "archived"})
     assert (bad.status_code, bad.json()["code"]) == (422, "validation_failed")
+
+
+async def test_assignments_over_http(
+    auth_client: httpx2.AsyncClient, client_for: ClientFor, base: str
+) -> None:
+    claim = await new_claim(auth_client, base)
+    url = f"{base}/claims/{claim['id']}"
+    adjuster = await client_for(Role.ADJUSTER)
+    technician = await client_for(Role.TECHNICIAN)
+    adjuster_id = (await adjuster.get("/v1/me")).json()["id"]
+    technician_id = (await technician.get("/v1/me")).json()["id"]
+    me = (await auth_client.get("/v1/me")).json()["id"]
+    assert claim["assignments"] == []
+
+    assigned = await auth_client.post(
+        f"{url}/assignments", json={"user_id": adjuster_id, "role": "adjuster"}
+    )
+    assert assigned.status_code == 201, assigned.text
+    assert assigned.json()["user"] == {"id": adjuster_id, "full_name": "Someone"}
+    assert assigned.json()["assigned_by_id"] == me
+    await post(adjuster, f"{url}/assignments", {"user_id": technician_id, "role": "contractor"})
+
+    twice = await auth_client.post(
+        f"{url}/assignments", json={"user_id": technician_id, "role": "field_technician"}
+    )
+    assert (twice.status_code, twice.json()["code"]) == (409, "already_assigned")
+    unable = await auth_client.post(
+        f"{url}/assignments", json={"user_id": technician_id, "role": "adjuster"}
+    )
+    assert (unable.status_code, unable.json()["assignee_needs"]) == (422, "claims:write")
+    stranger = await auth_client.post(
+        f"{url}/assignments",
+        json={"user_id": "01a1d4e6-5c4e-73d8-9dbc-100ca276475e", "role": "contractor"},
+    )
+    assert (stranger.status_code, stranger.json()["code"]) == (422, "unknown_assignee")
+
+    shown = (await auth_client.get(url)).json()["assignments"]
+    assert [(a["user"]["id"], a["role"]) for a in shown] == [
+        (adjuster_id, "adjuster"),
+        (technician_id, "contractor"),
+    ]
+
+    mine = (await adjuster.get(f"{base}/claims", params={"assigned_to": adjuster_id})).json()
+    assert [(c["id"], c["adjuster"]["id"]) for c in mine["items"]] == [(claim["id"], adjuster_id)]
+    unowned = await auth_client.get(f"{base}/claims", params={"has_adjuster": "false"})
+    assert unowned.json()["items"] == []
+
+    assert (await technician.delete(f"{url}/assignments/{adjuster_id}")).status_code == 403
+    assert (await auth_client.delete(f"{url}/assignments/{adjuster_id}")).status_code == 204
+    assert (await auth_client.delete(f"{url}/assignments/{adjuster_id}")).status_code == 404
+    listed = (await auth_client.get(f"{base}/claims")).json()["items"]
+    assert listed[0]["adjuster"] is None
