@@ -65,4 +65,11 @@ export const HorizontalCards: Story = {
 
 export const Invalid: Story = { args: { invalid: true, defaultValue: undefined } };
 
-export const Disabled: Story = { args: { disabled: true } };
+export const Disabled: Story = {
+  args: { disabled: true },
+  parameters: {
+    // WCAG 1.4.3 exempts inactive (disabled) components from contrast requirements;
+    // axe cannot tell that the dimmed text belongs to a disabled control.
+    a11y: { config: { rules: [{ id: "color-contrast", enabled: false }] } },
+  },
+};

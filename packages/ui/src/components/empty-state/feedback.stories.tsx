@@ -62,7 +62,7 @@ export const Spinners: Story = {
 /** A claim card while it loads: shapes match the real content to avoid layout shift. */
 export const SkeletonCard: Story = {
   render: () => (
-    <Card style={{ width: 360 }} aria-busy="true" aria-label="Loading claim">
+    <Card style={{ width: 360 }} role="status" aria-busy="true" aria-label="Loading claim">
       <CardBody>
         <Stack gap={4}>
           <Inline gap={3} wrap={false}>
