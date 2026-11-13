@@ -25,6 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from claimforge_api.api.deps import get_db_session
+from claimforge_api.audit import recorder as audit_recorder
 from claimforge_api.core import passwords
 from claimforge_api.core.settings import Environment, Settings
 from claimforge_api.core.tokens import create_access_token
@@ -41,6 +42,12 @@ def make_alembic_config(database_url: str) -> Config:
     config.set_main_option("sqlalchemy.url", database_url)
     config.attributes["configure_logger"] = False
     return config
+
+
+@pytest.fixture(scope="session", autouse=True)
+def audit_hook() -> None:
+    """Service-level tests flush without building an app, so install the hook here too."""
+    audit_recorder.install()
 
 
 @pytest.fixture(autouse=True)
