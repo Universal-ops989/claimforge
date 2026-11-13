@@ -11,6 +11,7 @@ from claimforge_api.contacts.models import Contact, ContactKind, ContactMethod
 from claimforge_api.contacts.schemas import ContactCreate, ContactUpdate
 from claimforge_api.core.errors import BusinessRuleError, NotFoundError
 from claimforge_api.db.pagination import Page, SortKey, paginate
+from claimforge_api.db.search import icontains
 from claimforge_api.users.models import User
 
 ALPHABETICAL = SortKey([Contact.full_name, Contact.id])
@@ -39,23 +40,12 @@ def _live_contacts(organization_id: UUID) -> Select[Contact]:
     return select(Contact).where(Contact.organization_id == organization_id, Contact.not_deleted())
 
 
-LIKE_ESCAPE = "\\"
-
-
-def _escape_like(text: str) -> str:
-    """Make ``%`` and ``_`` in user input match literally."""
-    for char in (LIKE_ESCAPE, "%", "_"):
-        text = text.replace(char, LIKE_ESCAPE + char)
-    return text
-
-
 def _matching(statement: Select[Contact], q: str) -> Select[Contact]:
     """Case-insensitive substring match on names and email, or on phone digits."""
-    pattern = f"%{_escape_like(q.strip())}%"
     conditions: list[ColumnElement[bool]] = [
-        Contact.full_name.ilike(pattern, escape=LIKE_ESCAPE),
-        Contact.company_name.ilike(pattern, escape=LIKE_ESCAPE),
-        Contact.email.ilike(pattern, escape=LIKE_ESCAPE),
+        icontains(Contact.full_name, q),
+        icontains(Contact.company_name, q),
+        icontains(Contact.email, q),
     ]
     digits = re.sub(r"\D", "", q)
     if len(digits) >= MIN_PHONE_DIGITS:
