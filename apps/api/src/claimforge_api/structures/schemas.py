@@ -11,6 +11,7 @@ from pydantic import (
     Field,
     PlainSerializer,
     StringConstraints,
+    WithJsonSchema,
     model_validator,
 )
 
@@ -20,10 +21,20 @@ Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max
 Level = Annotated[
     Annotated[str, StringConstraints(strip_whitespace=True, max_length=40)] | None, Blankable
 ]
-# Sent and returned as JSON numbers; stored exactly, to the hundredth of a foot.
+# Sent and returned as JSON numbers; stored exactly, to the hundredth of a foot. The
+# schema says "number" only, so generated clients don't type dimensions as number | string.
 Feet = Annotated[
     Decimal,
-    Field(gt=0, max_digits=6, decimal_places=2, examples=[12.5]),
+    Field(gt=0, max_digits=6, decimal_places=2),
+    WithJsonSchema(
+        {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 9999.99,
+            "description": "Feet, to the hundredth (12' 6\" is 12.5)",
+            "examples": [12.5],
+        }
+    ),
     PlainSerializer(float, return_type=float, when_used="json"),
 ]
 Measure = Annotated[Decimal, PlainSerializer(float, return_type=float, when_used="json")]
