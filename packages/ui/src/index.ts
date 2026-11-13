@@ -7,6 +7,7 @@ export * from "./components/icon";
 export * from "./components/icon-button";
 export * from "./components/input";
 export * from "./components/layout";
+export * from "./components/radio-group";
 export * from "./components/select";
 export * from "./components/text";
 export * from "./components/textarea";
