@@ -2573,6 +2573,69 @@
         "title": "PhotoType",
         "type": "string"
       },
+      "PhotoUpdate": {
+        "additionalProperties": false,
+        "description": "Only the fields sent change. ``room_id: null`` takes the photo out of its room.",
+        "properties": {
+          "caption": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Free text. Blank clears it.",
+            "examples": [
+              "Stain spreading from the vent"
+            ],
+            "title": "Caption"
+          },
+          "room_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Room Id"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "description": "Short labels, at most 20: letters, digits, spaces and hyphens. Stored lowercase, without repeats, in alphabetical order.",
+                "examples": [
+                  [
+                    "before",
+                    "ceiling"
+                  ]
+                ],
+                "items": {
+                  "examples": [
+                    "before"
+                  ],
+                  "maxLength": 40,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 20,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags"
+          }
+        },
+        "title": "PhotoUpdate",
+        "type": "object"
+      },
       "PhotoUploadCreate": {
         "additionalProperties": false,
         "description": "What the client is about to upload. The stored file must match it.",
@@ -3523,6 +3586,25 @@
         ],
         "title": "Surface",
         "type": "string"
+      },
+      "TagCount": {
+        "properties": {
+          "photos": {
+            "description": "How many photos on live claims carry it",
+            "title": "Photos",
+            "type": "integer"
+          },
+          "tag": {
+            "title": "Tag",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tag",
+          "photos"
+        ],
+        "title": "TagCount",
+        "type": "object"
       },
       "TaskCreate": {
         "additionalProperties": false,
@@ -7677,7 +7759,7 @@
     },
     "/v1/organizations/{organization_id}/claims/{claim_id}/photo-uploads": {
       "post": {
-        "description": "Needs `field_data:write`. Describe the file; the response holds a link to send it to, with the method and headers to use (the link works for 30 minutes). Then complete the upload. Photos larger than the limit are refused (`photo_too_large`, with `limit`). Closed and cancelled claims are read-only (`claim_locked`).",
+        "description": "Needs `field_data:write`. Describe the file; the response holds a link to send it to, with the method and headers to use (the link works for 30 minutes). Then complete the upload. Caption, tags and room can be given now or edited later; a room must be on this claim (`unknown_room`). Photos larger than the limit are refused (`photo_too_large`, with `limit`). Closed and cancelled claims are read-only (`claim_locked`).",
         "operationId": "start_photo_upload",
         "parameters": [
           {
@@ -7937,7 +8019,7 @@
     },
     "/v1/organizations/{organization_id}/claims/{claim_id}/photos": {
       "get": {
-        "description": "Newest first. Each photo's links work for an hour.",
+        "description": "Newest first. Each photo's links work for an hour. Filter by `room_id`, by photos in no room (`unassigned=true`), or by tags: `tag=before&tag=ceiling` finds photos with both.",
         "operationId": "list_photos",
         "parameters": [
           {
@@ -7958,6 +8040,56 @@
               "format": "uuid",
               "title": "Claim Id",
               "type": "string"
+            }
+          },
+          {
+            "description": "Only this room's photos",
+            "in": "query",
+            "name": "room_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only this room's photos",
+              "title": "Room Id"
+            }
+          },
+          {
+            "description": "Only photos not linked to a room",
+            "in": "query",
+            "name": "unassigned",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Only photos not linked to a room",
+              "title": "Unassigned",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "Only photos with every one of these tags; repeat.",
+            "in": "query",
+            "name": "tag",
+            "required": false,
+            "schema": {
+              "description": "Only photos with every one of these tags; repeat.",
+              "items": {
+                "examples": [
+                  "before"
+                ],
+                "maxLength": 40,
+                "minLength": 1,
+                "type": "string"
+              },
+              "title": "Tag",
+              "type": "array"
             }
           },
           {
@@ -8317,6 +8449,139 @@
           }
         ],
         "summary": "Get a photo, with fresh links",
+        "tags": [
+          "photos"
+        ]
+      },
+      "patch": {
+        "description": "Needs `field_data:write`. Only the fields sent change: `room_id: null` takes the photo out of its room, `tags: []` removes every tag, a blank caption clears it. Tags are stored lowercase, without repeats, in alphabetical order.",
+        "operationId": "update_photo",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Organization Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "claim_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Claim Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "photo_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Photo Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PhotoUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Authentication required"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Permission denied"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Validation failed or business rule violated"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Edit a photo's caption, tags or room",
         "tags": [
           "photos"
         ]
@@ -11458,6 +11723,146 @@
         "summary": "Notes that mention me",
         "tags": [
           "notes"
+        ]
+      }
+    },
+    "/v1/organizations/{organization_id}/photo-tags": {
+      "get": {
+        "description": "The organization's photo tags with how many photos carry each, most used first: suggestions while someone types a tag.",
+        "operationId": "list_photo_tags",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Organization Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only tags starting with this",
+            "in": "query",
+            "name": "prefix",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 40,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only tags starting with this",
+              "title": "Prefix"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TagCount"
+                  },
+                  "title": "Response List Photo Tags",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Authentication required"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Permission denied"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Validation failed or business rule violated"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Tags in use on photos",
+        "tags": [
+          "photos"
         ]
       }
     },

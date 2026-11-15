@@ -12,6 +12,7 @@ from claimforge_api.invitations.router import accept_router as invitation_accept
 from claimforge_api.invitations.router import organization_router as invitations_router
 from claimforge_api.notes.router import router as notes_router
 from claimforge_api.organizations.router import router as organizations_router
+from claimforge_api.photos.router import organization_router as photo_tags_router
 from claimforge_api.photos.router import router as photos_router
 from claimforge_api.properties.router import router as properties_router
 from claimforge_api.search.router import router as search_router
@@ -34,6 +35,7 @@ v1_router.include_router(claims_router)
 v1_router.include_router(structures_router)
 v1_router.include_router(damage_router)
 v1_router.include_router(photos_router)
+v1_router.include_router(photo_tags_router)
 v1_router.include_router(notes_router)
 v1_router.include_router(tasks_router)
 v1_router.include_router(timeline_router)
