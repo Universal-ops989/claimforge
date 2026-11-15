@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, Index, String, func
+from sqlalchemy import DateTime, ForeignKey, Index, String, func, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -27,6 +27,9 @@ class AuditEvent(UUIDPrimaryKeyMixin, Base):
     action: Mapped[str] = mapped_column(String(100))  # e.g. "membership.updated"
     entity_type: Mapped[str] = mapped_column(String(50))
     entity_id: Mapped[UUID]
+    # The claim this change belongs to: the claim itself, or the claim a contact link,
+    # room, note, task... sits under. No foreign key: events outlive what they describe.
+    claim_id: Mapped[UUID | None] = mapped_column(default=None)
     # {"field": [before, after]}; secrets are redacted.
     changes: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
     request_id: Mapped[str | None] = mapped_column(String(128), default=None)
@@ -36,4 +39,11 @@ class AuditEvent(UUIDPrimaryKeyMixin, Base):
         # Timeline queries: an organization's events, newest first.
         Index("ix_audit_events_org_timeline", "organization_id", "id"),
         Index("ix_audit_events_entity", "entity_type", "entity_id"),
+        # A claim's timeline, newest first.
+        Index(
+            "ix_audit_events_claim_timeline",
+            "claim_id",
+            "id",
+            postgresql_where=text("claim_id IS NOT NULL"),
+        ),
     )
