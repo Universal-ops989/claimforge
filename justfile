@@ -61,6 +61,10 @@ api-lock:
 api-openapi:
     cd {{ api_dir }} && {{ venv_bin }}/python -m claimforge_api.openapi
 
+# Run the background worker (photo thumbnails, upload cleanup); add --once to drain and exit
+worker *args:
+    cd {{ api_dir }} && {{ venv_bin }}/python -m claimforge_api.worker {{ args }}
+
 # Create the storage bucket (or directories) and allow the web apps to upload
 storage-init:
     cd {{ api_dir }} && {{ venv_bin }}/python -m claimforge_api.storage

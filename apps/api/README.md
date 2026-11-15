@@ -47,6 +47,18 @@ just storage-init   # create the bucket (or directories) and allow the web apps'
 
 `/readyz` reports storage as well as the database.
 
+## Background worker
+
+Photo thumbnails and previews are made outside requests, and abandoned uploads are cleaned
+up, by a worker using the same settings as the API:
+
+```bash
+just worker          # runs until Ctrl+C / SIGTERM; run several to share the load
+just worker --once   # process what's due, clean up, and exit
+```
+
+Photos stay `processing: "pending"` (no thumbnail links) until a worker has run.
+
 ## Dependencies
 
 Dependencies are declared in `pyproject.toml` and pinned with pip-tools:

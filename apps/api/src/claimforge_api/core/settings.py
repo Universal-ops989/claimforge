@@ -101,6 +101,13 @@ class Settings(BaseSettings):
         default=25 * 1024 * 1024, ge=1, description="Largest photo that can be uploaded."
     )
 
+    worker_poll_seconds: float = Field(
+        default=5.0, gt=0, le=300, description="How often an idle worker looks for new photos."
+    )
+    worker_cleanup_minutes: float = Field(
+        default=15.0, gt=0, description="How often the worker discards abandoned uploads."
+    )
+
     s3_endpoint_url: str | None = Field(
         default=None,
         pattern=r"^https?://",
