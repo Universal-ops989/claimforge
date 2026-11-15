@@ -111,3 +111,15 @@ def test_signatures_cover_every_part() -> None:
 )
 def test_content_disposition(filename: str | None, header: str) -> None:
     assert content_disposition(filename) == header
+
+
+async def test_long_keys_fit_on_every_platform(tmp_path: Path) -> None:
+    # Over 300 characters under the root: beyond Windows' classic 260-character limit.
+    key = "/".join(letter * 100 for letter in "abc") + "/photo.jpg"
+    storage = local_storage(tmp_path)
+
+    await storage.put(key, b"jpeg", content_type="image/jpeg")
+
+    assert await storage.get(key) == b"jpeg"
+    await storage.delete(key)
+    assert await storage.stat(key) is None

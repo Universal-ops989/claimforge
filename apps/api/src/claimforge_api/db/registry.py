@@ -13,6 +13,7 @@ from claimforge_api.db.base import Base
 from claimforge_api.invitations import models as invitations_models
 from claimforge_api.notes import models as notes_models
 from claimforge_api.organizations import models as organizations_models
+from claimforge_api.photos import models as photos_models
 from claimforge_api.properties import models as properties_models
 from claimforge_api.structures import models as structures_models
 from claimforge_api.tasks import models as tasks_models
@@ -30,6 +31,7 @@ __all__ = [
     "metadata",
     "notes_models",
     "organizations_models",
+    "photos_models",
     "properties_models",
     "structures_models",
     "tasks_models",
