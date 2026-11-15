@@ -17,6 +17,7 @@ from claimforge_api.core.logging import configure_logging
 from claimforge_api.core.rate_limit import InMemoryRateLimiter
 from claimforge_api.core.settings import Settings, get_settings
 from claimforge_api.invitations.delivery import LoggingInvitationSender
+from claimforge_api.storage.factory import create_storage
 
 
 def _operation_id(route: APIRoute) -> str:
@@ -52,6 +53,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Creating the engine does no I/O; connections open lazily on first use.
     app.state.engine = create_engine(settings)
     app.state.session_factory = create_session_factory(app.state.engine)
+    app.state.storage = create_storage(settings)
     # Replaced by the email sender when notifications land.
     app.state.invitation_sender = LoggingInvitationSender()
     # Per-instance buckets; replace with a shared store when running several instances.

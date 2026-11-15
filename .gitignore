@@ -32,5 +32,6 @@ Thumbs.db
 
 # Local data
 /var/
+/apps/api/var/
 *.log
 coverage.xml

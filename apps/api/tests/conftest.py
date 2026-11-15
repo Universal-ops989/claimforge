@@ -114,12 +114,13 @@ async def db_session(migrated_database_url: str) -> AsyncIterator[AsyncSession]:
 
 
 @pytest.fixture
-def settings(database_url: str) -> Settings:
+def settings(database_url: str, tmp_path: Path) -> Settings:
     """Test settings, independent of any developer .env file."""
     return Settings(
         _env_file=None,
         environment=Environment.TEST,
         database_url=PostgresDsn(database_url),
+        storage_local_root=tmp_path / "storage",
     )
 
 

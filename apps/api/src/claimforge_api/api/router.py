@@ -14,6 +14,7 @@ from claimforge_api.notes.router import router as notes_router
 from claimforge_api.organizations.router import router as organizations_router
 from claimforge_api.properties.router import router as properties_router
 from claimforge_api.search.router import router as search_router
+from claimforge_api.storage.router import router as storage_router
 from claimforge_api.structures.router import router as structures_router
 from claimforge_api.tasks.router import router as tasks_router
 from claimforge_api.timeline.router import router as timeline_router
@@ -36,6 +37,7 @@ v1_router.include_router(tasks_router)
 v1_router.include_router(timeline_router)
 v1_router.include_router(search_router)
 v1_router.include_router(audit_router)
+v1_router.include_router(storage_router)
 
 api_router = APIRouter()
 api_router.include_router(health.router)
