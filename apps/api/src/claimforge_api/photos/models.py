@@ -15,17 +15,21 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    ForeignKeyConstraint,
     Index,
     Integer,
     SmallInteger,
     String,
+    Text,
     func,
     text,
 )
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from claimforge_api.db.base import Base
 from claimforge_api.db.mixins import TimestampMixin, UUIDPrimaryKeyMixin
+from claimforge_api.structures.models import Room
 from claimforge_api.users.models import User
 
 
@@ -79,6 +83,20 @@ class _File:
     size_bytes: Mapped[int] = mapped_column(BigInteger)
     #: When the picture was taken, as the device reports it (EXIF); not checked.
     taken_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    caption: Mapped[str | None] = mapped_column(Text, default=None)
+    #: Normalized by the schemas: trimmed, lowercase, unique, sorted.
+    tags: Mapped[list[str]] = mapped_column(ARRAY(String(40)), default=list, server_default="{}")
+    room_id: Mapped[UUID | None] = mapped_column(default=None)
+
+
+def _in_its_claims_room() -> ForeignKeyConstraint:
+    """Through (claim_id, room_id) only a room of the same claim; deleting it unlinks."""
+    return ForeignKeyConstraint(
+        ["claim_id", "room_id"], ["rooms.claim_id", "rooms.id"], ondelete="SET NULL (room_id)"
+    )
+
+
+_AT_MOST_20_TAGS = "cardinality(tags) <= 20"
 
 
 class PhotoUpload(_File, UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -93,6 +111,8 @@ class PhotoUpload(_File, UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __table_args__ = (
         CheckConstraint(f"content_type IN ({_PHOTO_TYPES})", name="content_type_valid"),
         CheckConstraint("size_bytes > 0", name="size_positive"),
+        CheckConstraint(_AT_MOST_20_TAGS, name="tags_limited"),
+        _in_its_claims_room(),
         Index("ix_photo_uploads_claim_id", "claim_id"),
         # Finding abandoned uploads to discard.
         Index("ix_photo_uploads_expires_at", "expires_at"),
@@ -108,6 +128,8 @@ class Photo(_File, UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
 
     uploaded_by: Mapped[User | None] = relationship(lazy="raise")
+    # Read-only: room_id is set directly, and claim_id belongs to the claim.
+    room: Mapped[Room | None] = relationship(lazy="raise", viewonly=True)
     # The database deletes it with the photo (passive_deletes): no extra load on delete.
     processing: Mapped["PhotoProcessing"] = relationship(
         lazy="raise", cascade="all, delete-orphan", passive_deletes=True
@@ -120,8 +142,14 @@ class Photo(_File, UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __table_args__ = (
         CheckConstraint(f"content_type IN ({_PHOTO_TYPES})", name="content_type_valid"),
         CheckConstraint("size_bytes > 0", name="size_positive"),
+        CheckConstraint(_AT_MOST_20_TAGS, name="tags_limited"),
+        _in_its_claims_room(),
         # A claim's photos, newest first (ids are time-ordered).
         Index("ix_photos_claim_id_id", "claim_id", "id"),
+        # A room's photos, and unlinking them when it's deleted.
+        Index("ix_photos_claim_id_room_id", "claim_id", "room_id"),
+        # Filtering by tag (tags @> ...) and the organization's tag list.
+        Index("ix_photos_tags", "tags", postgresql_using="gin"),
     )
 
 
