@@ -117,6 +117,15 @@ class ClaimUpdate(BaseModel):
         return self
 
 
+class ClaimRef(BaseModel):
+    """Enough to link to a claim from a record shown outside it (a note, a task)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    number: str
+
+
 class ClaimActor(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
