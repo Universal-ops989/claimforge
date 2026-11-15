@@ -218,6 +218,8 @@ class ClaimStatusChange(UUIDPrimaryKeyMixin, Base):
     """One step in a claim's status history. Rows are never changed or removed."""
 
     __tablename__ = "claim_status_changes"
+    # Audited so the claim timeline shows each change with its reason.
+    __audited__ = True
 
     # Denormalized from the claim so tenant scoping needs no join.
     organization_id: Mapped[UUID] = mapped_column(

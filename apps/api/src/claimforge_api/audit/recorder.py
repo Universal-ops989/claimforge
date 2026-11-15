@@ -28,8 +28,9 @@ actor_id_var: ContextVar[UUID | None] = ContextVar("audit_actor_id", default=Non
 
 REDACTED = "[redacted]"
 _SENSITIVE = frozenset({"password_hash", "token_hash"})
-# Bookkeeping columns that change on every write and add no information.
-_IGNORED = frozenset({"created_at", "updated_at"})
+# Bookkeeping columns that add no information: each event has its own created_at, and
+# changed_at (status history) is the same moment.
+_IGNORED = frozenset({"created_at", "updated_at", "changed_at"})
 
 
 def _json(value: object) -> object:
@@ -54,6 +55,14 @@ def _organization_id(obj: object) -> UUID | None:
     if getattr(obj, "__tablename__", None) == "organizations":
         return getattr(obj, "id", None)
     value = getattr(obj, "organization_id", None)
+    return value if isinstance(value, UUID) else None
+
+
+def _claim_id(obj: object) -> UUID | None:
+    """The claim a change belongs to, so a claim's timeline is one indexed query."""
+    if getattr(obj, "__tablename__", None) == "claims":
+        return getattr(obj, "id", None)
+    value = getattr(obj, "claim_id", None)
     return value if isinstance(value, UUID) else None
 
 
@@ -119,6 +128,7 @@ def _rows(session: Session, context: UOWTransaction) -> Iterable[dict[str, Any]]
             "action": f"{entity}.{verb}",
             "entity_type": entity,
             "entity_id": getattr(obj, "id"),  # noqa: B009 - audited models all have an id
+            "claim_id": _claim_id(obj),
             "changes": changes,
             "request_id": request_id,
         }
