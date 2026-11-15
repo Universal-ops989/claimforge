@@ -13,7 +13,7 @@ from pydantic import (
     model_validator,
 )
 
-from claimforge_api.claims.schemas import ClaimActor
+from claimforge_api.claims.schemas import ClaimActor, ClaimRef
 from claimforge_api.notes import mentions
 
 MAX_MENTIONS = 20
@@ -52,18 +52,11 @@ class NoteUpdate(_NoteWrite):
     """Only the author can edit a note. Mentions are re-read from the new body."""
 
 
-class NoteClaim(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    number: str
-
-
 class NoteRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
-    claim: NoteClaim
+    claim: ClaimRef
     author: ClaimActor | None = Field(description="Null once the author's account is gone")
     body: str = Field(description="As written, with `<@user-id>` mention tokens")
     mentions: list[ClaimActor] = Field(validation_alias="mentioned_users")

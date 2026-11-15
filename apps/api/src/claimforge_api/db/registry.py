@@ -15,6 +15,7 @@ from claimforge_api.notes import models as notes_models
 from claimforge_api.organizations import models as organizations_models
 from claimforge_api.properties import models as properties_models
 from claimforge_api.structures import models as structures_models
+from claimforge_api.tasks import models as tasks_models
 from claimforge_api.users import models as users_models
 
 metadata = Base.metadata
@@ -31,5 +32,6 @@ __all__ = [
     "organizations_models",
     "properties_models",
     "structures_models",
+    "tasks_models",
     "users_models",
 ]

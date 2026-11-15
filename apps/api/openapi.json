@@ -636,6 +636,26 @@
         "title": "ClaimRead",
         "type": "object"
       },
+      "ClaimRef": {
+        "description": "Enough to link to a claim from a record shown outside it (a note, a task).",
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "number": {
+            "title": "Number",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "number"
+        ],
+        "title": "ClaimRef",
+        "type": "object"
+      },
       "ClaimSort": {
         "description": "Sort orders for the claim list. A leading \"-\" means newest/latest first.",
         "enum": [
@@ -1967,25 +1987,6 @@
         "title": "MembershipRead",
         "type": "object"
       },
-      "NoteClaim": {
-        "properties": {
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "number": {
-            "title": "Number",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "number"
-        ],
-        "title": "NoteClaim",
-        "type": "object"
-      },
       "NoteCreate": {
         "additionalProperties": false,
         "properties": {
@@ -2025,7 +2026,7 @@
             "type": "string"
           },
           "claim": {
-            "$ref": "#/components/schemas/NoteClaim"
+            "$ref": "#/components/schemas/ClaimRef"
           },
           "created_at": {
             "format": "date-time",
