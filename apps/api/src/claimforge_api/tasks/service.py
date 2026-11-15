@@ -5,9 +5,10 @@ closed or cancelled. Tasks are shared work: anyone who can write may edit, reass
 complete one. The creator or an admin (``claims:delete``) deletes one.
 """
 
+from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import Select, func, select
+from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -150,7 +151,8 @@ async def update_task(
         setattr(task, field, value)
     # Completing a done task or reopening an open one changes nothing.
     if done is True and not task.done:
-        task.completed_at, task.completed_by_id = func.now(), user.id
+        # A Python time, not SQL now(): the audit log only sees values it can read at flush.
+        task.completed_at, task.completed_by_id = datetime.now(UTC), user.id
     elif done is False and task.done:
         task.completed_at, task.completed_by_id = None, None
     # Unchanged values leave no history, so a no-op writes neither a row nor an audit event.
