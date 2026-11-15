@@ -1485,6 +1485,39 @@
         "title": "CursorPage[TaskRead]",
         "type": "object"
       },
+      "CursorPage_TimelineEntry_": {
+        "properties": {
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TimelineEntry"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor",
+          "has_more"
+        ],
+        "title": "CursorPage[TimelineEntry]",
+        "type": "object"
+      },
       "DamageItemCreate": {
         "additionalProperties": false,
         "description": "One damaged material in a room. Water category and class apply only to water, flood, sewage and storm damage. Sewage and flood water are always Category 3, which is the default for them.",
@@ -3274,6 +3307,110 @@
           }
         },
         "title": "TaskUpdate",
+        "type": "object"
+      },
+      "TimelineEntry": {
+        "properties": {
+          "action": {
+            "examples": [
+              "note.created"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "actor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClaimActor"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null for system changes or deleted accounts"
+          },
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "changes": {
+            "additionalProperties": {
+              "items": {},
+              "type": "array"
+            },
+            "description": "`{field: [before, after]}`",
+            "title": "Changes",
+            "type": "object"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/TimelineKind"
+          },
+          "subject": {
+            "$ref": "#/components/schemas/TimelineSubject"
+          },
+          "summary": {
+            "examples": [
+              "Changed the status from new to on hold: Waiting on PA"
+            ],
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "kind",
+          "action",
+          "actor",
+          "subject",
+          "summary",
+          "changes"
+        ],
+        "title": "TimelineEntry",
+        "type": "object"
+      },
+      "TimelineKind": {
+        "description": "What an entry is about; the timeline's tabs and filters.",
+        "enum": [
+          "claim",
+          "status",
+          "contacts",
+          "team",
+          "layout",
+          "damage",
+          "notes",
+          "tasks",
+          "other"
+        ],
+        "title": "TimelineKind",
+        "type": "string"
+      },
+      "TimelineSubject": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "type": {
+            "examples": [
+              "note"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "id"
+        ],
+        "title": "TimelineSubject",
         "type": "object"
       },
       "TokenResponse": {
@@ -8960,6 +9097,167 @@
         "summary": "Update, reassign, complete or reopen a task",
         "tags": [
           "tasks"
+        ]
+      }
+    },
+    "/v1/organizations/{organization_id}/claims/{claim_id}/timeline": {
+      "get": {
+        "description": "Everything that happened on the claim and the records under it, newest first, each with a one-line summary. Needs `claims:read` (the raw audit log needs `audit:read`).",
+        "operationId": "claim_timeline",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Organization Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "claim_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Claim Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only these kinds; repeat for several. All when omitted.",
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "description": "Only these kinds; repeat for several. All when omitted.",
+              "items": {
+                "$ref": "#/components/schemas/TimelineKind"
+              },
+              "title": "Kind",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Items per page",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "description": "Items per page",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "next_cursor from the previous page",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "next_cursor from the previous page",
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CursorPage_TimelineEntry_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Authentication required"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Permission denied"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Validation failed or business rule violated"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "A claim's timeline",
+        "tags": [
+          "timeline"
         ]
       }
     },

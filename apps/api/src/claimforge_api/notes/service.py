@@ -5,9 +5,10 @@ closed or cancelled. Only the author edits a note; the author or an admin (``cla
 deletes one.
 """
 
+from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import Select, func, select
+from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -150,7 +151,8 @@ async def update_note(
 
     wanted = await _check_mentions(session, organization_id, data.body)
     note.body = data.body
-    note.edited_at = func.now()
+    # A Python time, not SQL now(): the audit log only sees values it can read at flush.
+    note.edited_at = datetime.now(UTC)
     # Keep the rows of members still mentioned; drop the rest, add the new ones.
     note.mentions = [m for m in note.mentions if m.user_id in wanted]
     kept = {m.user_id for m in note.mentions}

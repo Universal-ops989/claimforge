@@ -19,7 +19,7 @@ from claimforge_api.contacts.schemas import ContactCreate
 from claimforge_api.notes import service as notes
 from claimforge_api.notes.schemas import NoteCreate, NoteUpdate
 from claimforge_api.tasks import service as tasks
-from claimforge_api.tasks.schemas import TaskCreate
+from claimforge_api.tasks.schemas import TaskCreate, TaskUpdate
 from claimforge_api.users.models import User
 
 ADDRESS = {"line1": "123 Main St", "city": "Austin", "region": "TX", "postal_code": "78701"}
@@ -155,3 +155,27 @@ async def test_the_migration_tags_existing_events(
     for statement in backfill:
         await db_session.execute(text(statement))
     assert len(await claim_events(db_session, claim_id)) == len(rebuilt)
+
+
+async def test_completion_and_edit_times_are_audited(
+    db_session: AsyncSession, organization_id: UUID, user: User
+) -> None:
+    # Setting a column to SQL now() expires it at flush, before the recorder can read it;
+    # services set these times in Python so the log keeps them.
+    claim_id = (await busy_claim(db_session, organization_id, user)).id
+    task = await tasks.create_task(
+        db_session, organization_id, claim_id, TaskCreate(title="Set dehus"), user=user
+    )
+    await tasks.update_task(
+        db_session, organization_id, claim_id, task.id, TaskUpdate(done=True), user=user
+    )
+
+    updates = {
+        e.entity_type: e.changes
+        for e in await claim_events(db_session, claim_id)
+        if e.action in {"task.updated", "note.updated"}
+    }
+
+    assert updates["task"]["completed_at"][0] is None
+    assert updates["task"]["completed_at"][1] is not None
+    assert updates["note"]["edited_at"][1] is not None
