@@ -6,6 +6,7 @@ For local development a ``.env`` file next to ``pyproject.toml`` is also read.
 
 from enum import StrEnum
 from functools import lru_cache
+from pathlib import Path
 from typing import Annotated, Self
 
 from pydantic import Field, PostgresDsn, SecretStr, model_validator
@@ -19,6 +20,10 @@ class Environment(StrEnum):
     DEVELOPMENT = "development"
     TEST = "test"
     PRODUCTION = "production"
+
+
+class StorageBackend(StrEnum):
+    LOCAL = "local"
 
 
 class LogLevel(StrEnum):
@@ -70,6 +75,25 @@ class Settings(BaseSettings):
         default="http://localhost:5173",
         pattern=r"^https?://",
         description="Base URL of the web app, used in links sent by email.",
+    )
+
+    public_api_url: str = Field(
+        default="http://localhost:8000",
+        pattern=r"^https?://",
+        description="Base URL clients use to reach this API, used in signed storage URLs.",
+    )
+
+    storage_backend: StorageBackend = Field(
+        default=StorageBackend.LOCAL, description="Where uploaded files are kept."
+    )
+    storage_local_root: Path = Field(
+        default=Path("var/storage"),
+        description="Directory for the local backend, relative to the working directory.",
+    )
+    storage_max_upload_bytes: int = Field(
+        default=50 * 1024 * 1024,
+        ge=1,
+        description="Largest body the local backend accepts on a signed upload URL.",
     )
 
     @model_validator(mode="before")

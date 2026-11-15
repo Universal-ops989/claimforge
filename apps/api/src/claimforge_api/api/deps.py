@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from claimforge_api.core.settings import Settings
 from claimforge_api.db.pagination import DEFAULT_LIMIT, MAX_LIMIT
+from claimforge_api.storage.base import ObjectStorage
 
 
 def get_app_settings(request: Request) -> Settings:
@@ -18,6 +19,11 @@ def get_app_settings(request: Request) -> Settings:
 def get_engine(request: Request) -> AsyncEngine:
     """The database engine owned by the app handling this request."""
     return cast("AsyncEngine", request.app.state.engine)
+
+
+def get_storage(request: Request) -> ObjectStorage:
+    """Where the app handling this request keeps uploaded files."""
+    return cast("ObjectStorage", request.app.state.storage)
 
 
 async def get_db_session(request: Request) -> AsyncIterator[AsyncSession]:
@@ -54,4 +60,5 @@ class PageParams:
 SettingsDep = Annotated[Settings, Depends(get_app_settings)]
 EngineDep = Annotated[AsyncEngine, Depends(get_engine)]
 DbSession = Annotated[AsyncSession, Depends(get_db_session)]
+StorageDep = Annotated[ObjectStorage, Depends(get_storage)]
 PageParamsDep = Annotated[PageParams, Depends()]
