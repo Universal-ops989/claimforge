@@ -10,6 +10,7 @@ from claimforge_api.contacts.router import router as contacts_router
 from claimforge_api.damage.router import router as damage_router
 from claimforge_api.invitations.router import accept_router as invitation_accept_router
 from claimforge_api.invitations.router import organization_router as invitations_router
+from claimforge_api.notes.router import router as notes_router
 from claimforge_api.organizations.router import router as organizations_router
 from claimforge_api.properties.router import router as properties_router
 from claimforge_api.structures.router import router as structures_router
@@ -27,6 +28,7 @@ v1_router.include_router(properties_router)
 v1_router.include_router(claims_router)
 v1_router.include_router(structures_router)
 v1_router.include_router(damage_router)
+v1_router.include_router(notes_router)
 v1_router.include_router(audit_router)
 
 api_router = APIRouter()
