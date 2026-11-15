@@ -61,6 +61,10 @@ api-lock:
 api-openapi:
     cd {{ api_dir }} && {{ venv_bin }}/python -m claimforge_api.openapi
 
+# Create the storage bucket (or directories) and allow the web apps to upload
+storage-init:
+    cd {{ api_dir }} && {{ venv_bin }}/python -m claimforge_api.storage
+
 # Apply database migrations (default: to the latest revision)
 db-upgrade revision="head":
     cd {{ api_dir }} && {{ venv_bin }}/python -m alembic upgrade {{ revision }}

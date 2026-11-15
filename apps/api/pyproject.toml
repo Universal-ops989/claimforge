@@ -15,6 +15,7 @@ dependencies = [
     "tzdata>=2024.2",
     "pyjwt>=2.10",
     "email-validator>=2.2",
+    "boto3>=1.40",
 ]
 
 [project.optional-dependencies]
@@ -26,6 +27,11 @@ dev = [
     "pytest-cov>=6.0",
     "httpx2>=2.0",
     "pgserver>=0.1.4",
+    # S3 for the storage tests, served over HTTP by moto's threaded server (Flask).
+    "moto[s3]>=5.1",
+    "flask>=3.1",
+    "flask-cors>=5.0",
+    "types-boto3[s3]>=1.40",
 ]
 
 [build-system]

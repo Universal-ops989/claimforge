@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from tests.storage.conftest import SECRET, local_storage
 
-from claimforge_api.storage.base import content_disposition
+from claimforge_api.storage.base import StorageUnavailableError, content_disposition
 from claimforge_api.storage.signing import UrlSigner
 
 HOUR = timedelta(hours=1)
@@ -33,7 +33,7 @@ async def test_a_failed_write_leaves_no_trace(
         raise OSError("disk full")
 
     monkeypatch.setattr("claimforge_api.storage.local.os.replace", broken_replace)
-    with pytest.raises(OSError, match="disk full"):
+    with pytest.raises(StorageUnavailableError, match="disk full"):
         await storage.put("photo.jpg", b"half", content_type="image/jpeg")
     monkeypatch.undo()
 

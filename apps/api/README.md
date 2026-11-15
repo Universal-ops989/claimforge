@@ -31,6 +31,22 @@ just db-downgrade                     # roll back one step
 The test suite runs every migration up, down and up again, and fails if the models
 and migrations drift apart.
 
+## File storage
+
+Photos and documents go through `claimforge_api.storage`, which hides the backend:
+
+- `local` (default): files under `CLAIMFORGE_STORAGE_LOCAL_ROOT`; the API serves the
+  signed upload and download links itself.
+- `s3`: an S3 bucket. Locally that's SeaweedFS from `compose.yaml`: set
+  `CLAIMFORGE_STORAGE_BACKEND=s3` and the `CLAIMFORGE_S3_*` values from `.env.example`.
+  Presigned links go straight to the bucket.
+
+```bash
+just storage-init   # create the bucket (or directories) and allow the web apps' origins
+```
+
+`/readyz` reports storage as well as the database.
+
 ## Dependencies
 
 Dependencies are declared in `pyproject.toml` and pinned with pip-tools:

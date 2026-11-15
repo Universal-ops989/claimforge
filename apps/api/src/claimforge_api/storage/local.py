@@ -26,6 +26,7 @@ from claimforge_api.storage.base import (
     ObjectInfo,
     ObjectNotFoundError,
     SignedUpload,
+    StorageUnavailableError,
     check_content_type,
     check_key,
     check_lifetime,
@@ -77,7 +78,7 @@ class LocalStorage:
             _write_atomically(kind, content_type.encode("utf-8"))
             _write_atomically(obj, data)
 
-        await asyncio.to_thread(write)
+        await _in_thread(write)
         return ObjectInfo(key=key, size=len(data), content_type=content_type)
 
     async def read(self, key: str) -> tuple[ObjectInfo, bytes]:
@@ -94,7 +95,7 @@ class LocalStorage:
                 raise ObjectNotFoundError(key) from None
             return ObjectInfo(key=key, size=len(data), content_type=_read_type(kind)), data
 
-        return await asyncio.to_thread(load)
+        return await _in_thread(load)
 
     async def get(self, key: str) -> bytes:
         _, data = await self.read(key)
@@ -112,7 +113,7 @@ class LocalStorage:
                 return None
             return ObjectInfo(key=key, size=size, content_type=_read_type(kind))
 
-        return await asyncio.to_thread(look)
+        return await _in_thread(look)
 
     async def delete(self, key: str) -> None:
         obj, kind = self._paths(key)
@@ -123,7 +124,22 @@ class LocalStorage:
                     path.unlink()
                 _prune_empty_parents(path, top)
 
-        await asyncio.to_thread(remove)
+        await _in_thread(remove)
+
+    # Setup and health
+
+    async def ping(self) -> None:
+        def check() -> None:
+            for directory in (self._objects, self._types):
+                directory.mkdir(parents=True, exist_ok=True)
+                if not os.access(directory, os.W_OK):
+                    raise StorageUnavailableError(f"{directory} is not writable")
+
+        await _in_thread(check)
+
+    async def prepare(self, *, cors_origins: list[str]) -> None:
+        # Signed URLs are served by the API, whose CORS settings already apply.
+        await self.ping()
 
     # Signed URLs
 
@@ -172,6 +188,14 @@ class LocalStorage:
 
     def _url(self, key: str, query: dict[str, str | int]) -> str:
         return f"{self._base_url}{URL_PATH}{quote(key)}?{urlencode(query)}"
+
+
+async def _in_thread[T](work: Callable[[], T]) -> T:
+    """``work`` in a worker thread; disk errors become :class:`StorageUnavailableError`."""
+    try:
+        return await asyncio.to_thread(work)
+    except OSError as error:
+        raise StorageUnavailableError(str(error)) from error
 
 
 def _write_atomically(path: Path, data: bytes) -> None:

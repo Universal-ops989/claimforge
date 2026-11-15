@@ -1,9 +1,11 @@
 import httpx2
+from fastapi import FastAPI
 from pydantic import PostgresDsn
 
 from claimforge_api import __version__
 from claimforge_api.core.settings import Settings
 from claimforge_api.main import create_app
+from claimforge_api.storage.base import StorageUnavailableError
 
 
 async def test_healthz_reports_ok_and_version(client: httpx2.AsyncClient) -> None:
@@ -36,7 +38,7 @@ async def test_readyz_reports_ready_when_database_answers(client: httpx2.AsyncCl
     response = await client.get("/readyz")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ready", "database": "ok"}
+    assert response.json() == {"status": "ready", "database": "ok", "storage": "ok"}
 
 
 async def test_readyz_returns_503_when_database_is_unreachable(settings: Settings) -> None:
@@ -51,4 +53,24 @@ async def test_readyz_returns_503_when_database_is_unreachable(settings: Setting
     await app.state.engine.dispose()
 
     assert response.status_code == 503
-    assert response.json() == {"status": "unavailable", "database": "unreachable"}
+    assert response.json() == {
+        "status": "unavailable",
+        "database": "unreachable",
+        "storage": "ok",
+    }
+
+
+class BrokenStorage:
+    async def ping(self) -> None:
+        raise StorageUnavailableError("bucket 'media' does not exist")
+
+
+async def test_readyz_returns_503_when_storage_is_unusable(
+    app: FastAPI, client: httpx2.AsyncClient
+) -> None:
+    app.state.storage = BrokenStorage()
+
+    response = await client.get("/readyz")
+
+    assert response.status_code == 503
+    assert response.json() == {"status": "unavailable", "database": "ok", "storage": "unreachable"}

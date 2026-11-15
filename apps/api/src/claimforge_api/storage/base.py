@@ -27,6 +27,10 @@ class ObjectNotFoundError(LookupError):
     """No object is stored under the key."""
 
 
+class StorageUnavailableError(RuntimeError):
+    """The backend can't be reached or used (network, credentials, missing bucket)."""
+
+
 def check_key(key: str) -> str:
     """``key`` unchanged if every backend can store it safely, else :class:`InvalidKeyError`."""
     if len(key) > MAX_KEY_LENGTH or not _KEY.fullmatch(key):
@@ -82,7 +86,11 @@ class SignedUpload:
 
 
 class ObjectStorage(Protocol):
-    """Bytes under keys. Keys are checked with :func:`check_key` by every method."""
+    """Bytes under keys. Keys are checked with :func:`check_key` by every method.
+
+    Whatever goes wrong inside a backend (network, disk, credentials) surfaces as
+    :class:`StorageUnavailableError`, so callers handle one error whichever is configured.
+    """
 
     async def put(self, key: str, data: bytes, *, content_type: str) -> ObjectInfo:
         """Store ``data`` under ``key``, replacing any object already there."""
@@ -115,5 +123,16 @@ class ObjectStorage(Protocol):
         """A URL that serves the object until it expires.
 
         With ``filename`` browsers save it under that name; without, they show it inline.
+        """
+        ...
+
+    async def ping(self) -> None:
+        """Return if the backend is usable, else raise :class:`StorageUnavailableError`."""
+        ...
+
+    async def prepare(self, *, cors_origins: list[str]) -> None:
+        """Create what the backend needs (bucket, directories). Safe to run repeatedly.
+
+        ``cors_origins`` may upload and download straight from the browser.
         """
         ...
