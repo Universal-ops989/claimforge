@@ -28,9 +28,9 @@ actor_id_var: ContextVar[UUID | None] = ContextVar("audit_actor_id", default=Non
 
 REDACTED = "[redacted]"
 _SENSITIVE = frozenset({"password_hash", "token_hash"})
-# Bookkeeping columns that add no information: each event has its own created_at, and
-# changed_at (status history) is the same moment.
-_IGNORED = frozenset({"created_at", "updated_at", "changed_at"})
+# Bookkeeping columns that add no information: each event has its own created_at,
+# changed_at (status history) is the same moment, and search_vector is derived.
+_IGNORED = frozenset({"created_at", "updated_at", "changed_at", "search_vector"})
 
 
 def _json(value: object) -> object:
