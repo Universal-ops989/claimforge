@@ -10,7 +10,7 @@ Queries match every term as a prefix, so results appear while someone is still t
 
 import re
 
-from sqlalchemy import ColumnElement, func, literal_column
+from sqlalchemy import ColumnElement, SQLColumnExpression, func, literal_column
 
 # ─── Documents (SQL for Computed columns; every function used must be immutable) ───
 
@@ -60,7 +60,7 @@ def term_query(term: str) -> ColumnElement[str]:
     return func.to_tsquery(_SIMPLE, pattern).op("||")(func.to_tsquery(_ENGLISH, pattern))
 
 
-def matches(vector: ColumnElement[str], term: str) -> ColumnElement[bool]:
+def matches(vector: SQLColumnExpression[str], term: str) -> ColumnElement[bool]:
     return vector.op("@@")(term_query(term))
 
 
@@ -72,4 +72,19 @@ def query(q: str) -> ColumnElement[str] | None:
     combined = term_query(words[0])
     for word in words[1:]:
         combined = combined.op("&&")(term_query(word))
+    return combined
+
+
+def any_query(q: str) -> ColumnElement[str] | None:
+    """Every term ORed, for ranking a record that holds only some of the words.
+
+    Searches that span records (a contact's name and a property's city) rank each record
+    against this: :func:`query` would score them all zero.
+    """
+    words = terms(q)
+    if not words:
+        return None
+    combined = term_query(words[0])
+    for word in words[1:]:
+        combined = combined.op("||")(term_query(word))
     return combined

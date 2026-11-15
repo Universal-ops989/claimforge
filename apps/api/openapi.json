@@ -492,6 +492,27 @@
         "title": "ClaimCreate",
         "type": "object"
       },
+      "ClaimHit": {
+        "properties": {
+          "claim": {
+            "$ref": "#/components/schemas/ClaimSummary"
+          },
+          "matched_in": {
+            "description": "Where any of the words were found: on the claim itself, its property, a linked contact or a note",
+            "items": {
+              "$ref": "#/components/schemas/MatchedIn"
+            },
+            "title": "Matched In",
+            "type": "array"
+          }
+        },
+        "required": [
+          "claim",
+          "matched_in"
+        ],
+        "title": "ClaimHit",
+        "type": "object"
+      },
       "ClaimRead": {
         "properties": {
           "assignments": {
@@ -1043,6 +1064,18 @@
           "full_name"
         ],
         "title": "ContactCreate",
+        "type": "object"
+      },
+      "ContactHit": {
+        "properties": {
+          "contact": {
+            "$ref": "#/components/schemas/ContactRead"
+          }
+        },
+        "required": [
+          "contact"
+        ],
+        "title": "ContactHit",
         "type": "object"
       },
       "ContactKind": {
@@ -1971,6 +2004,17 @@
           "other"
         ],
         "title": "LossType",
+        "type": "string"
+      },
+      "MatchedIn": {
+        "description": "Where on a claim the search words were found.",
+        "enum": [
+          "claim",
+          "property",
+          "contact",
+          "note"
+        ],
+        "title": "MatchedIn",
         "type": "string"
       },
       "MeResponse": {
@@ -2965,6 +3009,32 @@
           }
         },
         "title": "RoomUpdate",
+        "type": "object"
+      },
+      "SearchResults": {
+        "properties": {
+          "claims": {
+            "description": "Empty without `claims:read`",
+            "items": {
+              "$ref": "#/components/schemas/ClaimHit"
+            },
+            "title": "Claims",
+            "type": "array"
+          },
+          "contacts": {
+            "description": "Empty without `contacts:read`",
+            "items": {
+              "$ref": "#/components/schemas/ContactHit"
+            },
+            "title": "Contacts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "claims",
+          "contacts"
+        ],
+        "title": "SearchResults",
         "type": "object"
       },
       "StructureCreate": {
@@ -10974,6 +11044,139 @@
         "summary": "Update a property",
         "tags": [
           "properties"
+        ]
+      }
+    },
+    "/v1/organizations/{organization_id}/search": {
+      "get": {
+        "description": "Every word must appear, as a prefix, somewhere on a result: for a claim that includes its property, linked contacts and notes. Typing a claim number (ours or the carrier's) puts that claim first. Claims need `claims:read`, contacts `contacts:read`.",
+        "operationId": "search",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Organization Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "examples": [
+                "whitfield austin"
+              ],
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Results per section",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 5,
+              "description": "Results per section",
+              "maximum": 25,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResults"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Authentication required"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Permission denied"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Validation failed or business rule violated"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Search claims and contacts",
+        "tags": [
+          "search"
         ]
       }
     },
