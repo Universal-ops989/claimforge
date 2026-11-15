@@ -14,6 +14,7 @@ from claimforge_api.notes.router import router as notes_router
 from claimforge_api.organizations.router import router as organizations_router
 from claimforge_api.properties.router import router as properties_router
 from claimforge_api.structures.router import router as structures_router
+from claimforge_api.tasks.router import router as tasks_router
 from claimforge_api.users.router import router as users_router
 
 # Business endpoints are versioned so breaking changes can ship as /v2 side by side.
@@ -29,6 +30,7 @@ v1_router.include_router(claims_router)
 v1_router.include_router(structures_router)
 v1_router.include_router(damage_router)
 v1_router.include_router(notes_router)
+v1_router.include_router(tasks_router)
 v1_router.include_router(audit_router)
 
 api_router = APIRouter()
