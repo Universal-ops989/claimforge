@@ -2379,6 +2379,17 @@
       },
       "PhotoRead": {
         "properties": {
+          "caption": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caption"
+          },
           "claim_id": {
             "format": "uuid",
             "title": "Claim Id",
@@ -2434,9 +2445,26 @@
             "$ref": "#/components/schemas/ProcessingStatus",
             "description": "Thumbnails are made in the background: `pending` until then, `failed` when the file can't be read (the original can still be downloaded)."
           },
+          "room": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PhotoRoom"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "size_bytes": {
             "title": "Size Bytes",
             "type": "integer"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
           },
           "taken_at": {
             "anyOf": [
@@ -2499,6 +2527,9 @@
           "size_bytes",
           "taken_at",
           "uploaded_by",
+          "caption",
+          "tags",
+          "room",
           "created_at",
           "url",
           "download_url",
@@ -2509,6 +2540,25 @@
           "preview_url"
         ],
         "title": "PhotoRead",
+        "type": "object"
+      },
+      "PhotoRoom": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "PhotoRoom",
         "type": "object"
       },
       "PhotoType": {
@@ -2527,6 +2577,22 @@
         "additionalProperties": false,
         "description": "What the client is about to upload. The stored file must match it.",
         "properties": {
+          "caption": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Free text. Blank clears it.",
+            "examples": [
+              "Stain spreading from the vent"
+            ],
+            "title": "Caption"
+          },
           "content_type": {
             "$ref": "#/components/schemas/PhotoType"
           },
@@ -2540,11 +2606,44 @@
             "title": "Filename",
             "type": "string"
           },
+          "room_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A room of this claim.",
+            "title": "Room Id"
+          },
           "size_bytes": {
             "description": "Exact size of the file in bytes.",
             "exclusiveMinimum": 0.0,
             "title": "Size Bytes",
             "type": "integer"
+          },
+          "tags": {
+            "description": "Short labels, at most 20: letters, digits, spaces and hyphens. Stored lowercase, without repeats, in alphabetical order.",
+            "examples": [
+              [
+                "before",
+                "ceiling"
+              ]
+            ],
+            "items": {
+              "examples": [
+                "before"
+              ],
+              "maxLength": 40,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Tags",
+            "type": "array"
           },
           "taken_at": {
             "anyOf": [
