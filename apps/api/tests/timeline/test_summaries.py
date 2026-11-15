@@ -100,6 +100,14 @@ def deleted(**values: Any) -> dict[str, list[Any]]:
             "Updated Drywall damage: water class",
         ),
         (
+            Event("photo", "created", created(original_filename="IMG_0412.HEIC")),
+            "Added photo IMG_0412.HEIC",
+        ),
+        (
+            Event("photo", "deleted", deleted(original_filename="IMG_0412.HEIC")),
+            "Deleted photo IMG_0412.HEIC",
+        ),
+        (
             Event("note", "created", created(body=f"<@{AVERY}> call the carrier")),
             "Wrote a note: @Avery Adjuster call the carrier",
         ),

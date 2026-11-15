@@ -12,6 +12,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from claimforge_api.core.errors import AppError
 from claimforge_api.core.logging import request_id_var
+from claimforge_api.storage.base import StorageUnavailableError
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +123,21 @@ async def handle_http_exception(request: Request, exc: Exception) -> JSONRespons
     )
 
 
+async def handle_storage_unavailable(request: Request, exc: Exception) -> JSONResponse:
+    # An outage, not a bug: log it for operators, and let clients retry.
+    logger.error(
+        "Storage unavailable on %s %s: %s", request.method, request.url.path, exc, exc_info=exc
+    )
+    return problem_response(
+        request,
+        status=503,
+        code="storage_unavailable",
+        title="File storage unavailable",
+        detail="Files can't be stored or fetched right now. Try again shortly.",
+        headers={"Retry-After": "30"},
+    )
+
+
 async def handle_unexpected_error(request: Request, exc: Exception) -> JSONResponse:
     # Log everything server-side; tell the client nothing about internals.
     logger.exception("Unhandled error on %s %s", request.method, request.url.path, exc_info=exc)
@@ -138,6 +154,7 @@ def register_problem_handlers(app: FastAPI) -> None:
     app.add_exception_handler(AppError, handle_app_error)
     app.add_exception_handler(RequestValidationError, handle_validation_error)
     app.add_exception_handler(StarletteHTTPException, handle_http_exception)
+    app.add_exception_handler(StorageUnavailableError, handle_storage_unavailable)
     app.add_exception_handler(Exception, handle_unexpected_error)
 
 

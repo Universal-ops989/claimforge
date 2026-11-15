@@ -146,6 +146,15 @@ def _damage(event: Event, names: Names) -> str:
     return _with_fields(f"Updated {what}", event)
 
 
+def _photo(event: Event, names: Names) -> str:
+    name = event.value("original_filename")
+    if event.verb == "created":
+        return f"Added photo {name}"
+    if event.verb == "deleted":
+        return f"Deleted photo {name}"
+    return _with_fields(f"Updated photo {name}", event)
+
+
 def _note(event: Event, names: Names) -> str:
     verb = {"created": "Wrote", "updated": "Edited", "deleted": "Deleted"}.get(
         event.verb, "Changed"
@@ -183,6 +192,7 @@ SUMMARIES: dict[str, Callable[[Event, Names], str]] = {
     "structure": _named("structure"),
     "room": _named("room"),
     "damage_item": _damage,
+    "photo": _photo,
     "note": _note,
     "task": _task,
 }
