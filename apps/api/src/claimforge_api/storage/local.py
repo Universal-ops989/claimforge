@@ -35,6 +35,8 @@ from claimforge_api.storage.signing import UrlSigner
 
 #: Served when an object's type file is missing (written by hand, or an interrupted put).
 DEFAULT_CONTENT_TYPE = "application/octet-stream"
+#: The prefix that lifts Windows' 260-character limit on paths.
+EXTENDED_PREFIX = "\\\\?\\"
 #: Path of the signed-URL routes, under the API's public URL.
 URL_PATH = "/v1/storage/"
 
@@ -56,7 +58,7 @@ class LocalStorage:
         base_url: str,
         clock: Callable[[], float] = time.time,
     ) -> None:
-        root = root.absolute()
+        root = _without_length_limit(root)
         self._objects = root / "objects"
         self._types = root / "types"
         self._signer = signer
@@ -188,6 +190,20 @@ class LocalStorage:
 
     def _url(self, key: str, query: dict[str, str | int]) -> str:
         return f"{self._base_url}{URL_PATH}{quote(key)}?{urlencode(query)}"
+
+
+def _without_length_limit(root: Path) -> Path:
+    r"""``root`` as an absolute path that file names under it can't make too long.
+
+    Windows refuses paths over 260 characters unless they carry the ``\\?\`` prefix, and
+    a photo's key alone is over 150. Elsewhere this is just the absolute path.
+    """
+    absolute = os.path.abspath(root)  # normalized: the prefix turns off ".." handling
+    if os.name != "nt" or absolute.startswith(EXTENDED_PREFIX):
+        return Path(absolute)
+    if absolute.startswith("\\\\"):  # a network share, \\server\share
+        return Path(EXTENDED_PREFIX + "UNC\\" + absolute[2:])
+    return Path(EXTENDED_PREFIX + absolute)
 
 
 async def _in_thread[T](work: Callable[[], T]) -> T:

@@ -97,6 +97,10 @@ class Settings(BaseSettings):
         description="Largest body the local backend accepts on a signed upload URL.",
     )
 
+    photo_max_bytes: int = Field(
+        default=25 * 1024 * 1024, ge=1, description="Largest photo that can be uploaded."
+    )
+
     s3_endpoint_url: str | None = Field(
         default=None,
         pattern=r"^https?://",
