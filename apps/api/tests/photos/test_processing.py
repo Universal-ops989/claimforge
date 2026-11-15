@@ -150,6 +150,23 @@ async def test_storage_outages_back_off_then_give_up(site: Site) -> None:
     assert given_up.error == "Storage unavailable: connection refused"
 
 
+async def test_unexpected_errors_fail_the_photo(
+    site: Site, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    photo = await site.photo(jpeg())
+
+    def choke(_: bytes) -> None:
+        raise ValueError("tile cannot extend outside image")
+
+    monkeypatch.setattr(processing, "render", choke)
+    await processing.process_next(site.session, site.storage)
+
+    failed = await job(site.session, photo.id)
+    assert (failed.status, failed.error) == ("failed", "Couldn't process this file (ValueError)")
+    # The queue moved on: nothing is retried.
+    assert await processing.process_next(site.session, site.storage) is None
+
+
 def test_backoff() -> None:
     assert [processing.backoff(n).total_seconds() / 60 for n in range(1, 8)] == [
         2,

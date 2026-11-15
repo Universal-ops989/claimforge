@@ -95,6 +95,11 @@ async def process_next(
             logger.warning("Photo %s will be retried: %s", photo_id, error)
             job.error = str(error)[:_ERROR_LENGTH]
             job.next_attempt_at = now + backoff(job.attempts)
+    except Exception as error:
+        # A file the image libraries choke on in a way render() doesn't expect. Retrying
+        # would hit the same wall forever, so this photo fails and the queue moves on.
+        logger.exception("Couldn't process photo %s", photo_id)
+        _fail(job, f"Couldn't process this file ({type(error).__name__})", now)
     else:
         job.status = ProcessingStatus.READY
         job.width, job.height = made.width, made.height
