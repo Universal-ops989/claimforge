@@ -574,23 +574,26 @@ ASSIGNMENT_NEEDS = {
 }
 
 
-async def _check_assignee(
-    session: AsyncSession, organization_id: UUID, data: ClaimAssignmentCreate
+async def check_assignee(
+    session: AsyncSession, organization_id: UUID, user_id: UUID, needed: Permission, work: str
 ) -> None:
+    """Refuse unless ``user_id`` is a member whose role grants ``needed``.
+
+    ``work`` names what they'd be doing, for the error: "assigned as adjuster".
+    """
     member_role = await session.scalar(
         select(Membership.role).where(
             Membership.organization_id == organization_id,
-            Membership.user_id == data.user_id,
+            Membership.user_id == user_id,
         )
     )
     if member_role is None:
         raise UnknownAssigneeError(
-            "Only members of this organization can be assigned", user_id=str(data.user_id)
+            "Only members of this organization can be assigned", user_id=str(user_id)
         )
-    needed = ASSIGNMENT_NEEDS[data.role]
     if not has_permission(member_role, needed):
         raise AssigneeLacksPermissionError(
-            f"A {member_role} can't be assigned as {data.role}",
+            f"A {member_role} can't be {work}",
             member_role=str(member_role),
             assignee_needs=needed.value,
         )
@@ -625,7 +628,13 @@ async def assign(
     """Assign a member. A new adjuster replaces the current one in the same transaction."""
     await authorize(session, user, organization_id, Permission.CLAIMS_WRITE)
     claim = await _get_editable(session, organization_id, claim_id)
-    await _check_assignee(session, organization_id, data)
+    await check_assignee(
+        session,
+        organization_id,
+        data.user_id,
+        ASSIGNMENT_NEEDS[data.role],
+        f"assigned as {data.role}",
+    )
     existing = next((a for a in claim.assignments if a.user_id == data.user_id), None)
     if existing is not None:
         raise AlreadyAssignedError(
