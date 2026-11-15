@@ -10,7 +10,18 @@ from datetime import datetime
 from enum import StrEnum
 from uuid import UUID
 
-from sqlalchemy import BigInteger, CheckConstraint, DateTime, ForeignKey, Index, String
+from sqlalchemy import (
+    BigInteger,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    SmallInteger,
+    String,
+    func,
+    text,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from claimforge_api.db.base import Base
@@ -31,9 +42,28 @@ class PhotoType(StrEnum):
 _PHOTO_TYPES = ", ".join(sorted(repr(t.value) for t in PhotoType))
 
 
+class Rendition(StrEnum):
+    """The JPEG versions made of every photo; the value is the file's name."""
+
+    THUMBNAIL = "thumbnail.jpg"
+    PREVIEW = "preview.jpg"
+
+
+class ProcessingStatus(StrEnum):
+    PENDING = "pending"
+    READY = "ready"
+    FAILED = "failed"  # unreadable, or storage kept failing: only the original is there
+
+
 def storage_key(organization_id: UUID, claim_id: UUID, photo_id: UUID) -> str:
     """Where a photo's original file lives. Ids only: nothing a user typed."""
     return f"organizations/{organization_id}/claims/{claim_id}/photos/{photo_id}/original"
+
+
+def rendition_key(original_key: str, rendition: Rendition) -> str:
+    """A rendition's key, beside the original's."""
+    folder, _, _ = original_key.rpartition("/")
+    return f"{folder}/{rendition.value}"
 
 
 class _File:
@@ -78,10 +108,59 @@ class Photo(_File, UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
 
     uploaded_by: Mapped[User | None] = relationship(lazy="raise")
+    # The database deletes it with the photo (passive_deletes): no extra load on delete.
+    processing: Mapped["PhotoProcessing"] = relationship(
+        lazy="raise", cascade="all, delete-orphan", passive_deletes=True
+    )
+
+    @property
+    def rendition_keys(self) -> list[str]:
+        return [rendition_key(self.storage_key, r) for r in Rendition]
 
     __table_args__ = (
         CheckConstraint(f"content_type IN ({_PHOTO_TYPES})", name="content_type_valid"),
         CheckConstraint("size_bytes > 0", name="size_positive"),
         # A claim's photos, newest first (ids are time-ordered).
         Index("ix_photos_claim_id_id", "claim_id", "id"),
+    )
+
+
+class PhotoProcessing(TimestampMixin, Base):
+    """Making a photo's renditions: a queue the worker takes photos from.
+
+    Its own table so the worker's bookkeeping never reaches the audit log: photos are
+    audited, this isn't.
+    """
+
+    __tablename__ = "photo_processing"
+
+    photo_id: Mapped[UUID] = mapped_column(
+        ForeignKey("photos.id", ondelete="CASCADE"), primary_key=True
+    )
+    status: Mapped[ProcessingStatus] = mapped_column(
+        String(20), default=ProcessingStatus.PENDING, server_default=ProcessingStatus.PENDING
+    )
+    attempts: Mapped[int] = mapped_column(SmallInteger, default=0, server_default="0")
+    #: Pending photos wait until then (backing off while storage is down).
+    next_attempt_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    #: Of the original, upright.
+    width: Mapped[int | None] = mapped_column(Integer, default=None)
+    height: Mapped[int | None] = mapped_column(Integer, default=None)
+    error: Mapped[str | None] = mapped_column(String(500), default=None)
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+
+    __table_args__ = (
+        CheckConstraint("status IN ('failed', 'pending', 'ready')", name="status_valid"),
+        CheckConstraint(
+            "(status = 'ready') = (width IS NOT NULL AND height IS NOT NULL)",
+            name="ready_has_dimensions",
+        ),
+        # The worker's queue: pending photos, soonest first.
+        Index(
+            "ix_photo_processing_queue",
+            "next_attempt_at",
+            postgresql_where=text("status = 'pending'"),
+        ),
     )

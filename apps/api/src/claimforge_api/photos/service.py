@@ -24,7 +24,15 @@ from claimforge_api.claims.schemas import ClaimActor
 from claimforge_api.core.errors import BusinessRuleError, ConflictError, NotFoundError
 from claimforge_api.core.ids import uuid7
 from claimforge_api.db.pagination import Page, SortKey, paginate
-from claimforge_api.photos.models import Photo, PhotoUpload, storage_key
+from claimforge_api.photos.models import (
+    Photo,
+    PhotoProcessing,
+    PhotoUpload,
+    ProcessingStatus,
+    Rendition,
+    rendition_key,
+    storage_key,
+)
 from claimforge_api.photos.schemas import PhotoRead, PhotoUploadCreate
 from claimforge_api.storage.base import ObjectStorage, SignedUpload, StorageUnavailableError
 from claimforge_api.users.models import User
@@ -63,7 +71,7 @@ def _photos(organization_id: UUID, claim_id: UUID) -> Select[Photo]:
     return (
         select(Photo)
         .where(Photo.claim_id == claim_id, Photo.organization_id == organization_id)
-        .options(selectinload(Photo.uploaded_by))
+        .options(selectinload(Photo.uploaded_by), selectinload(Photo.processing))
     )
 
 
@@ -87,7 +95,16 @@ async def _get_photo(
 
 
 async def present(storage: ObjectStorage, photo: Photo) -> PhotoRead:
-    """``photo`` as clients see it, with fresh links to the file."""
+    """``photo`` as clients see it, with fresh links to the file and its renditions."""
+    processing = photo.processing
+    ready = processing.status == ProcessingStatus.READY
+
+    async def link(rendition: Rendition) -> str | None:
+        if not ready:
+            return None
+        key = rendition_key(photo.storage_key, rendition)
+        return await storage.download_url(key, expires_in=VIEW_LINK_LIFETIME)
+
     return PhotoRead(
         id=photo.id,
         claim_id=photo.claim_id,
@@ -101,6 +118,11 @@ async def present(storage: ObjectStorage, photo: Photo) -> PhotoRead:
         download_url=await storage.download_url(
             photo.storage_key, expires_in=VIEW_LINK_LIFETIME, filename=photo.original_filename
         ),
+        processing=processing.status,
+        width=processing.width,
+        height=processing.height,
+        thumbnail_url=await link(Rendition.THUMBNAIL),
+        preview_url=await link(Rendition.PREVIEW),
     )
 
 
@@ -225,6 +247,8 @@ async def complete_upload(
             size_bytes=upload.size_bytes,
             taken_at=upload.taken_at,
             uploaded_by_id=upload.created_by_id,
+            # Queued for the worker to make its renditions.
+            processing=PhotoProcessing(),
         )
     )
     await session.delete(upload)
@@ -244,15 +268,16 @@ async def delete_photo(
     await authorize(session, user, organization_id, Permission.FIELD_DATA_WRITE)
     await claims.lock_for_changes(session, organization_id, claim_id)
     photo = await _get_photo(session, organization_id, claim_id, photo_id)
-    key = photo.storage_key
+    keys = [photo.storage_key, *photo.rendition_keys]
     await session.delete(photo)
     await session.commit()
     # After the commit: a file without a photo is only wasted space; a photo without its
     # file would be broken.
     try:
-        await storage.delete(key)
+        for key in keys:
+            await storage.delete(key)
     except StorageUnavailableError:
-        logger.warning("Photo %s deleted but its file %s remains", photo_id, key, exc_info=True)
+        logger.warning("Photo %s deleted but its files remain", photo_id, exc_info=True)
 
 
 async def discard_expired_uploads(

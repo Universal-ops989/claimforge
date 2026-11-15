@@ -16,6 +16,8 @@ dependencies = [
     "pyjwt>=2.10",
     "email-validator>=2.2",
     "boto3>=1.40",
+    "pillow>=11.0",
+    "pillow-heif>=1.0",
 ]
 
 [project.optional-dependencies]

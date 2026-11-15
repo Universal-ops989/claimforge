@@ -7,7 +7,7 @@ from uuid import UUID
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, StringConstraints
 
 from claimforge_api.claims.schemas import ClaimActor
-from claimforge_api.photos.models import PhotoType
+from claimforge_api.photos.models import PhotoType, ProcessingStatus
 
 
 class PhotoUploadCreate(BaseModel):
@@ -54,3 +54,16 @@ class PhotoRead(BaseModel):
         description="Shows the photo; works for an hour. Fetch the photo again for a fresh one."
     )
     download_url: str = Field(description="Saves the photo under its file name; works for an hour.")
+    processing: ProcessingStatus = Field(
+        description="Thumbnails are made in the background: `pending` until then, `failed` "
+        "when the file can't be read (the original can still be downloaded)."
+    )
+    width: int | None = Field(description="Of the original, upright; once processed.")
+    height: int | None
+    thumbnail_url: str | None = Field(
+        description="A JPEG at most 400 px on its longest side, once processed."
+    )
+    preview_url: str | None = Field(
+        description="A JPEG at most 1600 px on its longest side, once processed. Show this "
+        "rather than `url`: most browsers can't display HEIC originals."
+    )
