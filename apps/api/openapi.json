@@ -2402,10 +2402,37 @@
             "title": "Filename",
             "type": "string"
           },
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "preview_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A JPEG at most 1600 px on its longest side, once processed. Show this rather than `url`: most browsers can't display HEIC originals.",
+            "title": "Preview Url"
+          },
+          "processing": {
+            "$ref": "#/components/schemas/ProcessingStatus",
+            "description": "Thumbnails are made in the background: `pending` until then, `failed` when the file can't be read (the original can still be downloaded)."
           },
           "size_bytes": {
             "title": "Size Bytes",
@@ -2423,6 +2450,18 @@
             ],
             "title": "Taken At"
           },
+          "thumbnail_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A JPEG at most 400 px on its longest side, once processed.",
+            "title": "Thumbnail Url"
+          },
           "uploaded_by": {
             "anyOf": [
               {
@@ -2438,6 +2477,18 @@
             "description": "Shows the photo; works for an hour. Fetch the photo again for a fresh one.",
             "title": "Url",
             "type": "string"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Of the original, upright; once processed.",
+            "title": "Width"
           }
         },
         "required": [
@@ -2450,7 +2501,12 @@
           "uploaded_by",
           "created_at",
           "url",
-          "download_url"
+          "download_url",
+          "processing",
+          "width",
+          "height",
+          "thumbnail_url",
+          "preview_url"
         ],
         "title": "PhotoRead",
         "type": "object"
@@ -2600,6 +2656,15 @@
         ],
         "title": "Problem",
         "type": "object"
+      },
+      "ProcessingStatus": {
+        "enum": [
+          "pending",
+          "ready",
+          "failed"
+        ],
+        "title": "ProcessingStatus",
+        "type": "string"
       },
       "PropertyCreate": {
         "additionalProperties": false,

@@ -115,6 +115,12 @@ pathspec==1.1.1
     # via mypy
 pgserver==0.1.4
     # via claimforge-api (pyproject.toml)
+pillow==13.0.0
+    # via
+    #   claimforge-api (pyproject.toml)
+    #   pillow-heif
+pillow-heif==1.8.1
+    # via claimforge-api (pyproject.toml)
 platformdirs==4.14.5
     # via pgserver
 pluggy==1.7.0

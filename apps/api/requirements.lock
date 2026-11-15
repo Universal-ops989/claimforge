@@ -51,6 +51,12 @@ markupsafe==3.0.4
     # via mako
 opentelemetry-api==1.45.2
     # via fastapi
+pillow==13.0.0
+    # via
+    #   claimforge-api (pyproject.toml)
+    #   pillow-heif
+pillow-heif==1.8.1
+    # via claimforge-api (pyproject.toml)
 pydantic==2.14.3
     # via
     #   fastapi
