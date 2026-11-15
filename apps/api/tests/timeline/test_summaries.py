@@ -20,6 +20,14 @@ def deleted(**values: Any) -> dict[str, list[Any]]:
     return {k: [v, None] for k, v in values.items()}
 
 
+#: A photo's room before and after, and how the timeline says it.
+PHOTO_ROOM_MOVES: list[tuple[list[str | None], str]] = [
+    ([None, str(DANA)], "Put photo IMG_0412.HEIC in a room"),
+    ([str(DANA), str(AVERY)], "Moved photo IMG_0412.HEIC to another room"),
+    ([str(DANA), None], "Took photo IMG_0412.HEIC out of its room"),
+]
+
+
 @pytest.mark.parametrize(
     ("event", "summary"),
     [
@@ -106,6 +114,27 @@ def deleted(**values: Any) -> dict[str, list[Any]]:
         (
             Event("photo", "deleted", deleted(original_filename="IMG_0412.HEIC")),
             "Deleted photo IMG_0412.HEIC",
+        ),
+        *[
+            (
+                Event(
+                    "photo",
+                    "updated",
+                    {"room_id": room, "tags": [[], ["before"]]},
+                    facts={"original_filename": "IMG_0412.HEIC"},
+                ),
+                summary,
+            )
+            for room, summary in PHOTO_ROOM_MOVES
+        ],
+        (
+            Event(
+                "photo",
+                "updated",
+                {"caption": [None, "Vent"], "tags": [[], ["before"]]},
+                facts={"original_filename": "IMG_0412.HEIC"},
+            ),
+            "Updated photo IMG_0412.HEIC: caption, tags",
         ),
         (
             Event("note", "created", created(body=f"<@{AVERY}> call the carrier")),

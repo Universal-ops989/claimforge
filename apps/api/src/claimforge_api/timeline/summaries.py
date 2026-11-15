@@ -152,6 +152,13 @@ def _photo(event: Event, names: Names) -> str:
         return f"Added photo {name}"
     if event.verb == "deleted":
         return f"Deleted photo {name}"
+    if event.changed("room_id"):
+        before, after = event.became("room_id")
+        if before is None:
+            return f"Put photo {name} in a room"
+        if after is None:
+            return f"Took photo {name} out of its room"
+        return f"Moved photo {name} to another room"
     return _with_fields(f"Updated photo {name}", event)
 
 
