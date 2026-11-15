@@ -8,8 +8,9 @@ from pydantic import BaseModel
 from sqlalchemy.exc import SQLAlchemyError
 
 from claimforge_api import __version__
-from claimforge_api.api.deps import EngineDep
+from claimforge_api.api.deps import EngineDep, StorageDep
 from claimforge_api.core.database import ping
+from claimforge_api.storage.base import StorageUnavailableError
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,7 @@ class HealthResponse(BaseModel):
 class ReadinessResponse(BaseModel):
     status: Literal["ready", "unavailable"]
     database: Literal["ok", "unreachable"]
+    storage: Literal["ok", "unreachable"]
 
 
 @router.get("/healthz", response_model=HealthResponse, summary="Liveness probe")
@@ -38,12 +40,21 @@ async def healthz() -> HealthResponse:
     summary="Readiness probe",
     responses={503: {"model": ReadinessResponse, "description": "A dependency is unavailable"}},
 )
-async def readyz(engine: EngineDep, response: Response) -> ReadinessResponse:
-    """Ready to serve traffic: the database answers a trivial query."""
+async def readyz(engine: EngineDep, storage: StorageDep, response: Response) -> ReadinessResponse:
+    """Ready to serve traffic: the database answers a trivial query and storage is usable."""
+    database: Literal["ok", "unreachable"] = "ok"
     try:
         await ping(engine)
     except (SQLAlchemyError, OSError):
         logger.warning("Readiness check failed: database unreachable", exc_info=True)
-        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-        return ReadinessResponse(status="unavailable", database="unreachable")
-    return ReadinessResponse(status="ready", database="ok")
+        database = "unreachable"
+    storage_state: Literal["ok", "unreachable"] = "ok"
+    try:
+        await storage.ping()
+    except StorageUnavailableError:
+        logger.warning("Readiness check failed: storage unavailable", exc_info=True)
+        storage_state = "unreachable"
+    if database == storage_state == "ok":
+        return ReadinessResponse(status="ready", database=database, storage=storage_state)
+    response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    return ReadinessResponse(status="unavailable", database=database, storage=storage_state)

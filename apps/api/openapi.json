@@ -2669,11 +2669,20 @@
             ],
             "title": "Status",
             "type": "string"
+          },
+          "storage": {
+            "enum": [
+              "ok",
+              "unreachable"
+            ],
+            "title": "Storage",
+            "type": "string"
           }
         },
         "required": [
           "status",
-          "database"
+          "database",
+          "storage"
         ],
         "title": "ReadinessResponse",
         "type": "object"
@@ -3560,7 +3569,7 @@
     },
     "/readyz": {
       "get": {
-        "description": "Ready to serve traffic: the database answers a trivial query.",
+        "description": "Ready to serve traffic: the database answers a trivial query and storage is usable.",
         "operationId": "readyz",
         "responses": {
           "200": {

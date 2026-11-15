@@ -24,6 +24,7 @@ class Environment(StrEnum):
 
 class StorageBackend(StrEnum):
     LOCAL = "local"
+    S3 = "s3"
 
 
 class LogLevel(StrEnum):
@@ -96,6 +97,20 @@ class Settings(BaseSettings):
         description="Largest body the local backend accepts on a signed upload URL.",
     )
 
+    s3_endpoint_url: str | None = Field(
+        default=None,
+        pattern=r"^https?://",
+        description="S3-compatible server (SeaweedFS, MinIO, R2). Leave unset for AWS S3.",
+    )
+    s3_region: str = Field(default="us-east-1", min_length=1)
+    s3_bucket: str = Field(
+        default="claimforge-media", pattern=r"^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$"
+    )
+    s3_access_key: str | None = Field(
+        default=None, description="Leave unset to use the standard AWS credential chain."
+    )
+    s3_secret_key: SecretStr | None = None
+
     @model_validator(mode="before")
     @classmethod
     def _split_cors_origins(cls, data: object) -> object:
@@ -105,6 +120,14 @@ class Settings(BaseSettings):
             if isinstance(value, str):
                 data["cors_origins"] = [o.strip() for o in value.split(",") if o.strip()]
         return data
+
+    @model_validator(mode="after")
+    def _check_s3_credentials(self) -> Self:
+        if (self.s3_access_key is None) != (self.s3_secret_key is None):
+            raise ValueError(
+                "Set both CLAIMFORGE_S3_ACCESS_KEY and CLAIMFORGE_S3_SECRET_KEY, or neither"
+            )
+        return self
 
     @model_validator(mode="after")
     def _check_production_safety(self) -> Self:
