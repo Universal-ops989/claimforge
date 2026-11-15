@@ -209,7 +209,8 @@ async def complete_upload(
             f"received {stored.size} bytes of {stored.content_type}",
             expected_size=upload.size_bytes,
             received_size=stored.size,
-            expected_content_type=upload.content_type.value,
+            # A str once loaded from the database (the column is a plain string).
+            expected_content_type=str(upload.content_type),
             received_content_type=stored.content_type,
         )
 
