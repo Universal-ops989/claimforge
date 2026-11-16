@@ -23,6 +23,7 @@ class TimelineKind(StrEnum):
     DOCUMENTS = "documents"
     MOISTURE = "moisture"
     EQUIPMENT = "equipment"
+    ESTIMATES = "estimates"
     NOTES = "notes"
     TASKS = "tasks"
     OTHER = "other"
@@ -40,12 +41,13 @@ ENTITY_TYPES: dict[TimelineKind, tuple[str, ...]] = {
     TimelineKind.DOCUMENTS: ("document",),
     TimelineKind.MOISTURE: ("moisture_point", "moisture_log"),
     TimelineKind.EQUIPMENT: ("equipment_placement",),
+    TimelineKind.ESTIMATES: ("estimate",),
     TimelineKind.NOTES: ("note",),
     TimelineKind.TASKS: ("task",),
 }
 #: Audited, but told through another entry: a visit's readings are its "Logged moisture
 #: readings" (and "Corrected …"), not one entry per value.
-HIDDEN_ENTITY_TYPES = frozenset({"moisture_reading", "atmospheric_reading"})
+HIDDEN_ENTITY_TYPES = frozenset({"moisture_reading", "atmospheric_reading", "estimate_line"})
 KIND_OF = {entity: kind for kind, entities in ENTITY_TYPES.items() for entity in entities}
 
 

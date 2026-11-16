@@ -11,6 +11,7 @@ from claimforge_api.damage.router import router as damage_router
 from claimforge_api.documents.router import router as documents_router
 from claimforge_api.equipment.router import claim_router as equipment_placements_router
 from claimforge_api.equipment.router import router as equipment_router
+from claimforge_api.estimates.router import router as estimates_router
 from claimforge_api.invitations.router import accept_router as invitation_accept_router
 from claimforge_api.invitations.router import organization_router as invitations_router
 from claimforge_api.moisture.router import router as moisture_router
@@ -46,6 +47,7 @@ v1_router.include_router(photo_tags_router)
 v1_router.include_router(documents_router)
 v1_router.include_router(moisture_router)
 v1_router.include_router(equipment_placements_router)
+v1_router.include_router(estimates_router)
 v1_router.include_router(notes_router)
 v1_router.include_router(tasks_router)
 v1_router.include_router(timeline_router)

@@ -230,6 +230,28 @@ def _placement(event: Event, names: Names) -> str:
     return _with_fields(f"Corrected the placement of {unit}", event)
 
 
+#: How each estimate status change reads, by (from, to).
+_ESTIMATE_MOVES = {
+    ("draft", "submitted"): "Submitted",
+    ("submitted", "approved"): "Approved",
+    ("submitted", "rejected"): "Rejected",
+    ("submitted", "draft"): "Withdrew",
+}
+
+
+def _estimate(event: Event, names: Names) -> str:
+    estimate = f"estimate {event.value('number')}"
+    if event.verb == "created":
+        return f"Started {estimate}: {event.value('title')}"
+    if event.verb == "deleted":
+        return f"Deleted draft {estimate}"
+    if event.changed("status"):
+        before, after = event.became("status")
+        verb = _ESTIMATE_MOVES.get((before, after), "Reopened")
+        return f"{verb} {estimate}"
+    return _with_fields(f"Updated {estimate}", event)
+
+
 def _note(event: Event, names: Names) -> str:
     verb = {"created": "Wrote", "updated": "Edited", "deleted": "Deleted"}.get(
         event.verb, "Changed"
@@ -272,6 +294,7 @@ SUMMARIES: dict[str, Callable[[Event, Names], str]] = {
     "moisture_point": _moisture_point,
     "moisture_log": _moisture_log,
     "equipment_placement": _placement,
+    "estimate": _estimate,
     "note": _note,
     "task": _task,
 }
