@@ -2,6 +2,7 @@
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,7 +10,7 @@ from fastapi.routing import APIRoute
 
 from claimforge_api import __version__
 from claimforge_api.api.middleware import REQUEST_ID_HEADER, RequestContextMiddleware
-from claimforge_api.api.problems import register_problem_handlers
+from claimforge_api.api.problems import document_problem_media_type, register_problem_handlers
 from claimforge_api.api.router import api_router
 from claimforge_api.audit import recorder as audit_recorder
 from claimforge_api.core.database import create_engine, create_session_factory
@@ -23,6 +24,18 @@ from claimforge_api.storage.factory import create_storage
 def _operation_id(route: APIRoute) -> str:
     """Handler names as operation ids: generated clients get ``listOrganizations()``."""
     return route.name
+
+
+def _customize_openapi(app: FastAPI) -> None:
+    """Post-process the generated document once, when it is first built."""
+    generate = app.openapi
+
+    def openapi() -> dict[str, Any]:
+        if app.openapi_schema is None:
+            app.openapi_schema = document_problem_media_type(generate())
+        return app.openapi_schema
+
+    app.openapi = openapi  # type: ignore[method-assign]  # FastAPI's documented extension point
 
 
 @asynccontextmanager
@@ -72,6 +85,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.add_middleware(RequestContextMiddleware)
     register_problem_handlers(app)
     app.include_router(api_router)
+    _customize_openapi(app)
     return app
 
 

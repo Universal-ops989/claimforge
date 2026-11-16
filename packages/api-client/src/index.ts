@@ -59,12 +59,15 @@ export type QueryParams<P extends ApiPath, M extends MethodOf<P>> = NonNullable<
   Operation<P, M>["parameters"]["query"]
 >;
 
+/** Data travels as JSON; errors as RFC 9457 problem details. */
+type JsonMediaType = "application/json" | "application/problem+json";
+
 // Distributive on purpose: `never` (no request body, no 2xx response) stays `never`, and a
 // union of responses (200 | 201) gives the union of their bodies.
-type JsonContent<Message, Otherwise> = Message extends {
-  content: { "application/json": infer Body };
-}
-  ? Body
+type JsonContent<Message, Otherwise> = Message extends { content: infer Content }
+  ? [Extract<keyof Content, JsonMediaType>] extends [never]
+    ? Otherwise
+    : Content[Extract<keyof Content, JsonMediaType>]
   : Otherwise;
 
 /** The JSON request body (`never` when the operation takes none, or takes a file instead). */

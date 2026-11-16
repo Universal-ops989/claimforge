@@ -4844,8 +4844,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -4854,8 +4853,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -4864,8 +4862,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -4874,8 +4871,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -4884,8 +4880,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -4894,8 +4889,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Too many requests; retry after the Retry-After header's seconds */
@@ -4905,8 +4899,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -4937,8 +4930,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -4947,8 +4939,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -4957,8 +4948,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -4967,8 +4957,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -4977,8 +4966,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -4987,8 +4975,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -5021,8 +5008,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -5031,8 +5017,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -5041,8 +5026,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -5051,8 +5035,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -5061,8 +5044,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -5071,8 +5053,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Too many requests; retry after the Retry-After header's seconds */
@@ -5082,8 +5063,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -5116,8 +5096,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -5126,8 +5105,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -5136,8 +5114,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -5146,8 +5123,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -5156,8 +5132,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -5166,8 +5141,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Too many requests; retry after the Retry-After header's seconds */
@@ -5177,8 +5151,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -5207,8 +5180,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -5217,8 +5189,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -5227,8 +5198,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -5237,8 +5207,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -5247,8 +5216,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -5257,8 +5225,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -5292,8 +5259,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -5302,8 +5268,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -5312,8 +5277,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -5322,8 +5286,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -5332,8 +5295,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -5342,8 +5304,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -5376,8 +5337,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -5386,8 +5346,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -5396,8 +5355,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -5406,8 +5364,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -5416,8 +5373,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -5426,8 +5382,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -5458,8 +5413,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -5468,8 +5422,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -5478,8 +5431,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -5488,8 +5440,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -5498,8 +5449,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -5508,8 +5458,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -5538,8 +5487,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -5548,8 +5496,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -5558,8 +5505,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -5568,8 +5514,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -5578,8 +5523,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -5588,8 +5532,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -5624,8 +5567,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -5634,8 +5576,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -5644,8 +5585,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -5654,8 +5594,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -5664,8 +5603,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -5674,8 +5612,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -5714,8 +5651,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -5724,8 +5660,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -5734,8 +5669,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -5744,8 +5678,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -5754,8 +5687,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -5764,8 +5696,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -5820,8 +5751,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -5830,8 +5760,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -5840,8 +5769,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -5850,8 +5778,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -5860,8 +5787,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -5870,8 +5796,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -5906,8 +5831,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -5916,8 +5840,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -5926,8 +5849,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -5936,8 +5858,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -5946,8 +5867,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -5956,8 +5876,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -5989,8 +5908,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -5999,8 +5917,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -6009,8 +5926,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -6019,8 +5935,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -6029,8 +5944,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -6039,8 +5953,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -6072,8 +5985,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -6082,8 +5994,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -6092,8 +6003,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -6102,8 +6012,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -6112,8 +6021,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -6122,8 +6030,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -6159,8 +6066,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -6169,8 +6075,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -6179,8 +6084,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -6189,8 +6093,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -6199,8 +6102,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -6209,8 +6111,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -6246,8 +6147,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -6256,8 +6156,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -6266,8 +6165,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -6276,8 +6174,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -6286,8 +6183,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -6296,8 +6192,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -6328,8 +6223,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -6338,8 +6232,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -6348,8 +6241,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -6358,8 +6250,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -6368,8 +6259,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -6378,8 +6268,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -6415,8 +6304,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -6425,8 +6313,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -6435,8 +6322,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -6445,8 +6331,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -6455,8 +6340,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -6465,8 +6349,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -6497,8 +6380,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -6507,8 +6389,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -6517,8 +6398,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -6527,8 +6407,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -6537,8 +6416,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -6547,8 +6425,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -6585,8 +6462,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -6595,8 +6471,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -6605,8 +6480,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -6615,8 +6489,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -6625,8 +6498,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -6635,8 +6507,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -6671,8 +6542,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -6681,8 +6551,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -6691,8 +6560,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -6701,8 +6569,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -6711,8 +6578,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -6721,8 +6587,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -6755,8 +6620,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -6765,8 +6629,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -6775,8 +6638,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -6785,8 +6647,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -6795,8 +6656,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -6805,8 +6665,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -6837,8 +6696,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -6847,8 +6705,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -6857,8 +6714,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -6867,8 +6723,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -6877,8 +6732,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -6887,8 +6741,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -6925,8 +6778,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -6935,8 +6787,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -6945,8 +6796,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -6955,8 +6805,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -6965,8 +6814,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -6975,8 +6823,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -7012,8 +6859,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -7022,8 +6868,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -7032,8 +6877,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -7042,8 +6886,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -7052,8 +6895,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -7062,8 +6904,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -7105,8 +6946,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -7115,8 +6955,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -7125,8 +6964,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -7135,8 +6973,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -7145,8 +6982,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -7155,8 +6991,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -7195,8 +7030,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -7205,8 +7039,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -7215,8 +7048,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -7225,8 +7057,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -7235,8 +7066,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -7245,8 +7075,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -7279,8 +7108,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -7289,8 +7117,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -7299,8 +7126,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -7309,8 +7135,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -7319,8 +7144,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -7329,8 +7153,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -7361,8 +7184,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -7371,8 +7193,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -7381,8 +7202,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -7391,8 +7211,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -7401,8 +7220,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -7411,8 +7229,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -7449,8 +7266,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -7459,8 +7275,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -7469,8 +7284,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -7479,8 +7293,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -7489,8 +7302,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -7499,8 +7311,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -7535,8 +7346,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -7545,8 +7355,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -7555,8 +7364,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -7565,8 +7373,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -7575,8 +7382,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -7585,8 +7391,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -7618,8 +7423,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -7628,8 +7432,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -7638,8 +7441,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -7648,8 +7450,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -7658,8 +7459,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -7668,8 +7468,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -7701,8 +7500,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -7711,8 +7509,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -7721,8 +7518,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -7731,8 +7527,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -7741,8 +7536,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -7751,8 +7545,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -7788,8 +7581,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -7798,8 +7590,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -7808,8 +7599,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -7818,8 +7608,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -7828,8 +7617,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -7838,8 +7626,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -7875,8 +7662,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -7885,8 +7671,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -7895,8 +7680,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -7905,8 +7689,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -7915,8 +7698,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -7925,8 +7707,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -7957,8 +7738,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -7967,8 +7747,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -7977,8 +7756,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -7987,8 +7765,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -7997,8 +7774,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -8007,8 +7783,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -8045,8 +7820,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -8055,8 +7829,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -8065,8 +7838,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -8075,8 +7847,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -8085,8 +7856,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -8095,8 +7865,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -8133,8 +7902,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -8143,8 +7911,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -8153,8 +7920,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -8163,8 +7929,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -8173,8 +7938,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -8183,8 +7947,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -8216,8 +7979,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -8226,8 +7988,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -8236,8 +7997,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -8246,8 +8006,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -8256,8 +8015,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -8266,8 +8024,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -8303,8 +8060,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -8313,8 +8069,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -8323,8 +8078,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -8333,8 +8087,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -8343,8 +8096,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -8353,8 +8105,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -8387,8 +8138,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -8397,8 +8147,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -8407,8 +8156,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -8417,8 +8165,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -8427,8 +8174,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -8437,8 +8183,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -8469,8 +8214,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -8479,8 +8223,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -8489,8 +8232,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -8499,8 +8241,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -8509,8 +8250,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -8519,8 +8259,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -8557,8 +8296,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -8567,8 +8305,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -8577,8 +8314,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -8587,8 +8323,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -8597,8 +8332,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -8607,8 +8341,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -8645,8 +8378,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -8655,8 +8387,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -8665,8 +8396,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -8675,8 +8405,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -8685,8 +8414,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -8695,8 +8423,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -8730,8 +8457,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -8740,8 +8466,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -8750,8 +8475,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -8760,8 +8484,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -8770,8 +8493,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -8780,8 +8502,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -8819,8 +8540,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -8829,8 +8549,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -8839,8 +8558,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -8849,8 +8567,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -8859,8 +8576,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -8869,8 +8585,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -8907,8 +8622,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -8917,8 +8631,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -8927,8 +8640,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -8937,8 +8649,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -8947,8 +8658,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -8957,8 +8667,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -8995,8 +8704,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -9005,8 +8713,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -9015,8 +8722,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -9025,8 +8731,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -9035,8 +8740,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -9045,8 +8749,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -9082,8 +8785,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -9092,8 +8794,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -9102,8 +8803,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -9112,8 +8812,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -9122,8 +8821,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -9132,8 +8830,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -9166,8 +8863,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -9176,8 +8872,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -9186,8 +8881,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -9196,8 +8890,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -9206,8 +8899,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -9216,8 +8908,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -9248,8 +8939,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -9258,8 +8948,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -9268,8 +8957,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -9278,8 +8966,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -9288,8 +8975,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -9298,8 +8984,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -9336,8 +9021,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -9346,8 +9030,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -9356,8 +9039,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -9366,8 +9048,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -9376,8 +9057,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -9386,8 +9066,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -9422,8 +9101,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -9432,8 +9110,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -9442,8 +9119,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -9452,8 +9128,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -9462,8 +9137,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -9472,8 +9146,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -9509,8 +9182,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -9519,8 +9191,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -9529,8 +9200,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -9539,8 +9209,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -9549,8 +9218,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -9559,8 +9227,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -9593,8 +9260,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -9603,8 +9269,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -9613,8 +9278,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -9623,8 +9287,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -9633,8 +9296,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -9643,8 +9305,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -9675,8 +9336,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -9685,8 +9345,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -9695,8 +9354,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -9705,8 +9363,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -9715,8 +9372,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -9725,8 +9381,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -9763,8 +9418,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -9773,8 +9427,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -9783,8 +9436,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -9793,8 +9445,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -9803,8 +9454,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -9813,8 +9463,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -9851,8 +9500,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -9861,8 +9509,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -9871,8 +9518,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -9881,8 +9527,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -9891,8 +9536,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -9901,8 +9545,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -9938,8 +9581,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -9948,8 +9590,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -9958,8 +9599,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -9968,8 +9608,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -9978,8 +9617,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -9988,8 +9626,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -10020,8 +9657,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -10030,8 +9666,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -10040,8 +9675,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -10050,8 +9684,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -10060,8 +9693,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -10070,8 +9702,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -10108,8 +9739,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -10118,8 +9748,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -10128,8 +9757,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -10138,8 +9766,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -10148,8 +9775,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -10158,8 +9784,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -10195,8 +9820,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -10205,8 +9829,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -10215,8 +9838,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -10225,8 +9847,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -10235,8 +9856,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -10245,8 +9865,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -10288,8 +9907,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -10298,8 +9916,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -10308,8 +9925,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -10318,8 +9934,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -10328,8 +9943,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -10338,8 +9952,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -10382,8 +9995,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -10392,8 +10004,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -10402,8 +10013,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -10412,8 +10022,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -10422,8 +10031,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -10432,8 +10040,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -10466,8 +10073,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -10476,8 +10082,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -10486,8 +10091,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -10496,8 +10100,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -10506,8 +10109,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -10516,8 +10118,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -10548,8 +10149,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -10558,8 +10158,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -10568,8 +10167,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -10578,8 +10176,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -10588,8 +10185,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -10598,8 +10194,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -10636,8 +10231,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -10646,8 +10240,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -10656,8 +10249,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -10666,8 +10258,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -10676,8 +10267,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -10686,8 +10276,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -10719,8 +10308,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -10729,8 +10317,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -10739,8 +10326,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -10749,8 +10335,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -10759,8 +10344,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -10769,8 +10353,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -10806,8 +10389,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -10816,8 +10398,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -10826,8 +10407,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -10836,8 +10416,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -10846,8 +10425,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -10856,8 +10434,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -10890,8 +10467,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -10900,8 +10476,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -10910,8 +10485,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -10920,8 +10494,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -10930,8 +10503,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -10940,8 +10512,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -10972,8 +10543,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -10982,8 +10552,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -10992,8 +10561,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -11002,8 +10570,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -11012,8 +10579,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -11022,8 +10588,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -11056,8 +10621,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -11066,8 +10630,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -11076,8 +10639,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -11086,8 +10648,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -11096,8 +10657,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -11106,8 +10666,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -11144,8 +10703,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -11154,8 +10712,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -11164,8 +10721,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -11174,8 +10730,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -11184,8 +10739,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -11194,8 +10748,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -11229,8 +10782,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -11239,8 +10791,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -11249,8 +10800,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -11259,8 +10809,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -11269,8 +10818,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -11279,8 +10827,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -11313,8 +10860,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -11323,8 +10869,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -11333,8 +10878,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -11343,8 +10887,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -11353,8 +10896,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -11363,8 +10905,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -11395,8 +10936,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -11405,8 +10945,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -11415,8 +10954,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -11425,8 +10963,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -11435,8 +10972,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -11445,8 +10981,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -11483,8 +11018,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -11493,8 +11027,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -11503,8 +11036,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -11513,8 +11045,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -11523,8 +11054,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -11533,8 +11063,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -11571,8 +11100,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -11581,8 +11109,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -11591,8 +11118,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -11601,8 +11127,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -11611,8 +11136,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -11621,8 +11145,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -11658,8 +11181,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -11668,8 +11190,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -11678,8 +11199,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -11688,8 +11208,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -11698,8 +11217,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -11708,8 +11226,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -11741,8 +11258,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -11751,8 +11267,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -11761,8 +11276,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -11771,8 +11285,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -11781,8 +11294,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -11791,8 +11303,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -11824,8 +11335,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -11834,8 +11344,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -11844,8 +11353,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -11854,8 +11362,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -11864,8 +11371,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -11874,8 +11380,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -11911,8 +11416,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -11921,8 +11425,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -11931,8 +11434,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -11941,8 +11443,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -11951,8 +11452,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -11961,8 +11461,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -11993,8 +11492,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -12003,8 +11501,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -12013,8 +11510,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -12023,8 +11519,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -12033,8 +11528,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -12043,8 +11537,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -12081,8 +11574,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -12091,8 +11583,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -12101,8 +11592,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -12111,8 +11601,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -12121,8 +11610,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -12131,8 +11619,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -12169,8 +11656,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -12179,8 +11665,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -12189,8 +11674,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -12199,8 +11683,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -12209,8 +11692,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -12219,8 +11701,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -12255,8 +11736,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -12265,8 +11745,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -12275,8 +11754,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -12285,8 +11763,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -12295,8 +11772,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -12305,8 +11781,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -12342,8 +11817,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -12352,8 +11826,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -12362,8 +11835,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -12372,8 +11844,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -12382,8 +11853,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -12392,8 +11862,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -12424,8 +11893,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -12434,8 +11902,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -12444,8 +11911,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -12454,8 +11920,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -12464,8 +11929,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -12474,8 +11938,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -12512,8 +11975,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -12522,8 +11984,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -12532,8 +11993,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -12542,8 +12002,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -12552,8 +12011,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -12562,8 +12020,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -12602,8 +12059,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -12612,8 +12068,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -12622,8 +12077,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -12632,8 +12086,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -12642,8 +12095,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -12652,8 +12104,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -12692,8 +12143,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -12702,8 +12152,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -12712,8 +12161,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -12722,8 +12170,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -12732,8 +12179,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -12742,8 +12188,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -12778,8 +12223,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -12788,8 +12232,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -12798,8 +12241,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -12808,8 +12250,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -12818,8 +12259,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -12828,8 +12268,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -12861,8 +12300,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -12871,8 +12309,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -12881,8 +12318,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -12891,8 +12327,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -12901,8 +12336,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -12911,8 +12345,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -12942,8 +12375,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -12952,8 +12384,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -12962,8 +12393,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -12972,8 +12402,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -12982,8 +12411,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -12992,8 +12420,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -13029,8 +12456,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -13039,8 +12465,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -13049,8 +12474,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -13059,8 +12483,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -13069,8 +12492,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -13079,8 +12501,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -13122,8 +12543,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -13132,8 +12552,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -13142,8 +12561,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -13152,8 +12570,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -13162,8 +12579,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -13172,8 +12588,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -13208,8 +12623,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -13218,8 +12632,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -13228,8 +12641,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -13238,8 +12650,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -13248,8 +12659,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -13258,8 +12668,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -13291,8 +12700,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -13301,8 +12709,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -13311,8 +12718,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -13321,8 +12727,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -13331,8 +12736,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -13341,8 +12745,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -13372,8 +12775,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -13382,8 +12784,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -13392,8 +12793,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -13402,8 +12802,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -13412,8 +12811,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -13422,8 +12820,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -13459,8 +12856,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -13469,8 +12865,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -13479,8 +12874,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -13489,8 +12883,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -13499,8 +12892,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -13509,8 +12901,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -13541,8 +12932,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -13551,8 +12941,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -13561,8 +12950,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -13571,8 +12959,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -13581,8 +12968,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -13591,8 +12977,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -13627,8 +13012,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -13637,8 +13021,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -13647,8 +13030,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -13657,8 +13039,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -13667,8 +13048,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -13677,8 +13057,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -13708,8 +13087,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -13718,8 +13096,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -13728,8 +13105,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -13738,8 +13114,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -13748,8 +13123,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -13758,8 +13132,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -13795,8 +13168,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -13805,8 +13177,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -13815,8 +13186,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -13825,8 +13195,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -13835,8 +13204,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -13845,8 +13213,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -13881,8 +13248,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -13891,8 +13257,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -13901,8 +13266,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -13911,8 +13275,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -13921,8 +13284,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -13931,8 +13293,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -13963,8 +13324,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -13973,8 +13333,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -13983,8 +13342,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -13993,8 +13351,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -14003,8 +13360,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -14013,8 +13369,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -14049,8 +13404,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -14059,8 +13413,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -14069,8 +13422,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -14079,8 +13431,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -14089,8 +13440,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -14099,8 +13449,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -14132,8 +13481,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -14142,8 +13490,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -14152,8 +13499,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -14162,8 +13508,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -14172,8 +13517,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -14182,8 +13526,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -14213,8 +13556,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -14223,8 +13565,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -14233,8 +13574,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -14243,8 +13583,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -14253,8 +13592,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -14263,8 +13601,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -14300,8 +13637,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -14310,8 +13646,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -14320,8 +13655,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -14330,8 +13664,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -14340,8 +13673,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -14350,8 +13682,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -14394,8 +13725,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -14404,8 +13734,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -14414,8 +13743,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -14424,8 +13752,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -14434,8 +13761,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -14444,8 +13770,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -14485,8 +13810,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -14495,8 +13819,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -14505,8 +13828,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -14515,8 +13837,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -14525,8 +13846,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -14535,8 +13855,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -14572,8 +13891,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -14582,8 +13900,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -14592,8 +13909,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -14602,8 +13918,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -14612,8 +13927,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -14622,8 +13936,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -14656,8 +13969,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -14666,8 +13978,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -14676,8 +13987,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -14686,8 +13996,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -14696,8 +14005,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -14706,8 +14014,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -14738,8 +14045,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -14748,8 +14054,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -14758,8 +14063,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -14768,8 +14072,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -14778,8 +14081,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -14788,8 +14090,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -14826,8 +14127,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -14836,8 +14136,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -14846,8 +14145,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -14856,8 +14154,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -14866,8 +14163,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -14876,8 +14172,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -14917,8 +14212,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -14927,8 +14221,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -14937,8 +14230,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -14947,8 +14239,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -14957,8 +14248,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -14967,8 +14257,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -15003,8 +14292,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -15013,8 +14301,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -15023,8 +14310,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -15033,8 +14319,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -15043,8 +14328,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -15053,8 +14337,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -15086,8 +14369,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -15096,8 +14378,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -15106,8 +14387,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -15116,8 +14396,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -15126,8 +14405,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -15136,8 +14414,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -15167,8 +14444,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -15177,8 +14453,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -15187,8 +14462,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -15197,8 +14471,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -15207,8 +14480,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -15217,8 +14489,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -15254,8 +14525,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -15264,8 +14534,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -15274,8 +14543,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -15284,8 +14552,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -15294,8 +14561,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -15304,8 +14570,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -15338,8 +14603,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -15348,8 +14612,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -15358,8 +14621,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -15368,8 +14630,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -15378,8 +14639,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -15388,8 +14648,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -15424,8 +14683,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -15434,8 +14692,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -15444,8 +14701,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -15454,8 +14710,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -15464,8 +14719,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -15474,8 +14728,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -15508,8 +14761,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -15518,8 +14770,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -15528,8 +14779,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -15538,8 +14788,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -15548,8 +14797,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -15558,8 +14806,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -15591,8 +14838,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -15601,8 +14847,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -15611,8 +14856,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -15621,8 +14865,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -15631,8 +14874,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -15641,8 +14883,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -15672,8 +14913,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -15682,8 +14922,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -15692,8 +14931,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -15702,8 +14940,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -15712,8 +14949,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -15722,8 +14958,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -15759,8 +14994,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -15769,8 +15003,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -15779,8 +15012,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -15789,8 +15021,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -15799,8 +15030,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -15809,8 +15039,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -15848,8 +15077,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -15858,8 +15086,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -15868,8 +15095,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -15878,8 +15104,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -15888,8 +15113,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -15898,8 +15122,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -15931,8 +15154,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -15941,8 +15163,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -15951,8 +15172,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -15961,8 +15181,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -15971,8 +15190,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -15981,8 +15199,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -16017,8 +15234,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -16027,8 +15243,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -16037,8 +15252,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -16047,8 +15261,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -16057,8 +15270,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -16067,8 +15279,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -16107,8 +15318,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -16117,8 +15327,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -16127,8 +15336,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Not found */
@@ -16137,8 +15345,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Conflict */
@@ -16147,8 +15354,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -16157,8 +15363,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -16187,8 +15392,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Authentication required */
@@ -16197,8 +15401,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Permission denied */
@@ -16207,8 +15410,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description The link doesn't work (expired, revoked or unknown) */
@@ -16216,7 +15418,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
             };
             /** @description Conflict */
             409: {
@@ -16224,8 +15428,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description Validation failed or business rule violated */
@@ -16234,8 +15437,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
