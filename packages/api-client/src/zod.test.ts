@@ -5,8 +5,16 @@ import type { z } from "zod";
 
 import { renderZodSource, ZOD_PATH } from "../scripts/generate.mjs";
 import { renderZod } from "../scripts/zod.mjs";
-import type { ApiPath, MethodOf, paths, ResponseBody, Schema, SchemaName } from "./index";
-import { responses, schemas } from "./zod.gen";
+import type {
+  ApiPath,
+  MethodOf,
+  paths,
+  RequestBody,
+  ResponseBody,
+  Schema,
+  SchemaName,
+} from "./index";
+import { responses, schemas, successStatuses, type requests } from "./zod.gen";
 
 /** `A` and `B` accept exactly the same values (readonly markers aside). */
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
@@ -46,6 +54,34 @@ describe("zod.gen.ts", () => {
         : Key;
     }[keyof Generated];
     expectTypeOf<Mismatched>().toBeNever();
+  });
+
+  test("every JSON request body infers exactly its RequestBody", () => {
+    type Generated = typeof requests;
+    type Mismatched = {
+      [Key in keyof Generated]: Key extends `${infer M} ${infer P extends ApiPath}`
+        ? M extends MethodOf<P>
+          ? Same<z.infer<Generated[Key]>, RequestBody<P, M>> extends true
+            ? never
+            : Key
+          : Key
+        : Key;
+    }[keyof Generated];
+    expectTypeOf<Mismatched>().toBeNever();
+  });
+
+  test("every operation lists its success statuses", () => {
+    expect(successStatuses["post /v1/organizations/{organization_id}/claims"]).toEqual([201]);
+    expect(
+      successStatuses["post /v1/organizations/{organization_id}/claims/{claim_id}/reports"],
+    ).toEqual([202]);
+    expect(successStatuses["delete /v1/organizations/{organization_id}"]).toEqual([204]);
+    // Completing an upload twice answers 200 with the same photo; the first time, 201.
+    expect(
+      successStatuses[
+        "post /v1/organizations/{organization_id}/claims/{claim_id}/photo-uploads/{upload_id}/complete"
+      ],
+    ).toEqual([200, 201]);
   });
 });
 

@@ -248,6 +248,35 @@ function Header() {
   offline. When a session ends on its own, call `queryClient.removeQueries()` from
   `onSessionExpired`.
 
+## Mocking (MSW)
+
+`@claimforge/api-client/msw` has [Mock Service Worker](https://mswjs.io) 3 handlers held to
+the contract, for frontend tests and local development (`msw` is a peer dependency).
+
+```ts
+import { setupServer } from "msw/node";
+import { mockApi, problem } from "@claimforge/api-client/msw";
+
+const api = mockApi("https://api.test");
+const server = setupServer(
+  api.get("/v1/organizations/{organization_id}/claims/{claim_id}", ({ params }) =>
+    claim({ id: params.claim_id }),
+  ),
+  api.post("/v1/organizations/{organization_id}/claims/{claim_id}/status", () =>
+    problem(409, "status_changed"),
+  ),
+);
+```
+
+- Paths, params, request bodies and answers are typed from the contract.
+- A plain answer gets the operation's success status (201 for creates, 204 for
+  `undefined`); `respond(status, body)` picks another documented one.
+- An answer the contract doesn't allow becomes a 500 `mock_contract_violation` naming the
+  field, so a stale mock fails its test.
+- A request body the contract refuses gets the API's 422 `validation_failed`, with
+  `errors[]` as the API shapes them; the resolver isn't called.
+- A hand-built `Response` (`problem()`, `HttpResponse.json()`) is sent as it is.
+
 ## Regenerating
 
 ```bash
