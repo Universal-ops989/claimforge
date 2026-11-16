@@ -105,6 +105,11 @@ def present(estimate: Estimate) -> EstimateRead:
                     "number",
                     "title",
                     "status",
+                    "total",
+                    "tax_percent",
+                    "overhead_percent",
+                    "profit_percent",
+                    "totals",
                     "created_at",
                     "updated_at",
                     "price_list",
@@ -170,7 +175,11 @@ async def list_estimates(
     await authorize(session, user, organization_id, Permission.CLAIMS_READ)
     await claims.require_live(session, organization_id, claim_id)
     return list(
-        await session.scalars(_estimates(organization_id, claim_id).order_by(Estimate.number))
+        await session.scalars(
+            _estimates(organization_id, claim_id)
+            .options(selectinload(Estimate.lines))  # for each one's total
+            .order_by(Estimate.number)
+        )
     )
 
 
@@ -202,6 +211,9 @@ async def create_estimate(
         title=data.title,
         price_list_id=await _price_list(session, organization_id, data.price_list_id),
         notes=data.notes,
+        tax_percent=data.tax_percent,
+        overhead_percent=data.overhead_percent,
+        profit_percent=data.profit_percent,
         created_by_id=user.id,
     )
     session.add(estimate)
