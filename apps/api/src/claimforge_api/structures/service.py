@@ -13,6 +13,7 @@ from sqlalchemy.orm import selectinload
 from claimforge_api.auth.permissions import Permission, authorize
 from claimforge_api.claims import service as claims
 from claimforge_api.core.errors import BusinessRuleError, ConflictError, NotFoundError
+from claimforge_api.moisture import service as moisture
 from claimforge_api.structures.models import Room, Structure
 from claimforge_api.structures.schemas import (
     RoomCreate,
@@ -31,6 +32,21 @@ class NameTakenError(ConflictError):
 class UnknownStructureError(BusinessRuleError):
     code = "unknown_structure"
     title = "Unknown structure"
+
+
+class HasMoisturePointsError(ConflictError):
+    code = "has_moisture_points"
+    title = "Moisture points are mapped here"
+
+
+async def _keep_drying_records(session: AsyncSession, room_ids: list[UUID]) -> None:
+    """Refuse to delete rooms with moisture points: drying records are evidence."""
+    count = await moisture.points_in_rooms(session, room_ids)
+    if count:
+        raise HasMoisturePointsError(
+            f"{count} moisture point(s) are mapped here; move or delete them first",
+            moisture_points=count,
+        )
 
 
 async def _check_structure_name(
@@ -190,6 +206,7 @@ async def delete_structure(
     structure = await _get_structure(
         session, organization_id, claim_id, structure_id, with_damage=True
     )
+    await _keep_drying_records(session, [room.id for room in structure.rooms])
     await session.delete(structure)
     await session.commit()
 
@@ -266,5 +283,6 @@ async def delete_room(
     await claims.lock_for_changes(session, organization_id, claim_id)
     # Its damage items are loaded, so each one's removal is audited.
     room = await _get_room(session, organization_id, claim_id, room_id, with_damage=True)
+    await _keep_drying_records(session, [room.id])
     await session.delete(room)
     await session.commit()
