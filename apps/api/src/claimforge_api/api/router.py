@@ -9,6 +9,7 @@ from claimforge_api.claims.router import router as claims_router
 from claimforge_api.contacts.router import router as contacts_router
 from claimforge_api.damage.router import router as damage_router
 from claimforge_api.documents.router import router as documents_router
+from claimforge_api.equipment.router import router as equipment_router
 from claimforge_api.invitations.router import accept_router as invitation_accept_router
 from claimforge_api.invitations.router import organization_router as invitations_router
 from claimforge_api.moisture.router import router as moisture_router
@@ -32,6 +33,7 @@ v1_router.include_router(invitations_router)
 v1_router.include_router(invitation_accept_router)
 v1_router.include_router(users_router)
 v1_router.include_router(contacts_router)
+v1_router.include_router(equipment_router)
 v1_router.include_router(properties_router)
 v1_router.include_router(claims_router)
 v1_router.include_router(structures_router)
