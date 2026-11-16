@@ -12,6 +12,7 @@ from claimforge_api.damage import models as damage_models
 from claimforge_api.db.base import Base
 from claimforge_api.documents import models as documents_models
 from claimforge_api.invitations import models as invitations_models
+from claimforge_api.moisture import models as moisture_models
 from claimforge_api.notes import models as notes_models
 from claimforge_api.organizations import models as organizations_models
 from claimforge_api.photos import models as photos_models
@@ -31,6 +32,7 @@ __all__ = [
     "documents_models",
     "invitations_models",
     "metadata",
+    "moisture_models",
     "notes_models",
     "organizations_models",
     "photos_models",

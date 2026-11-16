@@ -179,6 +179,20 @@ def _document(event: Event, names: Names) -> str:
     return _with_fields(f"Updated document {title}", event)
 
 
+def _moisture_point(event: Event, names: Names) -> str:
+    point = f"moisture point {event.value('label')}"
+    if event.verb == "created":
+        return f"Mapped {point} ({event.value('material')}, {event.value('surface')})"
+    if event.verb == "deleted":
+        return f"Deleted {point}"
+    if event.changed("label"):
+        before, after = event.became("label")
+        return f"Relabeled moisture point {before} as {after}"
+    if event.changed("room_id"):
+        return f"Moved {point} to another room"
+    return _with_fields(f"Updated {point}", event)
+
+
 def _note(event: Event, names: Names) -> str:
     verb = {"created": "Wrote", "updated": "Edited", "deleted": "Deleted"}.get(
         event.verb, "Changed"
@@ -218,6 +232,7 @@ SUMMARIES: dict[str, Callable[[Event, Names], str]] = {
     "damage_item": _damage,
     "photo": _photo,
     "document": _document,
+    "moisture_point": _moisture_point,
     "note": _note,
     "task": _task,
 }
