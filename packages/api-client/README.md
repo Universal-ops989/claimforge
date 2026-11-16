@@ -115,6 +115,31 @@ twice. So the client exchanges each refresh token at most once:
 - `/v1/auth/*` calls never carry a token. A request body that's a stream can't be sent
   twice, so send a string or a Blob to calls that may be retried.
 
+## Uploads
+
+Photos and documents upload in three steps; the file itself never passes through the API.
+
+```ts
+const { id, upload } = await api.post(
+  "/v1/organizations/{organization_id}/claims/{claim_id}/photo-uploads",
+  {
+    path: { organization_id: org, claim_id: claim },
+    body: { filename: file.name, content_type: "image/jpeg", size_bytes: file.size },
+  },
+);
+await api.sendFile(upload, file, { signal }); // straight to storage
+const photo = await api.post(
+  "/v1/organizations/{organization_id}/claims/{claim_id}/photo-uploads/{upload_id}/complete",
+  { path: { organization_id: org, claim_id: claim, upload_id: id } },
+);
+```
+
+`sendFile` sends only the link's method and headers: the bearer token and the client's
+default headers stay with the API. An expired link fails before anything is sent. Failures
+are `UploadError` with a `reason` of `expired`, `rejected` (with storage's `status` and the
+start of its answer in `detail`) or `unreachable`. Messages name storage's origin, never the
+signed link, whose query string is a credential. `complete` is safe to repeat.
+
 ## Validation
 
 The client checks every 2xx JSON body against Zod schemas generated from the same

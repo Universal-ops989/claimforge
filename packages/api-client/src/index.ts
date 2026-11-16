@@ -31,6 +31,7 @@ export {
   NetworkError,
   ResponseValidationError,
   UNEXPECTED_RESPONSE,
+  UploadError,
 } from "./errors";
 /** Zod schemas generated from the contract, for forms and anywhere else data needs checking. */
 export { responses, schemas } from "./zod.gen";

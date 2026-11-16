@@ -76,6 +76,27 @@ export class NetworkError extends Error {
   }
 }
 
+/**
+ * Sending a file to a signed upload link failed:
+ * - `expired`: the link ran out before anything was sent; ask the API for a new one.
+ * - `rejected`: storage answered with an error (`status`, and `detail`: the start of its
+ *   answer, usually XML naming the reason).
+ * - `unreachable`: no answer at all.
+ */
+export class UploadError extends Error {
+  override name = "UploadError";
+
+  constructor(
+    readonly reason: "expired" | "rejected" | "unreachable",
+    message: string,
+    readonly status: number | null = null,
+    readonly detail: string | null = null,
+    options?: ErrorOptions,
+  ) {
+    super(message, options);
+  }
+}
+
 export class ResponseValidationError extends Error {
   override name = "ResponseValidationError";
 
