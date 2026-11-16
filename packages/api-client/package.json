@@ -15,6 +15,10 @@
     "./react": {
       "types": "./dist/react/index.d.ts",
       "import": "./dist/react/index.js"
+    },
+    "./msw": {
+      "types": "./dist/msw/index.d.ts",
+      "import": "./dist/msw/index.js"
     }
   },
   "files": [
@@ -39,6 +43,7 @@
     "eslint": "^10",
     "globals": "^17.14.0",
     "jsdom": "^31",
+    "msw": "^3.0.6",
     "openapi-typescript": "^7.13.0",
     "react": "^19",
     "react-dom": "^19",
@@ -51,10 +56,14 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5",
+    "msw": "^3",
     "react": "^19"
   },
   "peerDependenciesMeta": {
     "@tanstack/react-query": {
+      "optional": true
+    },
+    "msw": {
       "optional": true
     },
     "react": {

@@ -93,6 +93,33 @@ export function renderZod(contract) {
       }
     }
   }
+  lines.push(
+    "};",
+    "",
+    "/** JSON request bodies by operation (`post /v1/auth/login`). */",
+    "export const requests = {",
+  );
+  for (const [path, operations] of Object.entries(contract.paths)) {
+    for (const [method, operation] of Object.entries(operations)) {
+      const schema = operation.requestBody?.content?.["application/json"]?.schema;
+      if (schema) {
+        const key = JSON.stringify(`${method} ${path}`);
+        lines.push(`  ${key}: ${render(schema, `${method} ${path} body`)},`);
+      }
+    }
+  }
+  lines.push(
+    "};",
+    "",
+    "/** The success statuses of every operation, in the contract's order. */",
+    "export const successStatuses: Record<string, readonly number[]> = {",
+  );
+  for (const [path, operations] of Object.entries(contract.paths)) {
+    for (const [method, operation] of Object.entries(operations)) {
+      const statuses = Object.keys(operation.responses).filter((status) => /^2\d\d$/.test(status));
+      lines.push(`  ${JSON.stringify(`${method} ${path}`)}: [${statuses.join(", ")}],`);
+    }
+  }
   lines.push("};", "");
   return lines.join("\n");
 }
