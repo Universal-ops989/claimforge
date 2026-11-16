@@ -175,6 +175,13 @@ function Header() {
   loader can prefetch what the component will read.
 - **Query keys.** Keys come from `queryKeys` and nest: invalidating
   `queryKeys.organization(id)` reaches everything cached under that organization.
+- **Lists.** Cursor-paginated lists are infinite queries. `allItems(data)` flattens the
+  loaded pages, and `nextCursor` is the shared `getNextPageParam`.
+- **Mutations keep the cache true.**
+  - Creating or updating writes the answer straight into the detail.
+  - Deleting an organization drops everything cached under it.
+  - Lists and `/v1/me`, which name each membership's organization, are refreshed.
+  - Revoking an invitation hides it at once and puts it back if the API refuses.
 - **Sessions.** `useLogin` and `useAcceptInvitation` reset the cache on success, so a
   new user never sees the last one's data. `useLogout` removes every cached query, even
   offline. When a session ends on its own, call `queryClient.removeQueries()` from
