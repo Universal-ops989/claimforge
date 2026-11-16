@@ -182,6 +182,11 @@ function Header() {
   - Deleting an organization drops everything cached under it.
   - Lists and `/v1/me`, which name each membership's organization, are refreshed.
   - Revoking an invitation hides it at once and puts it back if the API refuses.
+- **Claims.** A claim is cached by id and by number, and every change writes both;
+  `useClaimByNumber` fills the id entry too. `useChangeClaimStatus` sends the cached
+  status as `expected_status`, so if a teammate moved the claim first the API answers
+  409 `status_changed` and the hook refetches instead of acting on a stale screen. Pass
+  `expected_status: null` to skip the check. Unassigning is optimistic, like revoking.
 - **Sessions.** `useLogin` and `useAcceptInvitation` reset the cache on success, so a
   new user never sees the last one's data. `useLogout` removes every cached query, even
   offline. When a session ends on its own, call `queryClient.removeQueries()` from

@@ -9,6 +9,23 @@
  * Each data hook has a matching `…Query(api, …)` returning query options, so router
  * loaders can prefetch exactly what the component will read.
  */
+export {
+  claimByNumberQuery,
+  claimQuery,
+  claimsQuery,
+  statusHistoryQuery,
+  timelineQuery,
+  useAssignClaim,
+  useChangeClaimStatus,
+  useClaim,
+  useClaimByNumber,
+  useClaims,
+  useClaimStatusHistory,
+  useClaimTimeline,
+  useCreateClaim,
+  useUnassignClaim,
+  useUpdateClaim,
+} from "./claims";
 export { ApiProvider, useApi, type ApiProviderProps } from "./context";
 export { queryKeys } from "./keys";
 export { createQueryClient, MAX_RETRIES, shouldRetry } from "./query-client";
