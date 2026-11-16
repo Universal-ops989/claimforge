@@ -127,6 +127,21 @@ function refreshTimeline(queryClient: QueryClient, organizationId: string, claim
   return queryClient.invalidateQueries({ queryKey: queryKeys.timelines(organizationId, claimId) });
 }
 
+/**
+ * After a room is renamed or deleted: the timeline, and the photos, which show their
+ * room's name (a deleted room's photos become unassigned).
+ */
+async function refreshPhotos(
+  queryClient: QueryClient,
+  organizationId: string,
+  claimId: string,
+): Promise<void> {
+  await Promise.all([
+    refreshTimeline(queryClient, organizationId, claimId),
+    queryClient.invalidateQueries({ queryKey: queryKeys.photos(organizationId, claimId) }),
+  ]);
+}
+
 // ─── Structures ──────────────────────────────────────────────────────────────
 
 export function useCreateStructure(organizationId: string, claimId: string) {
@@ -186,7 +201,7 @@ export function useDeleteStructure(organizationId: string, claimId: string) {
       editLayout(queryClient, organizationId, claimId, (structures) =>
         structures.filter((structure) => structure.id !== structureId),
       );
-      await refreshTimeline(queryClient, organizationId, claimId);
+      await refreshPhotos(queryClient, organizationId, claimId);
     },
   });
 }
@@ -235,7 +250,7 @@ export function useUpdateRoom(organizationId: string, claimId: string) {
       }),
     onSuccess: async (updated) => {
       writeRoom(queryClient, organizationId, claimId, updated);
-      await refreshTimeline(queryClient, organizationId, claimId);
+      await refreshPhotos(queryClient, organizationId, claimId);
     },
   });
 }
@@ -257,7 +272,7 @@ export function useDeleteRoom(organizationId: string, claimId: string) {
           rooms: structure.rooms.filter((room) => room.id !== roomId),
         })),
       );
-      await refreshTimeline(queryClient, organizationId, claimId);
+      await refreshPhotos(queryClient, organizationId, claimId);
     },
   });
 }

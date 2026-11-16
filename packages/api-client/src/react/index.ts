@@ -27,6 +27,17 @@ export {
   useUpdateClaim,
 } from "./claims";
 export { ApiProvider, useApi, type ApiProviderProps } from "./context";
+export {
+  documentQuery,
+  documentsQuery,
+  useDeleteDocument,
+  useDocument,
+  useDocuments,
+  useUpdateDocument,
+  useUploadDocument,
+  type DocumentChange,
+  type DocumentUpload,
+} from "./documents";
 export { queryKeys } from "./keys";
 export { createQueryClient, MAX_RETRIES, shouldRetry } from "./query-client";
 export {
@@ -52,7 +63,21 @@ export {
   useRevokeInvitation,
   useUpdateOrganization,
 } from "./organizations";
-export { allItems, editPages, nextCursor } from "./pages";
+export { allItems, editOrRefetch, editPages, nextCursor } from "./pages";
+export {
+  PROCESSING_POLL_MS,
+  photoQuery,
+  photosQuery,
+  photoTagsQuery,
+  useDeletePhoto,
+  usePhoto,
+  usePhotos,
+  usePhotoTags,
+  useUpdatePhoto,
+  useUploadPhoto,
+  type PhotoChange,
+  type PhotoUpload,
+} from "./photos";
 export {
   roomQuery,
   structuresQuery,

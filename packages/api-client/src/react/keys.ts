@@ -23,6 +23,15 @@ const ROOT = "claimforge";
 
 type OrganizationsQuery = Omit<QueryParams<"/v1/organizations", "get">, "cursor">;
 type ClaimsQuery = Omit<QueryParams<"/v1/organizations/{organization_id}/claims", "get">, "cursor">;
+type PhotosQuery = Omit<
+  QueryParams<"/v1/organizations/{organization_id}/claims/{claim_id}/photos", "get">,
+  "cursor"
+>;
+type PhotoTagsQuery = QueryParams<"/v1/organizations/{organization_id}/photo-tags", "get">;
+type DocumentsQuery = Omit<
+  QueryParams<"/v1/organizations/{organization_id}/claims/{claim_id}/documents", "get">,
+  "cursor"
+>;
 type TasksQuery = QueryParams<"/v1/organizations/{organization_id}/claims/{claim_id}/tasks", "get">;
 type MyTasksQuery = Omit<
   QueryParams<"/v1/organizations/{organization_id}/tasks/assigned-to-me", "get">,
@@ -71,6 +80,29 @@ export const queryKeys = {
   /** A claim's structures, each with its rooms. */
   structures: (organizationId: string, claimId: string) =>
     [...queryKeys.claim(organizationId, claimId), "structures"] as const,
+  photos: (organizationId: string, claimId: string) =>
+    [...queryKeys.claim(organizationId, claimId), "photos"] as const,
+  /** Every photo list of a claim; the last element is the list's filters. */
+  photoLists: (organizationId: string, claimId: string) =>
+    [...queryKeys.photos(organizationId, claimId), "list"] as const,
+  photoList: (organizationId: string, claimId: string, query: PhotosQuery = {}) =>
+    [...queryKeys.photoLists(organizationId, claimId), query] as const,
+  photo: (organizationId: string, claimId: string, photoId: string) =>
+    [...queryKeys.photos(organizationId, claimId), photoId] as const,
+  /** Every tag suggestion list, whatever its prefix. */
+  photoTagLists: (organizationId: string) =>
+    [...queryKeys.organization(organizationId), "photo-tags"] as const,
+  photoTags: (organizationId: string, query: PhotoTagsQuery = {}) =>
+    [...queryKeys.photoTagLists(organizationId), query] as const,
+  documents: (organizationId: string, claimId: string) =>
+    [...queryKeys.claim(organizationId, claimId), "documents"] as const,
+  /** Every document list of a claim; the last element is the list's filters. */
+  documentLists: (organizationId: string, claimId: string) =>
+    [...queryKeys.documents(organizationId, claimId), "list"] as const,
+  documentList: (organizationId: string, claimId: string, query: DocumentsQuery = {}) =>
+    [...queryKeys.documentLists(organizationId, claimId), query] as const,
+  document: (organizationId: string, claimId: string, documentId: string) =>
+    [...queryKeys.documents(organizationId, claimId), documentId] as const,
   /** Every task list of a claim, whatever it filters on. */
   tasks: (organizationId: string, claimId: string) =>
     [...queryKeys.claim(organizationId, claimId), "tasks"] as const,
