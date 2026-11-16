@@ -132,3 +132,29 @@ class ReportJobRead(BaseModel):
     download_url: str | None = Field(
         description="Ready reports: saves the PDF under a readable name; works for an hour"
     )
+
+
+class ShareCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expires_in_days: int = Field(default=7, ge=1, le=30, description="1 to 30 days")
+    label: Annotated[str, StringConstraints(strip_whitespace=True, max_length=200)] | None = Field(
+        default=None, examples=["For Lone Star Mutual"]
+    )
+
+
+class ShareRead(BaseModel):
+    id: UUID
+    report_id: UUID
+    label: str | None
+    expires_at: datetime
+    revoked_at: datetime | None
+    active: bool = Field(description="Not expired and not revoked")
+    open_count: int
+    last_opened_at: datetime | None
+    created_by: ClaimActor | None
+    created_at: datetime
+
+
+class ShareCreated(ShareRead):
+    url: str = Field(description="The link to send. Shown this once: only a hash of it is kept.")

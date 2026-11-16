@@ -3,15 +3,19 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Request, Response, status
+from fastapi.responses import RedirectResponse
 
-from claimforge_api.api.deps import DbSession, StorageDep
+from claimforge_api.api.deps import DbSession, SettingsDep, StorageDep
 from claimforge_api.api.problems import PROBLEM_RESPONSES
 from claimforge_api.auth.deps import CurrentUser
-from claimforge_api.reports import jobs, logos, service
+from claimforge_api.reports import jobs, logos, service, shares
 from claimforge_api.reports.models import JobStatus, ReportKind
 from claimforge_api.reports.schemas import (
     ReportJobRead,
     ReportRequest,
+    ShareCreate,
+    ShareCreated,
+    ShareRead,
     TemplateCreate,
     TemplateRead,
     TemplateUpdate,
@@ -256,3 +260,79 @@ async def delete_report(
     user: CurrentUser,
 ) -> None:
     await jobs.delete_job(session, storage, organization_id, claim_id, job_id, user=user)
+
+
+@claim_router.post(
+    "/{job_id}/shares",
+    status_code=status.HTTP_201_CREATED,
+    summary="Share a report by link",
+    description="Needs `reports:generate`. A link to this ready report (`report_not_ready` "
+    "otherwise) that works without signing in, for `expires_in_days` (1 to 30, default 7). "
+    "The `url` is in this answer only: keep it or make another.",
+)
+async def share_report(
+    organization_id: UUID,
+    claim_id: UUID,
+    job_id: UUID,
+    session: DbSession,
+    settings: SettingsDep,
+    user: CurrentUser,
+    body: ShareCreate,
+) -> ShareCreated:
+    return await shares.create(
+        session,
+        organization_id,
+        claim_id,
+        job_id,
+        body,
+        base_url=settings.public_api_url,
+        user=user,
+    )
+
+
+@claim_router.get(
+    "/{job_id}/shares",
+    summary="List a report's links",
+    description="Newest first, with how often each was opened. Links can't be shown again.",
+)
+async def list_report_shares(
+    organization_id: UUID, claim_id: UUID, job_id: UUID, session: DbSession, user: CurrentUser
+) -> list[ShareRead]:
+    found = await shares.list_shares(session, organization_id, claim_id, job_id, user=user)
+    return [shares.present(share) for share in found]
+
+
+@claim_router.post(
+    "/{job_id}/shares/{share_id}/revoke",
+    summary="Revoke a link",
+    description="Needs `reports:generate`. The link stops working at once.",
+)
+async def revoke_report_share(
+    organization_id: UUID,
+    claim_id: UUID,
+    job_id: UUID,
+    share_id: UUID,
+    session: DbSession,
+    user: CurrentUser,
+) -> ShareRead:
+    share = await shares.revoke(session, organization_id, claim_id, job_id, share_id, user=user)
+    return shares.present(share)
+
+
+public_router = APIRouter(prefix="/shared-reports", tags=["reports"], responses=PROBLEM_RESPONSES)
+
+
+@public_router.get(
+    "/{token}",
+    summary="Open a shared report",
+    description="No sign-in: the link is the permission. Redirects to a download that works "
+    "for five minutes. Expired, revoked and unknown links all answer 404.",
+    response_class=RedirectResponse,
+    status_code=status.HTTP_302_FOUND,
+    responses={404: {"description": "The link doesn't work (expired, revoked or unknown)"}},
+)
+async def open_shared_report(
+    token: str, session: DbSession, storage: StorageDep
+) -> RedirectResponse:
+    url = await shares.open_link(session, storage, token)
+    return RedirectResponse(url, status_code=status.HTTP_302_FOUND)
