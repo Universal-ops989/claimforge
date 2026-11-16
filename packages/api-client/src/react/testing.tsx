@@ -46,6 +46,52 @@ export function me(fullName = "Morgan Member"): Schema<"MeResponse"> {
   };
 }
 
+export const CLAIM_ID = "0198a2c4-7b1e-7cc0-8000-0000000000d1";
+export const CLAIM_NUMBER = "CF-2026-0042";
+export const MORGAN = { id: "0198a2c4-7b1e-7cc0-8000-0000000000b1", full_name: "Morgan Member" };
+export const RILEY = { id: "0198a2c4-7b1e-7cc0-8000-0000000000b2", full_name: "Riley Tech" };
+
+/** A water claim on a house in Austin; `changes` override any field. */
+export function claim(changes: Partial<Schema<"ClaimRead">> = {}): Schema<"ClaimRead"> {
+  return {
+    id: CLAIM_ID,
+    number: CLAIM_NUMBER,
+    status: "new",
+    next_statuses: ["inspected", "on_hold", "cancelled"],
+    loss_type: "water",
+    loss_date: "2026-11-10",
+    description: "Supply line burst under the kitchen sink",
+    policy_number: null,
+    carrier_name: null,
+    carrier_claim_number: null,
+    property: {
+      id: "0198a2c4-7b1e-7cc0-8000-0000000000e1",
+      address: {
+        line1: "100 Congress Ave",
+        line2: null,
+        city: "Austin",
+        region: "TX",
+        postal_code: "78701",
+        country: "US",
+        formatted: "100 Congress Ave, Austin, TX 78701",
+      },
+      property_type: "residential",
+      year_built: 1998,
+      latitude: null,
+      longitude: null,
+      access_notes: null,
+      created_at: "2026-11-10T15:00:00Z",
+      updated_at: "2026-11-10T15:00:00Z",
+    },
+    contacts: [],
+    assignments: [],
+    created_by_id: MORGAN.id,
+    created_at: "2026-11-10T15:00:00Z",
+    updated_at: "2026-11-10T15:00:00Z",
+    ...changes,
+  };
+}
+
 export function tokenPair(n: number): Schema<"TokenResponse"> {
   return {
     access_token: `access-${String(n)}`,
