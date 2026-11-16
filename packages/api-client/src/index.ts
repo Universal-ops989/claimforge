@@ -6,10 +6,25 @@
  *     type Claim = Schema<"ClaimRead">;
  *     type NewClaim = RequestBody<"/v1/organizations/{organization_id}/claims", "post">;
  *     type Claims = ResponseBody<"/v1/organizations/{organization_id}/claims", "get">;
+ *
+ * Make calls with `createApiClient` (`client.ts`); failures throw `ApiError` or
+ * `NetworkError` (`errors.ts`).
  */
 import type { components, operations, paths } from "./schema.gen";
 
 export type { components, operations, paths };
+
+export {
+  createApiClient,
+  raw,
+  RawBody,
+  type ApiClient,
+  type ApiClientOptions,
+  type ApiResult,
+  type PathsFor,
+  type RequestOptions,
+} from "./client";
+export { ApiError, isApiError, NetworkError, UNEXPECTED_RESPONSE } from "./errors";
 
 // ─── Schemas ─────────────────────────────────────────────────────────────────
 
