@@ -8,6 +8,8 @@ import {
   raw,
   ResponseValidationError,
   UNEXPECTED_RESPONSE,
+  memoryTokenStore,
+  UploadError,
   type ApiClient,
   type ApiClientOptions,
   type Problem,
@@ -368,6 +370,109 @@ function signatures(api: ApiClient) {
     },
   ];
 }
+
+describe("sending files", () => {
+  const PHOTO = new Blob(["jpeg bytes"], { type: "image/jpeg" });
+  const inAMinute = () => new Date(Date.now() + 60_000).toISOString();
+
+  function link(overrides: Partial<Schema<"SignedUploadRead">> = {}): Schema<"SignedUploadRead"> {
+    return {
+      url: "https://storage.test/bucket/photos/p1.jpg?X-Amz-Signature=secret",
+      method: "PUT",
+      headers: { "Content-Type": "image/jpeg" },
+      expires_at: inAMinute(),
+      ...overrides,
+    };
+  }
+
+  /** A signed-in client with default headers, so a leak of either would show. */
+  function signedIn(answer: () => Response | Promise<Response>) {
+    const requests: Request[] = [];
+    const api = createApiClient({
+      baseUrl: "https://api.test",
+      headers: { "X-Client": "web" },
+      auth: {
+        tokens: memoryTokenStore({
+          accessToken: "access-1",
+          refreshToken: "refresh-1",
+          accessExpiresAt: Date.now() + 900_000,
+          refreshExpiresAt: Date.now() + 86_400_000,
+        }),
+      },
+      fetch: (input, init) => {
+        requests.push(new Request(input, init));
+        return Promise.resolve(answer());
+      },
+    });
+    return { api, requests };
+  }
+
+  test("sends the file with the link's method and headers, and nothing else", async () => {
+    const { api, requests } = signedIn(() => new Response(null, { status: 200 }));
+
+    await api.sendFile(link(), PHOTO);
+
+    const [sent] = requests;
+    expect(sent?.method).toBe("PUT");
+    expect(sent?.url).toBe(link().url);
+    expect([...(sent?.headers.keys() ?? [])]).toEqual(["content-type"]);
+    expect(sent?.headers.get("Content-Type")).toBe("image/jpeg");
+    expect(await sent?.text()).toBe("jpeg bytes");
+  });
+
+  test("a link given as a path goes to the API's host", async () => {
+    const { api, requests } = signedIn(() => new Response(null, { status: 204 }));
+
+    await api.sendFile(link({ url: "/v1/storage/photos/p1.jpg?signature=abc" }), PHOTO);
+
+    expect(requests[0]?.url).toBe("https://api.test/v1/storage/photos/p1.jpg?signature=abc");
+  });
+
+  test("an expired link fails before anything is sent", async () => {
+    const { api, requests } = signedIn(() => new Response(null, { status: 200 }));
+    const expired = link({ expires_at: new Date(Date.now() - 1_000).toISOString() });
+
+    const error = await api.sendFile(expired, PHOTO).catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(UploadError);
+    expect(error).toMatchObject({ reason: "expired", status: null });
+    expect(requests).toEqual([]);
+  });
+
+  test("a refusal keeps storage's status and reason, but not the signed link", async () => {
+    const answer = `<Error><Code>SignatureDoesNotMatch</Code>${"x".repeat(1_000)}</Error>`;
+    const { api } = signedIn(() => new Response(answer, { status: 403 }));
+
+    const error = await api.sendFile(link(), PHOTO).catch((e: unknown) => e);
+
+    expect(error).toMatchObject({ reason: "rejected", status: 403 });
+    const { detail, message } = error as UploadError;
+    expect(detail?.startsWith("<Error><Code>SignatureDoesNotMatch</Code>")).toBe(true);
+    expect(detail).toHaveLength(500);
+    expect(message).toBe("Storage refused the file with 403 (PUT https://storage.test)");
+    expect(message).not.toContain("secret");
+  });
+
+  test("no answer at all is unreachable, with the cause kept", async () => {
+    const down = new TypeError("Failed to fetch");
+    const { api } = signedIn(() => Promise.reject(down));
+
+    const error = await api.sendFile(link(), PHOTO).catch((e: unknown) => e);
+
+    expect(error).toMatchObject({ reason: "unreachable", cause: down });
+  });
+
+  test("aborting rethrows the signal's reason", async () => {
+    const controller = new AbortController();
+    const reason = new Error("user cancelled");
+    const { api } = signedIn(() => {
+      controller.abort(reason);
+      return Promise.reject(new DOMException("aborted", "AbortError"));
+    });
+
+    await expect(api.sendFile(link(), PHOTO, { signal: controller.signal })).rejects.toBe(reason);
+  });
+});
 
 describe("types", () => {
   test("calls are typed by the contract", () => {

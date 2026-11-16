@@ -12,7 +12,7 @@
 import type { z } from "zod";
 
 import { RefreshRefused, Session, type AuthOptions, type Exchange, type Tokens } from "./auth";
-import { ApiError, NetworkError, ResponseValidationError } from "./errors";
+import { ApiError, NetworkError, ResponseValidationError, UploadError } from "./errors";
 import type {
   ApiPath,
   HttpMethod,
@@ -138,7 +138,20 @@ export interface ApiClient {
    * works; a failure to reach the API leaves the refresh token valid until it expires.
    */
   logout(): Promise<void>;
+  /**
+   * Send a file to a signed upload link: the `upload` that `POST …/photo-uploads` or
+   * `POST …/document-uploads` answers with. It goes straight to storage with only the
+   * link's method and headers, never the bearer token or this client's default headers.
+   * Rejects with `UploadError`; `POST …/complete` afterwards turns it into a photo or
+   * document.
+   */
+  sendFile(link: SignedUpload, file: Blob, options?: { signal?: AbortSignal }): Promise<void>;
 }
+
+type SignedUpload = Schema<"SignedUploadRead">;
+
+/** How much of storage's error answer an `UploadError` keeps. */
+const DETAIL_LIMIT = 500;
 
 // ─── Implementation ──────────────────────────────────────────────────────────
 
@@ -298,6 +311,45 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
 
   // The public signatures are checked by the types above; the implementation is untyped
   // in between, so the casts here are the one place the two meet.
+  async function sendFile(
+    link: SignedUpload,
+    file: Blob,
+    { signal }: { signal?: AbortSignal } = {},
+  ): Promise<void> {
+    // Resolved against the API, in case a storage backend ever answers with a path.
+    const url = new URL(link.url, `${baseUrl}/`);
+    // Never the whole link in a message: its query string is the credential.
+    const where = `${link.method} ${url.origin}`;
+    if (Date.parse(link.expires_at) <= Date.now()) {
+      throw new UploadError("expired", `The upload link expired at ${link.expires_at}`);
+    }
+    let response: Response;
+    try {
+      response = await send(url.href, {
+        method: link.method,
+        headers: new Headers(link.headers),
+        body: file,
+        signal: signal ?? null,
+      });
+    } catch (error) {
+      if (signal?.aborted) {
+        throw signal.reason ?? error;
+      }
+      throw new UploadError("unreachable", `Couldn't reach storage (${where})`, null, null, {
+        cause: error,
+      });
+    }
+    if (!response.ok) {
+      const detail = (await response.text().catch(() => "")).slice(0, DETAIL_LIMIT) || null;
+      throw new UploadError(
+        "rejected",
+        `Storage refused the file with ${String(response.status)} (${where})`,
+        response.status,
+        detail,
+      );
+    }
+  }
+
   return {
     request: request as ApiClient["request"],
     get: data("get") as ApiClient["get"],
@@ -308,6 +360,7 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     login: (credentials) => signIn("/v1/auth/login", credentials),
     acceptInvitation: (invitation) => signIn("/v1/invitations/accept", invitation),
     logout,
+    sendFile,
   };
 }
 
