@@ -115,6 +115,36 @@ twice. So the client exchanges each refresh token at most once:
 - `/v1/auth/*` calls never carry a token. A request body that's a stream can't be sent
   twice, so send a string or a Blob to calls that may be retried.
 
+## Validation
+
+The client checks every 2xx JSON body against Zod schemas generated from the same
+contract. A body that doesn't match means the API and this build disagree. That's
+better caught at the call than as a crash three components later.
+
+```ts
+createApiClient({ baseUrl }); // validate: "throw" (default): dev, tests, CI
+createApiClient({
+  baseUrl,
+  validate: "report", // production: return the body anyway, but say so
+  onInvalidResponse: (error) => reportToMonitoring(error),
+});
+```
+
+`ResponseValidationError` carries the `operation` (`get /v1/me`), `status`, the `body` as
+received and the Zod `issues`. Validation never reshapes data: unknown fields pass
+through. Bodies of request models reject unknown fields, as the API does.
+
+The schemas are exported for reuse, e.g. in forms:
+
+```ts
+import { schemas, responses } from "@claimforge/api-client";
+
+schemas.AddressInput.safeParse(values); // same limits the API enforces
+responses["get /v1/me"][200]; // success bodies by operation and status
+```
+
+A type-level test proves that each schema infers exactly the generated TypeScript type.
+
 ## Regenerating
 
 ```bash
@@ -122,6 +152,8 @@ just api-openapi                                  # contract + types, from the A
 pnpm --filter @claimforge/api-client generate     # types only, from openapi.json
 ```
 
-`src/schema.gen.ts` is committed so contract changes show up in review. A test fails
-when it no longer matches `openapi.json`, and the Web workflow runs whenever the
-contract changes.
+`src/schema.gen.ts` and `src/zod.gen.ts` are committed so contract changes show up in
+review. A test fails when either no longer matches `openapi.json`, and the Web workflow
+runs whenever the contract changes. The Zod renderer (`scripts/zod.mjs`) refuses JSON
+Schema it doesn't understand, so a new construct fails the build instead of being
+checked loosely.

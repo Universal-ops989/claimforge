@@ -14,6 +14,7 @@ import {
 
 const NOW = Date.parse("2026-11-16T12:00:00Z");
 const DAY = 86_400_000;
+const ME = "0198a2c4-7b1e-7cc0-8000-000000000001";
 
 function json(body: unknown, status = 200): Response {
   const type = status >= 400 ? "application/problem+json" : "application/json";
@@ -91,7 +92,14 @@ class FakeApi {
     if (bearer === null || !this.access.has(bearer)) {
       return problem(401, "authentication_required");
     }
-    return json({ id: "me", via: bearer });
+    // A valid MeResponse, plus which token the call carried.
+    return json({
+      id: ME,
+      email: "morgan@example.com",
+      full_name: "Morgan Member",
+      memberships: [],
+      via: bearer,
+    });
   };
 }
 
@@ -117,8 +125,10 @@ function setup({
   return { api, server, store, clock, onSessionExpired };
 }
 
-async function me(api: ReturnType<typeof setup>["api"]): Promise<unknown> {
-  return api.get("/v1/me");
+/** Which access token `/v1/me` was called with. */
+async function me(api: ReturnType<typeof setup>["api"]): Promise<string> {
+  const body = await api.get("/v1/me");
+  return (body as typeof body & { via: string }).via;
 }
 
 /** Runs tasks one at a time, like a Web Lock shared by tabs. */
@@ -144,7 +154,7 @@ describe("signing in", () => {
       refreshExpiresAt: NOW + 30 * DAY,
     });
     expect(await store.get()).toEqual(tokens);
-    expect(await me(api)).toEqual({ id: "me", via: "access-1" });
+    expect(await me(api)).toBe("access-1");
     expect(server.calls).toEqual(["/v1/auth/login -", "/v1/me access-1"]);
   });
 
@@ -174,7 +184,7 @@ describe("refreshing", () => {
     await api.login({ email: "morgan@example.com", password: "right" });
     server.expireAccessTokens();
 
-    expect(await me(api)).toEqual({ id: "me", via: "access-2" });
+    expect(await me(api)).toBe("access-2");
 
     expect(server.calls.slice(1)).toEqual([
       "/v1/me access-1",
@@ -191,7 +201,7 @@ describe("refreshing", () => {
 
     const answers = await Promise.all([me(api), me(api), me(api), me(api), me(api)]);
 
-    expect(answers).toEqual(Array(5).fill({ id: "me", via: "access-2" }));
+    expect(answers).toEqual(Array(5).fill("access-2"));
     expect(server.calls.filter((call) => call.startsWith("/v1/auth/refresh"))).toHaveLength(1);
     expect(server.reused).toBe(false);
   });
@@ -303,7 +313,7 @@ describe("ending the session", () => {
     expect(await store.get()).toEqual(tokens);
     expect(onSessionExpired).not.toHaveBeenCalled();
     server.refreshAnswer = null;
-    expect(await me(api)).toEqual({ id: "me", via: "access-2" }); // and it recovers
+    expect(await me(api)).toBe("access-2"); // and it recovers
   });
 
   test("logout forgets the tokens and revokes the session", async () => {

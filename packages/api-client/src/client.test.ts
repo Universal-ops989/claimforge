@@ -6,8 +6,10 @@ import {
   isApiError,
   NetworkError,
   raw,
+  ResponseValidationError,
   UNEXPECTED_RESPONSE,
   type ApiClient,
+  type ApiClientOptions,
   type Problem,
   type ResponseBody,
   type Schema,
@@ -33,6 +35,7 @@ function fake(answer: () => Response | Promise<Response>) {
   const api = createApiClient({
     baseUrl: "https://api.test/",
     headers: { "X-Client": "web" },
+    validate: "off", // transport tests: the bodies here are minimal, not contract-complete
     fetch: (input, init) => {
       requests.push(new Request(input, init));
       return Promise.resolve(answer());
@@ -238,11 +241,67 @@ describe("failures", () => {
   test("uses the global fetch by default", async () => {
     const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(json({ id: "me" }));
     try {
-      await createApiClient({ baseUrl: "https://api.test" }).get("/v1/me");
+      await createApiClient({ baseUrl: "https://api.test", validate: "off" }).get("/v1/me");
       expect(spy).toHaveBeenCalledOnce();
     } finally {
       spy.mockRestore();
     }
+  });
+});
+
+describe("validation", () => {
+  const me = {
+    id: "0198a2c4-7b1e-7cc0-8000-000000000001",
+    email: "morgan@example.com",
+    full_name: "Morgan Member",
+    memberships: [],
+  };
+  const broken = { ...me, id: "me", memberships: [{ role: "intern" }] };
+
+  function client(
+    body: unknown,
+    options: Pick<ApiClientOptions, "validate" | "onInvalidResponse">,
+  ) {
+    return createApiClient({
+      baseUrl: "https://api.test",
+      fetch: () => Promise.resolve(json(body)),
+      ...options,
+    });
+  }
+
+  test("bodies that match the contract come back as received", async () => {
+    const extra = { ...me, nickname: "Mo" }; // a newer API may add fields
+    await expect(client(extra, {}).get("/v1/me")).resolves.toEqual(extra);
+  });
+
+  test("by default a body that doesn't match rejects the call", async () => {
+    const error: unknown = await client(broken, {})
+      .get("/v1/me")
+      .catch((caught: unknown) => caught);
+
+    expect(error).toBeInstanceOf(ResponseValidationError);
+    const invalid = error as ResponseValidationError;
+    expect([invalid.operation, invalid.status, invalid.body]).toEqual(["get /v1/me", 200, broken]);
+    expect(invalid.issues.map((issue) => issue.path.join("."))).toEqual([
+      "id",
+      "memberships.0.organization",
+      "memberships.0.permissions",
+      "memberships.0.role",
+    ]);
+    expect(invalid.message).toMatch(/^get \/v1\/me answered 200 with a body that doesn't match/);
+  });
+
+  test("report mode hands the body over and tells someone", async () => {
+    const onInvalidResponse = vi.fn();
+
+    const body = await client(broken, { validate: "report", onInvalidResponse }).get("/v1/me");
+
+    expect(body).toEqual(broken);
+    expect(onInvalidResponse).toHaveBeenCalledWith(expect.any(ResponseValidationError));
+  });
+
+  test("off means off", async () => {
+    await expect(client(broken, { validate: "off" }).get("/v1/me")).resolves.toEqual(broken);
   });
 });
 

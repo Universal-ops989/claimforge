@@ -25,7 +25,15 @@ export {
   type PathsFor,
   type RequestOptions,
 } from "./client";
-export { ApiError, isApiError, NetworkError, UNEXPECTED_RESPONSE } from "./errors";
+export {
+  ApiError,
+  isApiError,
+  NetworkError,
+  ResponseValidationError,
+  UNEXPECTED_RESPONSE,
+} from "./errors";
+/** Zod schemas generated from the contract, for forms and anywhere else data needs checking. */
+export { responses, schemas } from "./zod.gen";
 export {
   memoryTokenStore,
   tokensFrom,

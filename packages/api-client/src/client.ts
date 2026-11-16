@@ -9,8 +9,10 @@
  * Paths, parameters, bodies and results all come from the generated contract types, so a
  * renamed field or a removed endpoint is a compile error in the calling code.
  */
+import type { z } from "zod";
+
 import { RefreshRefused, Session, type AuthOptions, type Exchange, type Tokens } from "./auth";
-import { ApiError, NetworkError } from "./errors";
+import { ApiError, NetworkError, ResponseValidationError } from "./errors";
 import type {
   ApiPath,
   HttpMethod,
@@ -22,6 +24,7 @@ import type {
   ResponseBody,
   Schema,
 } from "./index";
+import { responses } from "./zod.gen";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -93,6 +96,17 @@ export interface ApiClientOptions {
   headers?: HeadersInit;
   /** Sign calls with a bearer token and keep the session fresh. */
   auth?: AuthOptions;
+  /**
+   * Check 2xx JSON bodies against the contract's Zod schemas:
+   * - `"throw"` (default): the call rejects with `ResponseValidationError`.
+   * - `"report"`: the body is returned anyway and `onInvalidResponse` is called. For
+   *   production, where an older build may meet a newer API (a new status, say).
+   * - `"off"`: no checks.
+   *
+   * Either way the body is returned as received, never reshaped.
+   */
+  validate?: "throw" | "report" | "off";
+  onInvalidResponse?: (error: ResponseValidationError) => void;
 }
 
 type Call<M extends HttpMethod> = <P extends PathsFor<M>>(
@@ -135,6 +149,8 @@ interface LooseOptions {
 const ACCEPT = "application/json, application/problem+json";
 /** The code of a 401 that a fresh access token can fix. */
 export const AUTHENTICATION_REQUIRED = "authentication_required";
+/** The generated schemas, looked up by `"get /v1/me"` and status. */
+const SUCCESS_BODIES: Partial<Record<string, Partial<Record<number, z.ZodType>>>> = responses;
 /** Calls that manage tokens themselves and never carry one. */
 const AUTH_PATHS = "/v1/auth/";
 
@@ -204,7 +220,26 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     if (!response.ok) {
       throw await ApiError.from(response, url);
     }
-    return { data: await readBody(response), status: response.status, headers: response.headers };
+    const data = await readBody(response);
+    check(`${method} ${template}`, response.status, data);
+    return { data, status: response.status, headers: response.headers };
+  }
+
+  const mode = options.validate ?? "throw";
+  function check(operation: string, status: number, data: unknown): void {
+    const schema = mode === "off" ? undefined : SUCCESS_BODIES[operation]?.[status];
+    if (schema === undefined) {
+      return;
+    }
+    const result = schema.safeParse(data);
+    if (result.success) {
+      return;
+    }
+    const error = new ResponseValidationError(operation, status, data, result.error);
+    if (mode === "throw") {
+      throw error;
+    }
+    options.onInvalidResponse?.(error);
   }
 
   const exchange: Exchange = async (refreshToken) => {
