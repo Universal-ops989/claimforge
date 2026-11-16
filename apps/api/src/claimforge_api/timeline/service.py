@@ -21,6 +21,7 @@ from claimforge_api.db.pagination import Page, SortKey, paginate
 from claimforge_api.timeline import summaries
 from claimforge_api.timeline.schemas import (
     ENTITY_TYPES,
+    HIDDEN_ENTITY_TYPES,
     KIND_OF,
     TimelineEntry,
     TimelineKind,
@@ -120,6 +121,7 @@ async def claim_timeline(
         AuditEvent.claim_id == claim_id,
         AuditEvent.organization_id == organization_id,
         not_(_status_only_claim_update()),
+        AuditEvent.entity_type.not_in(HIDDEN_ENTITY_TYPES),
     )
     if query.kind:
         wanted = [entity for kind in query.kind for entity in ENTITY_TYPES.get(kind, ())]

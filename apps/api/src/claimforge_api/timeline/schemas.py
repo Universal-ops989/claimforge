@@ -37,10 +37,13 @@ ENTITY_TYPES: dict[TimelineKind, tuple[str, ...]] = {
     TimelineKind.DAMAGE: ("damage_item",),
     TimelineKind.PHOTOS: ("photo",),
     TimelineKind.DOCUMENTS: ("document",),
-    TimelineKind.MOISTURE: ("moisture_point",),
+    TimelineKind.MOISTURE: ("moisture_point", "moisture_log"),
     TimelineKind.NOTES: ("note",),
     TimelineKind.TASKS: ("task",),
 }
+#: Audited, but told through another entry: a visit's readings are its "Logged moisture
+#: readings" (and "Corrected …"), not one entry per value.
+HIDDEN_ENTITY_TYPES = frozenset({"moisture_reading"})
 KIND_OF = {entity: kind for kind, entities in ENTITY_TYPES.items() for entity in entities}
 
 
