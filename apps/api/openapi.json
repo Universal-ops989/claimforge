@@ -132,6 +132,54 @@
         "title": "AddressRead",
         "type": "object"
       },
+      "AlertEquipment": {
+        "properties": {
+          "asset_tag": {
+            "title": "Asset Tag",
+            "type": "string"
+          },
+          "placement_id": {
+            "format": "uuid",
+            "title": "Placement Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "placement_id",
+          "asset_tag"
+        ],
+        "title": "AlertEquipment",
+        "type": "object"
+      },
+      "AlertKind": {
+        "enum": [
+          "no_goal",
+          "stalled",
+          "monitoring_gap",
+          "equipment_in_dry_room"
+        ],
+        "title": "AlertKind",
+        "type": "string"
+      },
+      "AlertPoint": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label"
+        ],
+        "title": "AlertPoint",
+        "type": "object"
+      },
       "AssignmentRole": {
         "description": "What a member does on a claim. A claim has at most one adjuster.",
         "enum": [
@@ -2398,6 +2446,79 @@
         "title": "DocumentUploadRead",
         "type": "object"
       },
+      "DryingAlert": {
+        "properties": {
+          "details": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Details",
+            "type": "object"
+          },
+          "equipment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AlertEquipment"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kind": {
+            "$ref": "#/components/schemas/AlertKind",
+            "description": "`no_goal`: read but no dry standard; `stalled`: no improvement over the last 3 readings; `monitoring_gap`: still drying, not read for over 24 hours; `equipment_in_dry_room`: equipment running where every point is dry"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "point": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AlertPoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "room": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AtmosphereRoom"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "since": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Since when it holds, where that's known",
+            "title": "Since"
+          }
+        },
+        "required": [
+          "kind",
+          "message",
+          "point",
+          "room",
+          "equipment",
+          "since",
+          "details"
+        ],
+        "title": "DryingAlert",
+        "type": "object"
+      },
       "DryingLog": {
         "description": "The monitoring table: points down the side, visits across the top.",
         "properties": {
@@ -2713,6 +2834,78 @@
         ],
         "title": "DryingStatus",
         "type": "string"
+      },
+      "DryingStatusRead": {
+        "properties": {
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/DryingAlert"
+            },
+            "title": "Alerts",
+            "type": "array"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/DryingSummary"
+          }
+        },
+        "required": [
+          "summary",
+          "alerts"
+        ],
+        "title": "DryingStatusRead",
+        "type": "object"
+      },
+      "DryingSummary": {
+        "properties": {
+          "all_dry": {
+            "description": "There are points, and every one is dry",
+            "title": "All Dry",
+            "type": "boolean"
+          },
+          "dry": {
+            "title": "Dry",
+            "type": "integer"
+          },
+          "drying": {
+            "title": "Drying",
+            "type": "integer"
+          },
+          "last_visit_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Visit At"
+          },
+          "no_goal": {
+            "title": "No Goal",
+            "type": "integer"
+          },
+          "not_read": {
+            "title": "Not Read",
+            "type": "integer"
+          },
+          "points": {
+            "title": "Points",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "points",
+          "dry",
+          "drying",
+          "no_goal",
+          "not_read",
+          "all_dry",
+          "last_visit_at"
+        ],
+        "title": "DryingSummary",
+        "type": "object"
       },
       "EquipmentCreate": {
         "additionalProperties": false,
@@ -10182,6 +10375,121 @@
           }
         ],
         "summary": "The claim's drying log",
+        "tags": [
+          "moisture"
+        ]
+      }
+    },
+    "/v1/organizations/{organization_id}/claims/{claim_id}/drying-status": {
+      "get": {
+        "description": "How many points are dry, drying, without a goal or not read yet, and what needs attention: points read without a dry standard, points that stopped improving, a gap of over 24 hours in monitoring while points are still drying, and equipment still running in rooms where every point is dry (days a carrier won't pay for). Worked out from the current records each time.",
+        "operationId": "get_drying_status",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Organization Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "claim_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Claim Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DryingStatusRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Authentication required"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Permission denied"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Validation failed or business rule violated"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Drying status and alerts",
         "tags": [
           "moisture"
         ]
