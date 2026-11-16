@@ -9,9 +9,10 @@ import asyncio
 import contextlib
 import logging
 import time
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass, field
+from uuid import UUID
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from claimforge_api.documents.models import DocumentUpload
 from claimforge_api.photos import processing
 from claimforge_api.photos.models import PhotoUpload
+from claimforge_api.reports import jobs
 from claimforge_api.storage.base import ObjectStorage, StorageUnavailableError
 from claimforge_api.uploads import service as uploads
 from claimforge_api.uploads.models import PendingUpload
@@ -26,6 +28,12 @@ from claimforge_api.uploads.models import PendingUpload
 logger = logging.getLogger(__name__)
 
 SessionFactory = Callable[[], AbstractAsyncContextManager[AsyncSession]]
+
+#: The queues a worker takes work from: each takes one item and says which, or None.
+QUEUES: tuple[Callable[[AsyncSession, ObjectStorage], Awaitable[UUID | None]], ...] = (
+    processing.process_next,
+    jobs.process_next,
+)
 
 #: Every kind of pending upload the cleanup looks after.
 PENDING_UPLOADS: tuple[type[PendingUpload], ...] = (PhotoUpload, DocumentUpload)
@@ -43,13 +51,23 @@ class Worker:
     _last_cleanup: float | None = field(default=None, init=False)
 
     async def drain(self, stop: asyncio.Event | None = None) -> int:
-        """Process photos until none is due (or ``stop`` is set). How many were processed."""
+        """Work the queues until nothing is due (or ``stop`` is set). How many items were done.
+
+        Each round takes one item from every queue in turn, so a burst of photos doesn't
+        hold reports up, nor the reverse.
+        """
         processed = 0
         while stop is None or not stop.is_set():
-            async with self.sessions() as session:
-                if await processing.process_next(session, self.storage) is None:
-                    return processed
-            processed += 1
+            worked = False
+            for task in QUEUES:
+                async with self.sessions() as session:
+                    if await task(session, self.storage) is not None:
+                        processed += 1
+                        worked = True
+                if stop is not None and stop.is_set():
+                    break
+            if not worked:
+                return processed
         return processed
 
     async def clean_up(self, *, force: bool = False) -> int:
