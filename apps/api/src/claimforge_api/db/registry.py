@@ -17,6 +17,7 @@ from claimforge_api.moisture import models as moisture_models
 from claimforge_api.notes import models as notes_models
 from claimforge_api.organizations import models as organizations_models
 from claimforge_api.photos import models as photos_models
+from claimforge_api.pricing import models as pricing_models
 from claimforge_api.properties import models as properties_models
 from claimforge_api.structures import models as structures_models
 from claimforge_api.tasks import models as tasks_models
@@ -38,6 +39,7 @@ __all__ = [
     "notes_models",
     "organizations_models",
     "photos_models",
+    "pricing_models",
     "properties_models",
     "structures_models",
     "tasks_models",
