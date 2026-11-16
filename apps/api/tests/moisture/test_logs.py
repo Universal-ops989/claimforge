@@ -198,7 +198,11 @@ async def test_the_drying_log(site: Site) -> None:
     bath = await table(site.map, site.bath)
     assert [v["id"] for v in bath["visits"]] == [str(first.id), str(second.id)]
     assert bath["rooms"][0]["points"][0]["values"] == [190.0, 160.0]
-    assert (await table(site.map, await site.map.room("Attic"))) == {"visits": [], "rooms": []}
+    assert (await table(site.map, await site.map.room("Attic"))) == {
+        "visits": [],
+        "rooms": [],
+        "atmosphere": [],
+    }
 
 
 async def test_deleting_points_and_visits(site: Site) -> None:
