@@ -27,6 +27,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from claimforge_api.damage.models import Surface
 from claimforge_api.db.base import Base
 from claimforge_api.db.mixins import TimestampMixin, UUIDPrimaryKeyMixin
+from claimforge_api.equipment.models import EquipmentPlacement
+from claimforge_api.moisture import psychrometrics
 from claimforge_api.structures.models import Room
 from claimforge_api.users.models import User
 
@@ -121,6 +123,9 @@ class MoistureLog(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     readings: Mapped[list["MoistureReading"]] = relationship(
         back_populates="log", cascade="all, delete-orphan", lazy="raise"
     )
+    atmosphere: Mapped[list["AtmosphericReading"]] = relationship(
+        back_populates="log", cascade="all, delete-orphan", lazy="raise"
+    )
 
     __table_args__ = (
         UniqueConstraint("claim_id", "id"),
@@ -165,4 +170,88 @@ class MoistureReading(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         # A point's readings over time, and the cascade from a deleted point.
         Index("ix_moisture_readings_point_id", "point_id"),
         CheckConstraint("value >= 0", name="value_not_negative"),
+    )
+
+
+class AtmosphereLocation(StrEnum):
+    """Where the air was read. Comparing them is what shows drying working."""
+
+    OUTDOORS = "outdoors"
+    #: A dry part of the building: the goal the affected air is brought down to.
+    UNAFFECTED = "unaffected"
+    ROOM = "room"  # an affected room
+    #: A dehumidifier's exhaust: much drier than its room when it's doing its job.
+    DEHUMIDIFIER = "dehumidifier"
+
+
+#: Degrees Fahrenheit and percent relative humidity, to a tenth.
+Tenths = Numeric(4, 1)
+
+
+class AtmosphericReading(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """Temperature and relative humidity at one place on one visit."""
+
+    __tablename__ = "atmospheric_readings"
+    __audited__ = True
+
+    organization_id: Mapped[UUID] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE")
+    )
+    claim_id: Mapped[UUID] = mapped_column(ForeignKey("claims.id", ondelete="CASCADE"))
+    log_id: Mapped[UUID]
+    location: Mapped[AtmosphereLocation] = mapped_column(String(20))
+    room_id: Mapped[UUID | None] = mapped_column(default=None)
+    placement_id: Mapped[UUID | None] = mapped_column(default=None)
+    temperature_f: Mapped[Decimal] = mapped_column(Tenths)
+    relative_humidity: Mapped[Decimal] = mapped_column(Tenths)
+
+    log: Mapped[MoistureLog] = relationship(back_populates="atmosphere", lazy="raise")
+    room: Mapped[Room | None] = relationship(lazy="raise", viewonly=True)
+    placement: Mapped[EquipmentPlacement | None] = relationship(lazy="raise", viewonly=True)
+
+    @property
+    def grains_per_pound(self) -> Decimal:
+        return psychrometrics.grains_per_pound(self.temperature_f, self.relative_humidity)
+
+    @property
+    def dew_point_f(self) -> Decimal | None:
+        if self.relative_humidity <= 0:
+            return None
+        return psychrometrics.dew_point_f(self.temperature_f, self.relative_humidity)
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["claim_id", "log_id"],
+            ["moisture_logs.claim_id", "moisture_logs.id"],
+            ondelete="CASCADE",
+        ),
+        # Evidence again: a room with readings can't be deleted.
+        ForeignKeyConstraint(
+            ["claim_id", "room_id"], ["rooms.claim_id", "rooms.id"], ondelete="RESTRICT"
+        ),
+        # A placement entered by mistake takes its exhaust readings with it.
+        ForeignKeyConstraint(
+            ["claim_id", "placement_id"],
+            ["equipment_placements.claim_id", "equipment_placements.id"],
+            ondelete="CASCADE",
+        ),
+        # Each place once per visit (outdoors has no room or placement: NULLs are equal here).
+        Index(
+            "uq_atmospheric_readings_place",
+            "log_id",
+            "location",
+            "room_id",
+            "placement_id",
+            unique=True,
+            postgresql_nulls_not_distinct=True,
+        ),
+        Index("ix_atmospheric_readings_claim_id_room_id", "claim_id", "room_id"),
+        CheckConstraint(_in("location", AtmosphereLocation), name="location_valid"),
+        CheckConstraint("(location = 'room') = (room_id IS NOT NULL)", name="room_iff_room"),
+        CheckConstraint(
+            "(location = 'dehumidifier') = (placement_id IS NOT NULL)",
+            name="placement_iff_dehumidifier",
+        ),
+        CheckConstraint("temperature_f BETWEEN -40 AND 160", name="temperature_plausible"),
+        CheckConstraint("relative_humidity BETWEEN 0 AND 100", name="humidity_valid"),
     )

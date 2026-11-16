@@ -133,9 +133,12 @@ async def list_moisture_logs(
     status_code=status.HTTP_201_CREATED,
     summary="Log moisture readings",
     description="Needs `field_data:write`. One visit: a reading for each point read, on the "
-    "point's own scale. `taken_at` defaults to now and can be earlier when readings are "
-    "entered later, but not in the future (`taken_in_future`). Every point must be on this "
-    "claim (`unknown_moisture_point`, with `point_ids`).",
+    "point's own scale, and the air (temperature and relative humidity) outdoors, in an "
+    "unaffected area, in rooms and at dehumidifier exhausts. Either can be left out, not "
+    "both. Grains per pound and dew point are calculated, assuming sea-level air pressure. "
+    "`taken_at` defaults to now and can be earlier when readings are entered later, but "
+    "not in the future (`taken_in_future`). Points, rooms and dehumidifier placements must "
+    "be on this claim (`unknown_moisture_point`, `unknown_room`, `unknown_dehumidifier`).",
 )
 async def create_moisture_log(
     organization_id: UUID,
@@ -160,8 +163,9 @@ async def get_moisture_log(
     "/moisture-logs/{log_id}",
     summary="Correct a moisture log",
     description="Only the fields sent change. Each entry in `readings` sets a point's value "
-    "on this visit (adding it if the point wasn't read); `value: null` removes it. A visit "
-    "keeps at least one reading (`no_readings`): delete it instead.",
+    "on this visit (adding it if the point wasn't read); `value: null` removes it. "
+    "`atmosphere`, when sent, replaces the visit's atmospheric readings. A visit keeps at "
+    "least one reading of either kind (`no_readings`): delete it instead.",
 )
 async def update_moisture_log(
     organization_id: UUID,

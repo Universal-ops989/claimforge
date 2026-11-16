@@ -19,8 +19,19 @@ from claimforge_api.claims import service as claims
 from claimforge_api.claims.schemas import ClaimActor
 from claimforge_api.core.errors import BusinessRuleError, ConflictError, NotFoundError
 from claimforge_api.db.pagination import Page, SortKey, paginate
-from claimforge_api.moisture.models import MoistureLog, MoisturePoint, MoistureReading
+from claimforge_api.equipment.models import EquipmentKind, EquipmentPlacement
+from claimforge_api.moisture.models import (
+    AtmosphereLocation,
+    AtmosphericReading,
+    MoistureLog,
+    MoisturePoint,
+    MoistureReading,
+)
 from claimforge_api.moisture.schemas import (
+    AtmosphereIn,
+    AtmosphereRead,
+    AtmosphereRoom,
+    AtmosphereUnit,
     DryingLog,
     DryingLogPoint,
     DryingLogQuery,
@@ -61,6 +72,17 @@ class TakenInFutureError(BusinessRuleError):
 class NoReadingsError(BusinessRuleError):
     code = "no_readings"
     title = "A visit needs at least one reading"
+
+
+class UnknownDehumidifierError(BusinessRuleError):
+    code = "unknown_dehumidifier"
+    title = "Not a dehumidifier placed on this claim"
+
+
+#: Dehumidifier kinds whose exhaust can be read.
+DEHUMIDIFIERS = frozenset({EquipmentKind.DEHUMIDIFIER, EquipmentKind.DESICCANT_DEHUMIDIFIER})
+#: How atmospheric readings are listed: outdoors first, dehumidifiers last.
+LOCATION_ORDER = {location: index for index, location in enumerate(AtmosphereLocation)}
 
 
 #: Leeway for "now" between devices whose clocks disagree a little.
@@ -133,6 +155,19 @@ async def _check_label(
         statement = statement.where(MoisturePoint.id != ignore)
     if await session.scalar(statement) is not None:
         raise LabelTakenError(f"Point {label} is already on this claim's map", label=label)
+
+
+async def atmosphere_in_rooms(session: AsyncSession, room_ids: Iterable[UUID]) -> int:
+    """How many atmospheric readings were taken in the rooms (they can't be deleted)."""
+    ids = list(room_ids)
+    if not ids:
+        return 0
+    count = await session.scalar(
+        select(func.count())
+        .select_from(AtmosphericReading)
+        .where(AtmosphericReading.room_id.in_(ids))
+    )
+    return int(count or 0)
 
 
 async def points_in_rooms(session: AsyncSession, room_ids: Iterable[UUID]) -> int:
@@ -248,6 +283,8 @@ def _logs(organization_id: UUID, claim_id: UUID) -> Select[MoistureLog]:
         .options(
             selectinload(MoistureLog.taken_by),
             selectinload(MoistureLog.readings).selectinload(MoistureReading.point),
+            selectinload(MoistureLog.atmosphere).selectinload(AtmosphericReading.room),
+            selectinload(MoistureLog.atmosphere).selectinload(AtmosphericReading.placement),
         )
         .execution_options(populate_existing=True)
     )
@@ -276,6 +313,7 @@ def present_log(log: MoistureLog) -> MoistureLogRead:
         readings=[
             ReadingRead(point_id=r.point_id, label=r.point.label, value=r.value) for r in readings
         ],
+        atmosphere=[_present_air(a) for a in sorted(log.atmosphere, key=_air_order)],
         readings_edited_at=log.readings_edited_at,
         created_at=log.created_at,
         updated_at=log.updated_at,
@@ -307,6 +345,95 @@ async def _check_points(
     if unknown:
         raise UnknownPointError(
             "Not moisture points of this claim", point_ids=sorted(str(p) for p in unknown)
+        )
+
+
+def _air_order(reading: AtmosphericReading) -> tuple[int, str]:
+    where = reading.room.name if reading.room else ""
+    unit = reading.placement.asset_tag if reading.placement else ""
+    return LOCATION_ORDER[AtmosphereLocation(reading.location)], (where or unit).lower()
+
+
+def _present_air(reading: AtmosphericReading) -> AtmosphereRead:
+    return AtmosphereRead(
+        location=reading.location,
+        room=AtmosphereRoom(id=reading.room.id, name=reading.room.name) if reading.room else None,
+        dehumidifier=(
+            AtmosphereUnit(placement_id=reading.placement.id, asset_tag=reading.placement.asset_tag)
+            if reading.placement
+            else None
+        ),
+        temperature_f=reading.temperature_f,
+        relative_humidity=reading.relative_humidity,
+        grains_per_pound=reading.grains_per_pound,
+        dew_point_f=reading.dew_point_f,
+    )
+
+
+def _air(organization_id: UUID, claim_id: UUID, data: AtmosphereIn) -> AtmosphericReading:
+    return AtmosphericReading(
+        organization_id=organization_id,
+        claim_id=claim_id,
+        location=data.location,
+        room_id=data.room_id,
+        placement_id=data.placement_id,
+        temperature_f=data.temperature_f,
+        relative_humidity=data.relative_humidity,
+    )
+
+
+def _place(reading: AtmosphericReading) -> tuple[str, UUID | None]:
+    return str(reading.location), reading.room_id or reading.placement_id
+
+
+def _replace_air(log: MoistureLog, wanted: list[AtmosphericReading]) -> bool:
+    """Make the visit's air ``wanted``, place by place. Whether anything changed.
+
+    Places that stay are updated in place: deleting and re-adding the same place in one
+    flush could insert before it deletes, and trip the one-reading-per-place index.
+    """
+    current = {_place(reading): reading for reading in log.atmosphere}
+    changed = False
+    for new in wanted:
+        old = current.pop(_place(new), None)
+        if old is None:
+            log.atmosphere.append(new)
+            changed = True
+        elif (old.temperature_f, old.relative_humidity) != (
+            new.temperature_f,
+            new.relative_humidity,
+        ):
+            old.temperature_f, old.relative_humidity = new.temperature_f, new.relative_humidity
+            changed = True
+    for gone in current.values():
+        log.atmosphere.remove(gone)  # delete-orphan: audited as deleted
+        changed = True
+    return changed
+
+
+async def _check_air(
+    session: AsyncSession, organization_id: UUID, claim_id: UUID, air: list[AtmosphereIn]
+) -> None:
+    for room_id in {a.room_id for a in air if a.room_id is not None}:
+        await _check_room(session, organization_id, claim_id, room_id)
+    placement_ids = {a.placement_id for a in air if a.placement_id is not None}
+    if not placement_ids:
+        return
+    found = set(
+        await session.scalars(
+            select(EquipmentPlacement.id).where(
+                EquipmentPlacement.id.in_(placement_ids),
+                EquipmentPlacement.claim_id == claim_id,
+                EquipmentPlacement.organization_id == organization_id,
+                EquipmentPlacement.kind.in_(DEHUMIDIFIERS),
+            )
+        )
+    )
+    unknown = placement_ids - found
+    if unknown:
+        raise UnknownDehumidifierError(
+            "Exhaust readings need a dehumidifier placed on this claim",
+            placement_ids=sorted(str(p) for p in unknown),
         )
 
 
@@ -354,6 +481,7 @@ async def create_log(
     taken_at = data.taken_at or datetime.now(UTC)
     _check_taken_at(taken_at)
     await _check_points(session, organization_id, claim_id, {r.point_id for r in data.readings})
+    await _check_air(session, organization_id, claim_id, data.atmosphere)
     log = MoistureLog(
         organization_id=organization_id,
         claim_id=claim_id,
@@ -361,6 +489,7 @@ async def create_log(
         taken_by_id=user.id,
         notes=data.notes,
         readings=[_reading(organization_id, claim_id, r.point_id, r.value) for r in data.readings],
+        atmosphere=[_air(organization_id, claim_id, a) for a in data.atmosphere],
     )
     session.add(log)
     await session.commit()
@@ -380,11 +509,12 @@ async def update_log(
     await authorize(session, user, organization_id, Permission.FIELD_DATA_WRITE)
     await claims.lock_for_changes(session, organization_id, claim_id)
     log = await _get_log(session, organization_id, claim_id, log_id)
-    changes = data.model_dump(exclude_unset=True, exclude={"readings"})
+    changes = data.model_dump(exclude_unset=True, exclude={"readings", "atmosphere"})
     if "taken_at" in changes:
         _check_taken_at(changes["taken_at"])
     added = {r.point_id for r in data.readings if r.value is not None}
     await _check_points(session, organization_id, claim_id, added)
+    await _check_air(session, organization_id, claim_id, data.atmosphere or [])
 
     current = {reading.point_id: reading for reading in log.readings}
     corrected = False
@@ -400,7 +530,11 @@ async def update_log(
         elif reading.value != change.value:
             reading.value = change.value
             corrected = True
-    if not log.readings:
+    if data.atmosphere is not None and _replace_air(
+        log, [_air(organization_id, claim_id, a) for a in data.atmosphere]
+    ):
+        corrected = True
+    if not log.readings and not log.atmosphere:
         raise NoReadingsError("Delete the visit instead of removing every reading")
     for field, value in changes.items():
         setattr(log, field, value)

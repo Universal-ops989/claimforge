@@ -40,6 +40,11 @@ class HasMoisturePointsError(ConflictError):
     title = "Moisture points are mapped here"
 
 
+class HasAtmosphericReadingsError(ConflictError):
+    code = "has_atmospheric_readings"
+    title = "Atmospheric readings were taken here"
+
+
 class HasEquipmentPlacementsError(ConflictError):
     code = "has_equipment_placements"
     title = "Equipment has run here"
@@ -52,6 +57,12 @@ async def _keep_drying_records(session: AsyncSession, room_ids: list[UUID]) -> N
         raise HasMoisturePointsError(
             f"{count} moisture point(s) are mapped here; move or delete them first",
             moisture_points=count,
+        )
+    air = await moisture.atmosphere_in_rooms(session, room_ids)
+    if air:
+        raise HasAtmosphericReadingsError(
+            f"{air} atmospheric reading(s) were taken here; correct those visits first",
+            atmospheric_readings=air,
         )
     placed = await equipment.placements_in_rooms(session, room_ids)
     if placed:
