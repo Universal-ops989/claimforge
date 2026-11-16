@@ -17,7 +17,7 @@ from pydantic import (
 
 from claimforge_api.claims.schemas import ClaimActor
 from claimforge_api.estimates.models import EstimateStatus
-from claimforge_api.pricing.schemas import Code, ItemDescription, Money, Unit
+from claimforge_api.pricing.schemas import Code, ItemDescription, Money, Percent, Unit
 
 Title = Annotated[
     str,
@@ -48,26 +48,6 @@ Quantity = Annotated[
 Position = Annotated[int, Field(ge=1, description="1 is first; later lines move down")]
 
 
-def _percent_text(value: Decimal) -> str:
-    return f"{value:.3f}".rstrip("0").rstrip(".")
-
-
-#: A percentage as a decimal string to a thousandth: "8.25", "10".
-Percent = Annotated[
-    Decimal,
-    Field(ge=0, le=100, decimal_places=3),
-    WithJsonSchema(
-        {
-            "type": "string",
-            "pattern": r"^\d{1,3}(\.\d{1,3})?$",
-            "description": "Percent, as a decimal string to a thousandth",
-            "examples": ["8.25"],
-        }
-    ),
-    PlainSerializer(_percent_text, return_type=str, when_used="json"),
-]
-
-
 class EstimateCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -76,9 +56,15 @@ class EstimateCreate(BaseModel):
         default=None, description="Defaults to the organization's default price list"
     )
     notes: Notes = None
-    tax_percent: Percent = Field(default=Decimal(0), description="Sales tax on taxable lines")
-    overhead_percent: Percent = Decimal(0)
-    profit_percent: Percent = Decimal(0)
+    tax_percent: Percent | None = Field(
+        default=None, description="Sales tax on taxable lines; defaults to the organization's"
+    )
+    overhead_percent: Percent | None = Field(
+        default=None, description="Defaults to the organization's"
+    )
+    profit_percent: Percent | None = Field(
+        default=None, description="Defaults to the organization's"
+    )
 
 
 class EstimateUpdate(BaseModel):
@@ -202,6 +188,12 @@ class EstimateTotals(BaseModel):
     total: Money = Field(description="Subtotal + tax + overhead + profit")
 
 
+class RoomSubtotal(BaseModel):
+    room: LineRoom | None = Field(description="Null for the lines without a room")
+    lines: int
+    subtotal: Money
+
+
 class EstimateSummary(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -222,6 +214,9 @@ class EstimateRead(EstimateSummary):
     overhead_percent: Percent
     profit_percent: Percent
     totals: EstimateTotals
+    rooms: list[RoomSubtotal] = Field(
+        description="Subtotal per room, in the lines' order; lines without a room last"
+    )
     created_by: ClaimActor | None
     next_statuses: list[EstimateStatus] = Field(
         description="Where the estimate can go from here (permissions permitting)"

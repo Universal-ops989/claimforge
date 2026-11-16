@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstraints
 
 from claimforge_api.organizations.models import SLUG_PATTERN
+from claimforge_api.pricing.schemas import Percent
 
 
 def _valid_timezone(value: str) -> str:
@@ -40,6 +41,11 @@ class OrganizationUpdate(BaseModel):
 
     name: Name | None = None
     timezone: TimeZone | None = None
+    default_tax_percent: Percent | None = Field(
+        default=None, description="Sales tax new estimates start with"
+    )
+    default_overhead_percent: Percent | None = None
+    default_profit_percent: Percent | None = None
 
 
 class OrganizationRead(BaseModel):
@@ -49,5 +55,8 @@ class OrganizationRead(BaseModel):
     name: str
     slug: str
     timezone: str
+    default_tax_percent: Percent
+    default_overhead_percent: Percent
+    default_profit_percent: Percent
     created_at: datetime
     updated_at: datetime

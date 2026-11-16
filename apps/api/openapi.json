@@ -3286,14 +3286,21 @@
             "title": "Notes"
           },
           "overhead_percent": {
-            "default": "0",
-            "description": "Percent, as a decimal string to a thousandth",
-            "examples": [
-              "8.25"
+            "anyOf": [
+              {
+                "description": "Percent, as a decimal string to a thousandth",
+                "examples": [
+                  "8.25"
+                ],
+                "pattern": "^\\d{1,3}(\\.\\d{1,3})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "pattern": "^\\d{1,3}(\\.\\d{1,3})?$",
-            "title": "Overhead Percent",
-            "type": "string"
+            "description": "Defaults to the organization's",
+            "title": "Overhead Percent"
           },
           "price_list_id": {
             "anyOf": [
@@ -3309,24 +3316,38 @@
             "title": "Price List Id"
           },
           "profit_percent": {
-            "default": "0",
-            "description": "Percent, as a decimal string to a thousandth",
-            "examples": [
-              "8.25"
+            "anyOf": [
+              {
+                "description": "Percent, as a decimal string to a thousandth",
+                "examples": [
+                  "8.25"
+                ],
+                "pattern": "^\\d{1,3}(\\.\\d{1,3})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "pattern": "^\\d{1,3}(\\.\\d{1,3})?$",
-            "title": "Profit Percent",
-            "type": "string"
+            "description": "Defaults to the organization's",
+            "title": "Profit Percent"
           },
           "tax_percent": {
-            "default": "0",
-            "description": "Sales tax on taxable lines",
-            "examples": [
-              "8.25"
+            "anyOf": [
+              {
+                "description": "Percent, as a decimal string to a thousandth",
+                "examples": [
+                  "8.25"
+                ],
+                "pattern": "^\\d{1,3}(\\.\\d{1,3})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "pattern": "^\\d{1,3}(\\.\\d{1,3})?$",
-            "title": "Tax Percent",
-            "type": "string"
+            "description": "Sales tax on taxable lines; defaults to the organization's",
+            "title": "Tax Percent"
           },
           "title": {
             "examples": [
@@ -3448,6 +3469,14 @@
             "title": "Profit Percent",
             "type": "string"
           },
+          "rooms": {
+            "description": "Subtotal per room, in the lines' order; lines without a room last",
+            "items": {
+              "$ref": "#/components/schemas/RoomSubtotal"
+            },
+            "title": "Rooms",
+            "type": "array"
+          },
           "status": {
             "$ref": "#/components/schemas/EstimateStatus"
           },
@@ -3497,6 +3526,7 @@
           "overhead_percent",
           "profit_percent",
           "totals",
+          "rooms",
           "created_by",
           "next_statuses",
           "lines"
@@ -5170,6 +5200,33 @@
             "title": "Created At",
             "type": "string"
           },
+          "default_overhead_percent": {
+            "description": "Percent, as a decimal string to a thousandth",
+            "examples": [
+              "8.25"
+            ],
+            "pattern": "^\\d{1,3}(\\.\\d{1,3})?$",
+            "title": "Default Overhead Percent",
+            "type": "string"
+          },
+          "default_profit_percent": {
+            "description": "Percent, as a decimal string to a thousandth",
+            "examples": [
+              "8.25"
+            ],
+            "pattern": "^\\d{1,3}(\\.\\d{1,3})?$",
+            "title": "Default Profit Percent",
+            "type": "string"
+          },
+          "default_tax_percent": {
+            "description": "Percent, as a decimal string to a thousandth",
+            "examples": [
+              "8.25"
+            ],
+            "pattern": "^\\d{1,3}(\\.\\d{1,3})?$",
+            "title": "Default Tax Percent",
+            "type": "string"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -5198,6 +5255,9 @@
           "name",
           "slug",
           "timezone",
+          "default_tax_percent",
+          "default_overhead_percent",
+          "default_profit_percent",
           "created_at",
           "updated_at"
         ],
@@ -5208,6 +5268,55 @@
         "additionalProperties": false,
         "description": "Partial update; omitted fields are unchanged. The slug is immutable to keep URLs stable.",
         "properties": {
+          "default_overhead_percent": {
+            "anyOf": [
+              {
+                "description": "Percent, as a decimal string to a thousandth",
+                "examples": [
+                  "8.25"
+                ],
+                "pattern": "^\\d{1,3}(\\.\\d{1,3})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Overhead Percent"
+          },
+          "default_profit_percent": {
+            "anyOf": [
+              {
+                "description": "Percent, as a decimal string to a thousandth",
+                "examples": [
+                  "8.25"
+                ],
+                "pattern": "^\\d{1,3}(\\.\\d{1,3})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Profit Percent"
+          },
+          "default_tax_percent": {
+            "anyOf": [
+              {
+                "description": "Percent, as a decimal string to a thousandth",
+                "examples": [
+                  "8.25"
+                ],
+                "pattern": "^\\d{1,3}(\\.\\d{1,3})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Sales tax new estimates start with",
+            "title": "Default Tax Percent"
+          },
           "name": {
             "anyOf": [
               {
@@ -6908,6 +7017,41 @@
           "updated_at"
         ],
         "title": "RoomRead",
+        "type": "object"
+      },
+      "RoomSubtotal": {
+        "properties": {
+          "lines": {
+            "title": "Lines",
+            "type": "integer"
+          },
+          "room": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LineRoom"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null for the lines without a room"
+          },
+          "subtotal": {
+            "description": "Dollars as a decimal string, to the cent",
+            "examples": [
+              "42.15"
+            ],
+            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
+            "title": "Subtotal",
+            "type": "string"
+          }
+        },
+        "required": [
+          "room",
+          "lines",
+          "subtotal"
+        ],
+        "title": "RoomSubtotal",
         "type": "object"
       },
       "RoomUpdate": {

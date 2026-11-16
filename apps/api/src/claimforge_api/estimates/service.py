@@ -6,6 +6,7 @@ approved estimate need ``estimates:approve``. Closed and cancelled claims are re
 The claim row is locked for every change, so numbers and positions can't collide.
 """
 
+from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import Select, func, select, update
@@ -20,6 +21,7 @@ from claimforge_api.core.errors import (
     NotFoundError,
     PermissionDeniedError,
 )
+from claimforge_api.estimates import totals as arithmetic
 from claimforge_api.estimates.models import Estimate, EstimateLine, EstimateStatus
 from claimforge_api.estimates.schemas import (
     EstimateCreate,
@@ -28,6 +30,7 @@ from claimforge_api.estimates.schemas import (
     LineCreate,
     LineUpdate,
 )
+from claimforge_api.organizations.models import Organization
 from claimforge_api.pricing.models import PriceItem, PriceList
 from claimforge_api.structures.models import Room
 from claimforge_api.users.models import User
@@ -94,6 +97,18 @@ async def _get(
     return estimate
 
 
+def _rooms(estimate: Estimate) -> list[dict[str, object]]:
+    names = {line.room.id: line.room for line in estimate.lines if line.room is not None}
+    return [
+        {
+            "room": names.get(group.room_id) if group.room_id else None,
+            "lines": group.lines,
+            "subtotal": group.subtotal,
+        }
+        for group in arithmetic.by_room((line.room_id, line.total) for line in estimate.lines)
+    ]
+
+
 def present(estimate: Estimate) -> EstimateRead:
     return EstimateRead.model_validate(
         {
@@ -119,8 +134,13 @@ def present(estimate: Estimate) -> EstimateRead:
                 )
             },
             "next_statuses": list(TRANSITIONS[EstimateStatus(estimate.status)]),
+            "rooms": _rooms(estimate),
         }
     )
+
+
+def _or(given: Decimal | None, default: Decimal) -> Decimal:
+    return default if given is None else given
 
 
 def _require_draft(estimate: Estimate) -> None:
@@ -204,6 +224,7 @@ async def create_estimate(
     highest = await session.scalar(
         select(func.max(Estimate.number)).where(Estimate.claim_id == claim_id)
     )
+    organization = await session.get_one(Organization, organization_id)
     estimate = Estimate(
         organization_id=organization_id,
         claim_id=claim_id,
@@ -211,9 +232,9 @@ async def create_estimate(
         title=data.title,
         price_list_id=await _price_list(session, organization_id, data.price_list_id),
         notes=data.notes,
-        tax_percent=data.tax_percent,
-        overhead_percent=data.overhead_percent,
-        profit_percent=data.profit_percent,
+        tax_percent=_or(data.tax_percent, organization.default_tax_percent),
+        overhead_percent=_or(data.overhead_percent, organization.default_overhead_percent),
+        profit_percent=_or(data.profit_percent, organization.default_profit_percent),
         created_by_id=user.id,
     )
     session.add(estimate)

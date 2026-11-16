@@ -8,6 +8,7 @@ total is the sum of the rounded amounts, so the figures on a printed estimate ad
 from collections.abc import Iterable
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
+from uuid import UUID
 
 CENT = Decimal("0.01")
 HUNDRED = Decimal(100)
@@ -59,3 +60,23 @@ def totals(
         profit=profit,
         total=cents(subtotal + tax + overhead + profit),
     )
+
+
+@dataclass(frozen=True)
+class RoomSubtotal:
+    room_id: UUID | None
+    lines: int
+    subtotal: Decimal
+
+
+def by_room(lines: Iterable[tuple[UUID | None, Decimal]]) -> list[RoomSubtotal]:
+    """Subtotals per room, in the order the lines use the rooms; lines without one last."""
+    counts: dict[UUID | None, int] = {}
+    sums: dict[UUID | None, Decimal] = {}
+    for room_id, total in lines:
+        counts[room_id] = counts.get(room_id, 0) + 1
+        sums[room_id] = sums.get(room_id, Decimal("0.00")) + total
+    order: list[UUID | None] = [room for room in counts if room is not None]
+    if None in counts:
+        order.append(None)
+    return [RoomSubtotal(room, counts[room], cents(sums[room])) for room in order]
