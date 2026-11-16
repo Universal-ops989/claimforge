@@ -32,6 +32,18 @@ type DocumentsQuery = Omit<
   QueryParams<"/v1/organizations/{organization_id}/claims/{claim_id}/documents", "get">,
   "cursor"
 >;
+type PointsQuery = QueryParams<
+  "/v1/organizations/{organization_id}/claims/{claim_id}/moisture-points",
+  "get"
+>;
+type LogsQuery = Omit<
+  QueryParams<"/v1/organizations/{organization_id}/claims/{claim_id}/moisture-logs", "get">,
+  "cursor"
+>;
+type DryingLogQuery = QueryParams<
+  "/v1/organizations/{organization_id}/claims/{claim_id}/drying-log",
+  "get"
+>;
 type TasksQuery = QueryParams<"/v1/organizations/{organization_id}/claims/{claim_id}/tasks", "get">;
 type MyTasksQuery = Omit<
   QueryParams<"/v1/organizations/{organization_id}/tasks/assigned-to-me", "get">,
@@ -103,6 +115,29 @@ export const queryKeys = {
     [...queryKeys.documentLists(organizationId, claimId), query] as const,
   document: (organizationId: string, claimId: string, documentId: string) =>
     [...queryKeys.documents(organizationId, claimId), documentId] as const,
+  moisturePoints: (organizationId: string, claimId: string) =>
+    [...queryKeys.claim(organizationId, claimId), "moisture-points"] as const,
+  moisturePointLists: (organizationId: string, claimId: string) =>
+    [...queryKeys.moisturePoints(organizationId, claimId), "list"] as const,
+  moisturePointList: (organizationId: string, claimId: string, query: PointsQuery = {}) =>
+    [...queryKeys.moisturePointLists(organizationId, claimId), query] as const,
+  moisturePoint: (organizationId: string, claimId: string, pointId: string) =>
+    [...queryKeys.moisturePoints(organizationId, claimId), pointId] as const,
+  moistureLogs: (organizationId: string, claimId: string) =>
+    [...queryKeys.claim(organizationId, claimId), "moisture-logs"] as const,
+  moistureLogLists: (organizationId: string, claimId: string) =>
+    [...queryKeys.moistureLogs(organizationId, claimId), "list"] as const,
+  moistureLogList: (organizationId: string, claimId: string, query: LogsQuery = {}) =>
+    [...queryKeys.moistureLogLists(organizationId, claimId), query] as const,
+  moistureLog: (organizationId: string, claimId: string, logId: string) =>
+    [...queryKeys.moistureLogs(organizationId, claimId), logId] as const,
+  /** Everything computed from points and readings: the drying log and drying status. */
+  drying: (organizationId: string, claimId: string) =>
+    [...queryKeys.claim(organizationId, claimId), "drying"] as const,
+  dryingLog: (organizationId: string, claimId: string, query: DryingLogQuery = {}) =>
+    [...queryKeys.drying(organizationId, claimId), "log", query] as const,
+  dryingStatus: (organizationId: string, claimId: string) =>
+    [...queryKeys.drying(organizationId, claimId), "status"] as const,
   /** Every task list of a claim, whatever it filters on. */
   tasks: (organizationId: string, claimId: string) =>
     [...queryKeys.claim(organizationId, claimId), "tasks"] as const,
