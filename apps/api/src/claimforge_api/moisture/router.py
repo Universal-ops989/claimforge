@@ -195,7 +195,10 @@ async def delete_moisture_log(
     summary="The claim's drying log",
     description="The monitoring table: points down the side (grouped by room), visits "
     "across the top (oldest first), each point's value per visit, or null where it wasn't "
-    "read. With `room_id`, only that room's points and the visits that read them.",
+    "read. Then the air: outdoors, unaffected, rooms and dehumidifier exhausts, with grains "
+    "per pound, dew point and each dehumidifier's grain depression. With `room_id`, only "
+    "that room's points, air and dehumidifiers (with outdoors and unaffected to compare), "
+    "and the visits that read something there.",
 )
 async def get_drying_log(
     organization_id: UUID,

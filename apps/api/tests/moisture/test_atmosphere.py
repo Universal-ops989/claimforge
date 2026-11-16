@@ -17,7 +17,7 @@ from claimforge_api.equipment.models import EquipmentPlacement
 from claimforge_api.equipment.schemas import EquipmentCreate, PlacementCreate
 from claimforge_api.moisture import psychrometrics, service
 from claimforge_api.moisture.models import AtmosphericReading, MoistureLog
-from claimforge_api.moisture.schemas import MoistureLogCreate, MoistureLogUpdate
+from claimforge_api.moisture.schemas import DryingLogQuery, MoistureLogCreate, MoistureLogUpdate
 from claimforge_api.structures import service as structures
 from claimforge_api.structures.models import Room
 from claimforge_api.users.models import Role
@@ -278,3 +278,68 @@ async def test_over_http(
     assert [entry["summary"] for entry in timeline["items"]] == ["Logged moisture readings"]
     viewer = await client_for(Role.VIEWER)
     assert (await viewer.get(f"{url}/moisture-logs/{visit['id']}")).status_code == 200
+
+
+# ─── In the drying log ────────────────────────────────────────────────────────
+
+
+async def drying(job: Job, room: Room | None = None) -> dict[str, Any]:
+    log = await service.drying_log(
+        job.map.session,
+        job.map.organization_id,
+        job.map.claim.id,
+        DryingLogQuery(room_id=room.id if room else None),
+        user=job.map.user,
+    )
+    return log.model_dump(mode="json")
+
+
+async def test_air_rows_and_grain_depression(job: Job) -> None:
+    first = await job.log(atmosphere=job.everywhere())
+    outdoors_only = await job.log(atmosphere=[job.air("outdoors", "90", "75")])
+
+    table = await drying(job)
+    assert [v["id"] for v in table["visits"]] == [str(first.id), str(outdoors_only.id)]
+    rows = table["atmosphere"]
+    assert [
+        (r["location"], (r["room"] or {}).get("name"), (r["dehumidifier"] or {}).get("asset_tag"))
+        for r in rows
+    ] == [
+        ("outdoors", None, None),
+        ("unaffected", None, None),
+        ("room", "Kitchen", None),
+        ("dehumidifier", None, "D-12"),
+    ]
+    room_gpp = psychrometrics.grains_per_pound(D("78"), D("65"))
+    exhaust_gpp = psychrometrics.grains_per_pound(D("95"), D("20"))
+    dehu = rows[3]["values"]
+    assert dehu[0]["grains_per_pound"] == float(exhaust_gpp)
+    assert dehu[0]["grain_depression"] == float(room_gpp - exhaust_gpp)
+    assert dehu[1] is None  # not read on the second visit
+    assert rows[0]["values"][1]["temperature_f"] == 90.0
+    assert rows[2]["values"][0]["grain_depression"] is None  # only dehumidifiers have one
+
+
+async def test_a_rooms_log_keeps_outdoors_for_comparison(job: Job) -> None:
+    bath = await job.map.room("Bath")
+    in_kitchen = await job.log(atmosphere=job.everywhere())
+    await job.log(atmosphere=[job.air("outdoors", "90", "75")])  # nothing in the kitchen
+    await job.log(atmosphere=[job.air("room", "74", "50", room_id=str(bath.id))])
+
+    kitchen = await drying(job, job.kitchen)
+    assert [v["id"] for v in kitchen["visits"]] == [str(in_kitchen.id)]
+    assert [r["location"] for r in kitchen["atmosphere"]] == [
+        "outdoors",
+        "unaffected",
+        "room",
+        "dehumidifier",
+    ]
+    attic = await drying(job, await job.map.room("Attic"))
+    assert attic == {"visits": [], "rooms": [], "atmosphere": []}
+
+
+async def test_depression_needs_the_rooms_air(job: Job) -> None:
+    await job.log(atmosphere=[job.air("dehumidifier", "95", "20", placement_id=str(job.dehu.id))])
+
+    [dehu] = (await drying(job))["atmosphere"]
+    assert dehu["values"][0]["grain_depression"] is None

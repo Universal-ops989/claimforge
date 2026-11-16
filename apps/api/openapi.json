@@ -2401,6 +2401,14 @@
       "DryingLog": {
         "description": "The monitoring table: points down the side, visits across the top.",
         "properties": {
+          "atmosphere": {
+            "description": "Outdoors, unaffected, rooms, then dehumidifiers",
+            "items": {
+              "$ref": "#/components/schemas/DryingLogAir"
+            },
+            "title": "Atmosphere",
+            "type": "array"
+          },
           "rooms": {
             "description": "Rooms with points, in the points' order",
             "items": {
@@ -2420,9 +2428,120 @@
         },
         "required": [
           "visits",
-          "rooms"
+          "rooms",
+          "atmosphere"
         ],
         "title": "DryingLog",
+        "type": "object"
+      },
+      "DryingLogAir": {
+        "properties": {
+          "dehumidifier": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AtmosphereUnit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "location": {
+            "$ref": "#/components/schemas/AtmosphereLocation"
+          },
+          "room": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AtmosphereRoom"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "values": {
+            "description": "One per visit, in the visits' order; null where it wasn't read",
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/DryingLogAirValue"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Values",
+            "type": "array"
+          }
+        },
+        "required": [
+          "location",
+          "room",
+          "dehumidifier",
+          "values"
+        ],
+        "title": "DryingLogAir",
+        "type": "object"
+      },
+      "DryingLogAirValue": {
+        "properties": {
+          "dew_point_f": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dew Point F"
+          },
+          "grain_depression": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Dehumidifiers: the room's GPP minus the exhaust's on this visit; null without a room reading. Low or negative: the unit isn't pulling water out.",
+            "title": "Grain Depression"
+          },
+          "grains_per_pound": {
+            "title": "Grains Per Pound",
+            "type": "number"
+          },
+          "relative_humidity": {
+            "description": "Relative humidity in percent, to a tenth",
+            "examples": [
+              55
+            ],
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Relative Humidity",
+            "type": "number"
+          },
+          "temperature_f": {
+            "description": "Degrees Fahrenheit, to a tenth",
+            "examples": [
+              72.5
+            ],
+            "maximum": 160.0,
+            "minimum": -40.0,
+            "title": "Temperature F",
+            "type": "number"
+          }
+        },
+        "required": [
+          "temperature_f",
+          "relative_humidity",
+          "grains_per_pound",
+          "dew_point_f",
+          "grain_depression"
+        ],
+        "title": "DryingLogAirValue",
         "type": "object"
       },
       "DryingLogPoint": {
@@ -9782,7 +9901,7 @@
     },
     "/v1/organizations/{organization_id}/claims/{claim_id}/drying-log": {
       "get": {
-        "description": "The monitoring table: points down the side (grouped by room), visits across the top (oldest first), each point's value per visit, or null where it wasn't read. With `room_id`, only that room's points and the visits that read them.",
+        "description": "The monitoring table: points down the side (grouped by room), visits across the top (oldest first), each point's value per visit, or null where it wasn't read. Then the air: outdoors, unaffected, rooms and dehumidifier exhausts, with grains per pound, dew point and each dehumidifier's grain depression. With `room_id`, only that room's points, air and dehumidifiers (with outdoors and unaffected to compare), and the visits that read something there.",
         "operationId": "get_drying_log",
         "parameters": [
           {

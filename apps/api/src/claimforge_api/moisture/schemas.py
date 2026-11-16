@@ -296,11 +296,34 @@ class DryingLogRoom(BaseModel):
     points: list[DryingLogPoint]
 
 
+class DryingLogAirValue(BaseModel):
+    temperature_f: Fahrenheit
+    relative_humidity: Humidity
+    grains_per_pound: Grains
+    dew_point_f: Grains | None
+    grain_depression: Grains | None = Field(
+        description="Dehumidifiers: the room's GPP minus the exhaust's on this visit; null "
+        "without a room reading. Low or negative: the unit isn't pulling water out."
+    )
+
+
+class DryingLogAir(BaseModel):
+    location: AtmosphereLocation
+    room: AtmosphereRoom | None
+    dehumidifier: AtmosphereUnit | None
+    values: list[DryingLogAirValue | None] = Field(
+        description="One per visit, in the visits' order; null where it wasn't read"
+    )
+
+
 class DryingLog(BaseModel):
     """The monitoring table: points down the side, visits across the top."""
 
     visits: list[DryingLogVisit] = Field(description="Oldest first")
     rooms: list[DryingLogRoom] = Field(description="Rooms with points, in the points' order")
+    atmosphere: list[DryingLogAir] = Field(
+        description="Outdoors, unaffected, rooms, then dehumidifiers"
+    )
 
 
 class DryingLogQuery(BaseModel):

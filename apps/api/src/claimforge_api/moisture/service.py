@@ -7,6 +7,7 @@ points at once can't both take the next number.
 
 from collections.abc import Iterable
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
@@ -33,6 +34,8 @@ from claimforge_api.moisture.schemas import (
     AtmosphereRoom,
     AtmosphereUnit,
     DryingLog,
+    DryingLogAir,
+    DryingLogAirValue,
     DryingLogPoint,
     DryingLogQuery,
     DryingLogRoom,
@@ -556,6 +559,63 @@ async def delete_log(
     await session.commit()
 
 
+def _air_value(reading: AtmosphericReading, room_gpp: Decimal | None) -> DryingLogAirValue:
+    gpp = reading.grains_per_pound
+    return DryingLogAirValue(
+        temperature_f=reading.temperature_f,
+        relative_humidity=reading.relative_humidity,
+        grains_per_pound=gpp,
+        dew_point_f=reading.dew_point_f,
+        grain_depression=room_gpp - gpp if room_gpp is not None else None,
+    )
+
+
+def _air_rows(
+    air: list[AtmosphericReading], logs: list[MoistureLog], room_order: dict[UUID, int]
+) -> list[DryingLogAir]:
+    """One row per place read, values aligned with ``logs``; dehumidifiers with depression."""
+    by_place: dict[tuple[str, UUID | None], dict[UUID, AtmosphericReading]] = {}
+    for reading in air:
+        by_place.setdefault(_place(reading), {})[reading.log_id] = reading
+    room_gpp = {
+        (reading.log_id, reading.room_id): reading.grains_per_pound
+        for reading in air
+        if reading.room_id is not None
+    }
+
+    def order(place: tuple[str, UUID | None]) -> tuple[int, int, str]:
+        sample = next(iter(by_place[place].values()))
+        location = LOCATION_ORDER[AtmosphereLocation(sample.location)]
+        if sample.room is not None:
+            return location, room_order.get(sample.room.id, len(room_order)), sample.room.name
+        tag = sample.placement.asset_tag if sample.placement else ""
+        return location, 0, tag.lower()
+
+    rows = []
+    for place in sorted(by_place, key=order):
+        readings = by_place[place]
+        sample = next(iter(readings.values()))
+        unit = sample.placement
+        values: list[DryingLogAirValue | None] = []
+        for log in logs:
+            cell = readings.get(log.id)
+            inlet = room_gpp.get((log.id, unit.room_id)) if unit is not None else None
+            values.append(_air_value(cell, inlet) if cell is not None else None)
+        rows.append(
+            DryingLogAir(
+                location=sample.location,
+                room=AtmosphereRoom(id=sample.room.id, name=sample.room.name)
+                if sample.room
+                else None,
+                dehumidifier=AtmosphereUnit(placement_id=unit.id, asset_tag=unit.asset_tag)
+                if unit
+                else None,
+                values=values,
+            )
+        )
+    return rows
+
+
 async def drying_log(
     session: AsyncSession,
     organization_id: UUID,
@@ -564,17 +624,15 @@ async def drying_log(
     *,
     user: User,
 ) -> DryingLog:
-    """The monitoring table: each point's readings, visit by visit, oldest visit first.
+    """The monitoring table, oldest visit first: each point's readings, then the air.
 
-    Visits that read none of the points shown are left out, so a room's table has no
-    empty columns.
+    With a room, only that room's points, its air, the dehumidifiers placed in it, and
+    outdoors and unaffected for comparison; only visits that read something in the room
+    become columns, so a room's table has no empty ones.
     """
+    room_id = query.room_id if query else None
     points = await list_points(
-        session,
-        organization_id,
-        claim_id,
-        MoisturePointQuery(room_id=query.room_id if query else None),
-        user=user,
+        session, organization_id, claim_id, MoisturePointQuery(room_id=room_id), user=user
     )
     values: dict[tuple[UUID, UUID], Any] = {}
     if points:
@@ -585,14 +643,40 @@ async def drying_log(
             )
         )
         values = {(log_id, point_id): value for log_id, point_id, value in rows}
+
+    air = list(
+        await session.scalars(
+            select(AtmosphericReading)
+            .where(AtmosphericReading.claim_id == claim_id)
+            .options(
+                selectinload(AtmosphericReading.room),
+                selectinload(AtmosphericReading.placement),
+            )
+        )
+    )
+    shared = {AtmosphereLocation.OUTDOORS, AtmosphereLocation.UNAFFECTED}
+    if room_id is not None:
+        air = [
+            a
+            for a in air
+            if a.location in shared
+            or a.room_id == room_id
+            or (a.placement is not None and a.placement.room_id == room_id)
+        ]
+    # Visits that read something shown; outdoors alone doesn't make a room's column.
+    anchors = {log_id for log_id, _ in values} | {
+        a.log_id for a in air if room_id is None or a.location not in shared
+    }
     logs = list(
         await session.scalars(
             select(MoistureLog)
-            .where(MoistureLog.claim_id == claim_id, MoistureLog.id.in_({k[0] for k in values}))
+            .where(MoistureLog.claim_id == claim_id, MoistureLog.id.in_(anchors))
             .options(selectinload(MoistureLog.taken_by))
             .order_by(MoistureLog.taken_at, MoistureLog.id)
         )
     )
+    shown = {log.id for log in logs}
+    air = [a for a in air if a.log_id in shown]
 
     rooms: dict[UUID, DryingLogRoom] = {}
     for point in points:
@@ -609,10 +693,12 @@ async def drying_log(
                 values=[values.get((log.id, point.id)) for log in logs],
             )
         )
+    room_order = {room: index for index, room in enumerate(rooms)}
     return DryingLog(
         visits=[
             DryingLogVisit(id=log.id, taken_at=log.taken_at, taken_by=_actor(log.taken_by))
             for log in logs
         ],
         rooms=list(rooms.values()),
+        atmosphere=_air_rows(air, logs, room_order),
     )
