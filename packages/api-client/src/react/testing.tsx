@@ -2,7 +2,7 @@
  * Test helpers for the hooks: a fake API that routes by method and path, and `renderHook`
  * wrapped in the providers. Test-only; excluded from the build.
  */
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import { renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 
@@ -137,19 +137,24 @@ export class FakeServer {
 export interface Rendered {
   server?: FakeServer;
   tokens?: TokenStore;
+  /** Share another render's cache, as two screens of one app would. */
+  queryClient?: QueryClient;
 }
 
 /** `renderHook` inside a QueryClientProvider and an ApiProvider talking to `server`. */
 export function renderWithApi<Result>(
   hook: () => Result,
-  { server = new FakeServer(), tokens = memoryTokenStore(signedIn()) }: Rendered = {},
+  {
+    server = new FakeServer(),
+    tokens = memoryTokenStore(signedIn()),
+    queryClient = createQueryClient({ defaultOptions: { queries: { retry: false } } }),
+  }: Rendered = {},
 ) {
   const api = createApiClient({
     baseUrl: "https://api.test",
     fetch: server.fetch,
     auth: { tokens, now: () => NOW },
   });
-  const queryClient = createQueryClient({ defaultOptions: { queries: { retry: false } } });
   function wrapper({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
