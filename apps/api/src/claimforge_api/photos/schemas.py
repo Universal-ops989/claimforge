@@ -1,7 +1,7 @@
 """Request and response schemas for claim photos."""
 
 from datetime import datetime
-from typing import Annotated, Literal, Self
+from typing import Annotated, Self
 from uuid import UUID
 
 from pydantic import (
@@ -17,6 +17,7 @@ from pydantic import (
 
 from claimforge_api.claims.schemas import ClaimActor
 from claimforge_api.photos.models import PhotoType, ProcessingStatus
+from claimforge_api.uploads.schemas import SignedUploadRead
 
 MAX_TAGS = 20
 
@@ -115,15 +116,6 @@ class PhotoRoom(BaseModel):
 class TagCount(BaseModel):
     tag: str
     photos: int = Field(description="How many photos on live claims carry it")
-
-
-class SignedUploadRead(BaseModel):
-    """Send the file as the body of this request, with these headers."""
-
-    url: str
-    method: Literal["PUT"]
-    headers: dict[str, str]
-    expires_at: datetime
 
 
 class PhotoUploadRead(BaseModel):
