@@ -46,6 +46,16 @@ class MoistureScale(StrEnum):
     REFERENCE = "reference"
 
 
+class GoalBasis(StrEnum):
+    """How a point's dry standard was set: carriers ask."""
+
+    #: Read on unaffected material of the same kind (IICRC S500's dry reference).
+    REFERENCE = "reference"
+    #: A manufacturer's or industry figure for the material.
+    PUBLISHED = "published"
+    MANUAL = "manual"
+
+
 def _in(column: str, values: type[StrEnum]) -> str:
     return f"{column} IN ({', '.join(sorted(repr(v.value) for v in values))})"
 
@@ -73,6 +83,9 @@ class MoisturePoint(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     surface: Mapped[Surface] = mapped_column(String(20))
     scale: Mapped[MoistureScale] = mapped_column(String(20))
     notes: Mapped[str | None] = mapped_column(Text, default=None)
+    #: The value, on the point's scale, at or below which its material counts as dry.
+    dry_standard: Mapped[Decimal | None] = mapped_column(Reading, default=None)
+    dry_standard_basis: Mapped[GoalBasis | None] = mapped_column(String(20), default=None)
 
     room: Mapped[Room] = relationship(lazy="raise", viewonly=True)
     # Loaded when the point is deleted, so each reading's removal is audited.
@@ -95,6 +108,12 @@ class MoisturePoint(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         CheckConstraint(_in("surface", Surface), name="surface_valid"),
         CheckConstraint(_in("scale", MoistureScale), name="scale_valid"),
         CheckConstraint("btrim(label) <> ''", name="label_not_blank"),
+        CheckConstraint(_in("dry_standard_basis", GoalBasis), name="dry_standard_basis_valid"),
+        CheckConstraint(
+            "(dry_standard IS NULL) = (dry_standard_basis IS NULL)",
+            name="dry_standard_has_basis",
+        ),
+        CheckConstraint("dry_standard >= 0", name="dry_standard_not_negative"),
     )
 
 

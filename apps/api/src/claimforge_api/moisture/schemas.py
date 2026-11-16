@@ -18,7 +18,8 @@ from pydantic import (
 
 from claimforge_api.claims.schemas import ClaimActor
 from claimforge_api.damage.models import Surface
-from claimforge_api.moisture.models import AtmosphereLocation, MoistureScale
+from claimforge_api.moisture.goals import DryingStatus
+from claimforge_api.moisture.models import AtmosphereLocation, GoalBasis, MoistureScale
 
 Label = Annotated[
     str,
@@ -31,6 +32,28 @@ Material = Annotated[
     Field(examples=["Drywall"]),
 ]
 Notes = Annotated[str, StringConstraints(strip_whitespace=True, max_length=2000)] | None
+
+
+# Sent and returned as JSON numbers; stored exactly, to one decimal place.
+Value = Annotated[
+    Decimal,
+    Field(ge=0, max_digits=5, decimal_places=1),
+    WithJsonSchema(
+        {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 9999.9,
+            "description": "On the point's scale, to one decimal place",
+            "examples": [18.5],
+        }
+    ),
+    PlainSerializer(float, return_type=float, when_used="json"),
+]
+
+
+def _check_goal(goal: Decimal | None, basis: GoalBasis | None) -> None:
+    if (goal is None) != (basis is None):
+        raise ValueError("A dry standard needs its basis, and a basis its dry standard")
 
 
 class MoisturePointCreate(BaseModel):
@@ -46,6 +69,17 @@ class MoisturePointCreate(BaseModel):
         description="`percent` for moisture content, `reference` for a meter's own scale."
     )
     notes: Notes = None
+    dry_standard: Value | None = Field(
+        default=None, description="The goal on the point's scale: at or below it is dry."
+    )
+    dry_standard_basis: GoalBasis | None = Field(
+        default=None, description="How the goal was set; required with `dry_standard`."
+    )
+
+    @model_validator(mode="after")
+    def _goal_has_basis(self) -> Self:
+        _check_goal(self.dry_standard, self.dry_standard_basis)
+        return self
 
 
 class MoisturePointUpdate(BaseModel):
@@ -58,12 +92,20 @@ class MoisturePointUpdate(BaseModel):
     material: Material | None = None
     surface: Surface | None = None
     notes: Notes = None
+    dry_standard: Value | None = Field(
+        default=None, description="Send with `dry_standard_basis`; both null clear the goal."
+    )
+    dry_standard_basis: GoalBasis | None = None
 
     @model_validator(mode="after")
     def _required_stay(self) -> Self:
         for field in ("room_id", "label", "material", "surface"):
             if field in self.model_fields_set and getattr(self, field) is None:
                 raise ValueError(f"{field} cannot be cleared")
+        goal = {"dry_standard", "dry_standard_basis"} & self.model_fields_set
+        if goal and len(goal) != 2:
+            raise ValueError("Send dry_standard and dry_standard_basis together")
+        _check_goal(self.dry_standard, self.dry_standard_basis)
         return self
 
 
@@ -88,27 +130,13 @@ class MoisturePointRead(BaseModel):
     surface: Surface
     scale: MoistureScale
     notes: str | None
+    dry_standard: Value | None
+    dry_standard_basis: GoalBasis | None
     created_at: datetime
     updated_at: datetime
 
 
 MAX_READINGS = 500
-
-# Sent and returned as JSON numbers; stored exactly, to one decimal place.
-Value = Annotated[
-    Decimal,
-    Field(ge=0, max_digits=5, decimal_places=1),
-    WithJsonSchema(
-        {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 9999.9,
-            "description": "On the point's scale, to one decimal place",
-            "examples": [18.5],
-        }
-    ),
-    PlainSerializer(float, return_type=float, when_used="json"),
-]
 
 
 class ReadingIn(BaseModel):
@@ -285,6 +313,14 @@ class DryingLogPoint(BaseModel):
     material: str
     surface: Surface
     scale: MoistureScale
+    dry_standard: Value | None
+    dry_standard_basis: GoalBasis | None
+    status: DryingStatus = Field(
+        description="`dry`: latest reading at or below the goal; `drying`; `no_goal`; `not_read`"
+    )
+    dried_at: datetime | None = Field(
+        description="When the point's current run of dry readings began"
+    )
     values: list[Value | None] = Field(
         description="One per visit, in the visits' order; null where the point wasn't read"
     )

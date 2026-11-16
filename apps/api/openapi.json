@@ -2546,6 +2546,46 @@
       },
       "DryingLogPoint": {
         "properties": {
+          "dried_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When the point's current run of dry readings began",
+            "title": "Dried At"
+          },
+          "dry_standard": {
+            "anyOf": [
+              {
+                "description": "On the point's scale, to one decimal place",
+                "examples": [
+                  18.5
+                ],
+                "maximum": 9999.9,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dry Standard"
+          },
+          "dry_standard_basis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GoalBasis"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -2561,6 +2601,10 @@
           },
           "scale": {
             "$ref": "#/components/schemas/MoistureScale"
+          },
+          "status": {
+            "$ref": "#/components/schemas/DryingStatus",
+            "description": "`dry`: latest reading at or below the goal; `drying`; `no_goal`; `not_read`"
           },
           "surface": {
             "$ref": "#/components/schemas/Surface"
@@ -2593,6 +2637,10 @@
           "material",
           "surface",
           "scale",
+          "dry_standard",
+          "dry_standard_basis",
+          "status",
+          "dried_at",
           "values"
         ],
         "title": "DryingLogPoint",
@@ -2655,6 +2703,16 @@
         ],
         "title": "DryingLogVisit",
         "type": "object"
+      },
+      "DryingStatus": {
+        "enum": [
+          "dry",
+          "drying",
+          "no_goal",
+          "not_read"
+        ],
+        "title": "DryingStatus",
+        "type": "string"
       },
       "EquipmentCreate": {
         "additionalProperties": false,
@@ -3020,6 +3078,16 @@
         ],
         "title": "FieldError",
         "type": "object"
+      },
+      "GoalBasis": {
+        "description": "How a point's dry standard was set: carriers ask.",
+        "enum": [
+          "reference",
+          "published",
+          "manual"
+        ],
+        "title": "GoalBasis",
+        "type": "string"
       },
       "HealthResponse": {
         "properties": {
@@ -3461,6 +3529,35 @@
       "MoisturePointCreate": {
         "additionalProperties": false,
         "properties": {
+          "dry_standard": {
+            "anyOf": [
+              {
+                "description": "On the point's scale, to one decimal place",
+                "examples": [
+                  18.5
+                ],
+                "maximum": 9999.9,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The goal on the point's scale: at or below it is dry.",
+            "title": "Dry Standard"
+          },
+          "dry_standard_basis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GoalBasis"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How the goal was set; required with `dry_standard`."
+          },
           "label": {
             "anyOf": [
               {
@@ -3530,6 +3627,33 @@
             "title": "Created At",
             "type": "string"
           },
+          "dry_standard": {
+            "anyOf": [
+              {
+                "description": "On the point's scale, to one decimal place",
+                "examples": [
+                  18.5
+                ],
+                "maximum": 9999.9,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dry Standard"
+          },
+          "dry_standard_basis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GoalBasis"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -3577,6 +3701,8 @@
           "surface",
           "scale",
           "notes",
+          "dry_standard",
+          "dry_standard_basis",
           "created_at",
           "updated_at"
         ],
@@ -3606,6 +3732,34 @@
         "additionalProperties": false,
         "description": "Only the fields sent change. The scale is fixed: readings on two scales don't compare.",
         "properties": {
+          "dry_standard": {
+            "anyOf": [
+              {
+                "description": "On the point's scale, to one decimal place",
+                "examples": [
+                  18.5
+                ],
+                "maximum": 9999.9,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Send with `dry_standard_basis`; both null clear the goal.",
+            "title": "Dry Standard"
+          },
+          "dry_standard_basis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GoalBasis"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "label": {
             "anyOf": [
               {
