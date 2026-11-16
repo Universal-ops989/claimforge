@@ -227,6 +227,12 @@ function Header() {
   `UploadError("invalid")` before any request. A finished upload goes on top of unfiltered
   lists; filtered lists refetch. Photos whose thumbnails are still being made are polled
   every `PROCESSING_POLL_MS`. Renaming or deleting a room refreshes the photos.
+- **Moisture and drying.** `useDryingLog` and `useDryingStatus` are computed by the API
+  from points and visits, so any point or visit change refreshes both
+  (`queryKeys.drying`). Point and visit lists are refetched rather than re-sorted (points
+  sort by room and natural label order, visits by `taken_at`, which can be backdated);
+  details are written from the answer, and a deleted visit leaves the loaded pages at
+  once.
 - **Sessions.** `useLogin` and `useAcceptInvitation` reset the cache on success, so a
   new user never sees the last one's data. `useLogout` removes every cached query, even
   offline. When a session ends on its own, call `queryClient.removeQueries()` from

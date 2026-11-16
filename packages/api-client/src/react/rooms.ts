@@ -128,17 +128,21 @@ function refreshTimeline(queryClient: QueryClient, organizationId: string, claim
 }
 
 /**
- * After a room is renamed or deleted: the timeline, and the photos, which show their
- * room's name (a deleted room's photos become unassigned).
+ * After a room is renamed or deleted: the timeline, and what shows the room's name: its
+ * photos (a deleted room's photos become unassigned), moisture points and drying views.
  */
-async function refreshPhotos(
+async function refreshRoomViews(
   queryClient: QueryClient,
   organizationId: string,
   claimId: string,
 ): Promise<void> {
   await Promise.all([
     refreshTimeline(queryClient, organizationId, claimId),
-    queryClient.invalidateQueries({ queryKey: queryKeys.photos(organizationId, claimId) }),
+    ...[
+      queryKeys.photos(organizationId, claimId),
+      queryKeys.moisturePoints(organizationId, claimId),
+      queryKeys.drying(organizationId, claimId),
+    ].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
   ]);
 }
 
@@ -201,7 +205,7 @@ export function useDeleteStructure(organizationId: string, claimId: string) {
       editLayout(queryClient, organizationId, claimId, (structures) =>
         structures.filter((structure) => structure.id !== structureId),
       );
-      await refreshPhotos(queryClient, organizationId, claimId);
+      await refreshRoomViews(queryClient, organizationId, claimId);
     },
   });
 }
@@ -250,7 +254,7 @@ export function useUpdateRoom(organizationId: string, claimId: string) {
       }),
     onSuccess: async (updated) => {
       writeRoom(queryClient, organizationId, claimId, updated);
-      await refreshPhotos(queryClient, organizationId, claimId);
+      await refreshRoomViews(queryClient, organizationId, claimId);
     },
   });
 }
@@ -272,7 +276,7 @@ export function useDeleteRoom(organizationId: string, claimId: string) {
           rooms: structure.rooms.filter((room) => room.id !== roomId),
         })),
       );
-      await refreshPhotos(queryClient, organizationId, claimId);
+      await refreshRoomViews(queryClient, organizationId, claimId);
     },
   });
 }
