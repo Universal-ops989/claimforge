@@ -193,6 +193,12 @@ def _moisture_point(event: Event, names: Names) -> str:
         return f"Relabeled moisture point {before} as {after}"
     if event.changed("room_id"):
         return f"Moved {point} to another room"
+    if event.changed("dry_standard"):
+        _, goal = event.became("dry_standard")
+        if goal is None:
+            return f"Cleared the dry standard of {point}"
+        basis = label(event.value("dry_standard_basis"))
+        return f"Set the dry standard of {point} to {goal} ({basis})"
     return _with_fields(f"Updated {point}", event)
 
 

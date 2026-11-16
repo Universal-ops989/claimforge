@@ -21,6 +21,7 @@ from claimforge_api.claims.schemas import ClaimActor
 from claimforge_api.core.errors import BusinessRuleError, ConflictError, NotFoundError
 from claimforge_api.db.pagination import Page, SortKey, paginate
 from claimforge_api.equipment.models import EquipmentKind, EquipmentPlacement
+from claimforge_api.moisture import goals
 from claimforge_api.moisture.models import (
     AtmosphereLocation,
     AtmosphericReading,
@@ -683,6 +684,9 @@ async def drying_log(
         room = rooms.setdefault(
             point.room_id, DryingLogRoom(id=point.room.id, name=point.room.name, points=[])
         )
+        row = [values.get((log.id, point.id)) for log in logs]
+        read = [(log.taken_at, v) for log, v in zip(logs, row, strict=True) if v is not None]
+        state = goals.progress(read, point.dry_standard)
         room.points.append(
             DryingLogPoint(
                 id=point.id,
@@ -690,7 +694,11 @@ async def drying_log(
                 material=point.material,
                 surface=point.surface,
                 scale=point.scale,
-                values=[values.get((log.id, point.id)) for log in logs],
+                dry_standard=point.dry_standard,
+                dry_standard_basis=point.dry_standard_basis,
+                status=state.status,
+                dried_at=state.dried_at,
+                values=row,
             )
         )
     room_order = {room: index for index, room in enumerate(rooms)}
