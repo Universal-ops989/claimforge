@@ -3,6 +3,8 @@
 Reading needs ``org:read``; changes need ``reports:generate``.
 """
 
+import logging
+from datetime import timedelta
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -10,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from claimforge_api.auth.permissions import Permission, authorize
 from claimforge_api.core.errors import ConflictError, NotFoundError
+from claimforge_api.reports import logos
 from claimforge_api.reports.models import DEFAULT_ACCENT, ReportKind, ReportTemplate
 from claimforge_api.reports.schemas import (
     OPTIONS,
@@ -19,7 +22,13 @@ from claimforge_api.reports.schemas import (
     TemplateUpdate,
     options_for,
 )
+from claimforge_api.storage.base import ObjectStorage, StorageUnavailableError
 from claimforge_api.users.models import User
+
+logger = logging.getLogger(__name__)
+
+#: How long a logo link works.
+LINK_LIFETIME = timedelta(hours=1)
 
 
 class TemplateNameTakenError(ConflictError):
@@ -27,8 +36,11 @@ class TemplateNameTakenError(ConflictError):
     title = "A template already has this name"
 
 
-def present(template: ReportTemplate) -> TemplateRead:
+async def present(storage: ObjectStorage, template: ReportTemplate) -> TemplateRead:
     kind = ReportKind(template.kind)
+    logo_url = None
+    if template.logo_key is not None:
+        logo_url = await storage.download_url(template.logo_key, expires_in=LINK_LIFETIME)
     return TemplateRead(
         id=template.id,
         kind=kind,
@@ -39,6 +51,7 @@ def present(template: ReportTemplate) -> TemplateRead:
         accent_color=template.accent_color,
         options=OPTIONS[kind].model_validate(template.options),
         is_default=template.is_default,
+        logo_url=logo_url,
         built_in=False,
         created_at=template.created_at,
         updated_at=template.updated_at,
@@ -57,6 +70,7 @@ def built_in(kind: ReportKind) -> TemplateRead:
         accent_color=DEFAULT_ACCENT,
         options=OPTIONS[kind](),
         is_default=True,
+        logo_url=None,
         built_in=True,
         created_at=None,
         updated_at=None,
@@ -130,7 +144,12 @@ async def get_template(
 
 
 async def effective_template(
-    session: AsyncSession, organization_id: UUID, kind: ReportKind, *, user: User
+    session: AsyncSession,
+    storage: ObjectStorage,
+    organization_id: UUID,
+    kind: ReportKind,
+    *,
+    user: User,
 ) -> TemplateRead:
     """What a report of ``kind`` uses: the kind's default, or the built-in one."""
     await authorize(session, user, organization_id, Permission.ORG_READ)
@@ -141,7 +160,7 @@ async def effective_template(
             ReportTemplate.is_default.is_(True),
         )
     )
-    return present(default) if default is not None else built_in(kind)
+    return await present(storage, default) if default is not None else built_in(kind)
 
 
 async def create_template(
@@ -183,9 +202,65 @@ async def update_template(
 
 
 async def delete_template(
-    session: AsyncSession, organization_id: UUID, template_id: UUID, *, user: User
+    session: AsyncSession,
+    storage: ObjectStorage,
+    organization_id: UUID,
+    template_id: UUID,
+    *,
+    user: User,
 ) -> None:
     await authorize(session, user, organization_id, Permission.REPORTS_GENERATE)
     template = await _get(session, organization_id, template_id)
+    key = template.logo_key
     await session.delete(template)
     await session.commit()
+    if key is not None:
+        await _forget(storage, key)
+
+
+async def _forget(storage: ObjectStorage, key: str) -> None:
+    """Delete a logo file; if storage is down it's only wasted space, so say so and go on."""
+    try:
+        await storage.delete(key)
+    except StorageUnavailableError:
+        logger.warning("Logo file %s remains", key, exc_info=True)
+
+
+async def set_logo(
+    session: AsyncSession,
+    storage: ObjectStorage,
+    organization_id: UUID,
+    template_id: UUID,
+    data: bytes,
+    *,
+    user: User,
+) -> ReportTemplate:
+    """Store ``data`` as the template's logo, replacing any earlier one."""
+    await authorize(session, user, organization_id, Permission.REPORTS_GENERATE)
+    template = await _get(session, organization_id, template_id)
+    png = logos.normalize(data)
+    key = logos.logo_key(organization_id, template.id)
+    await storage.put(key, png, content_type=logos.CONTENT_TYPE)
+    # Same key each time, so a replaced logo leaves nothing behind. Recorded on the
+    # template when it's new; a replacement only changes the file.
+    template.logo_key = key
+    await session.commit()
+    return await _get(session, organization_id, template_id)
+
+
+async def remove_logo(
+    session: AsyncSession,
+    storage: ObjectStorage,
+    organization_id: UUID,
+    template_id: UUID,
+    *,
+    user: User,
+) -> ReportTemplate:
+    await authorize(session, user, organization_id, Permission.REPORTS_GENERATE)
+    template = await _get(session, organization_id, template_id)
+    key = template.logo_key
+    template.logo_key = None
+    await session.commit()
+    if key is not None:
+        await _forget(storage, key)
+    return await _get(session, organization_id, template_id)
