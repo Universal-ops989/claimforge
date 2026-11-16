@@ -267,6 +267,16 @@ def _report(event: Event, names: Names) -> str:
     return f"Retrying the {report}"
 
 
+def _share(event: Event, names: Names) -> str:
+    label = event.value("label")
+    target = f" for {label}" if label else ""
+    if event.verb == "created":
+        return f"Shared a report by link{target}"
+    if event.changed("revoked_at"):
+        return f"Revoked a report link{target}"
+    return f"Updated a report link{target}"
+
+
 def _note(event: Event, names: Names) -> str:
     verb = {"created": "Wrote", "updated": "Edited", "deleted": "Deleted"}.get(
         event.verb, "Changed"
@@ -311,6 +321,7 @@ SUMMARIES: dict[str, Callable[[Event, Names], str]] = {
     "equipment_placement": _placement,
     "estimate": _estimate,
     "report_job": _report,
+    "report_share": _share,
     "note": _note,
     "task": _task,
 }

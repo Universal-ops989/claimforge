@@ -43,7 +43,7 @@ ENTITY_TYPES: dict[TimelineKind, tuple[str, ...]] = {
     TimelineKind.MOISTURE: ("moisture_point", "moisture_log"),
     TimelineKind.EQUIPMENT: ("equipment_placement",),
     TimelineKind.ESTIMATES: ("estimate",),
-    TimelineKind.REPORTS: ("report_job",),
+    TimelineKind.REPORTS: ("report_job", "report_share"),
     TimelineKind.NOTES: ("note",),
     TimelineKind.TASKS: ("task",),
 }

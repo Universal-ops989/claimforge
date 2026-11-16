@@ -134,3 +134,32 @@ class ReportJob(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         ),
         Index("ix_report_jobs_claim_id_id", "claim_id", "id"),
     )
+
+
+class ReportShare(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """A link to one report that works without signing in, until it expires."""
+
+    __tablename__ = "report_shares"
+    __audited__ = True
+
+    organization_id: Mapped[UUID] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE")
+    )
+    claim_id: Mapped[UUID] = mapped_column(ForeignKey("claims.id", ondelete="CASCADE"))
+    report_id: Mapped[UUID] = mapped_column(ForeignKey("report_jobs.id", ondelete="CASCADE"))
+    #: SHA-256 of the link's token: the token itself is shown once and never stored.
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    label: Mapped[str | None] = mapped_column(String(200), default=None)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    created_by_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), default=None
+    )
+    # Kept up to date outside the ORM (see reports/shares.py): every open by a carrier
+    # would otherwise be an audit event.
+    open_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    last_opened_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+
+    created_by: Mapped[User | None] = relationship(lazy="raise")
+
+    __table_args__ = (Index("ix_report_shares_report_id", "report_id"),)

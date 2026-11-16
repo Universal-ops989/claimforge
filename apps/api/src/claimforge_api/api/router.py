@@ -22,6 +22,7 @@ from claimforge_api.photos.router import router as photos_router
 from claimforge_api.pricing.router import router as pricing_router
 from claimforge_api.properties.router import router as properties_router
 from claimforge_api.reports.router import claim_router as claim_reports_router
+from claimforge_api.reports.router import public_router as shared_reports_router
 from claimforge_api.reports.router import router as reports_router
 from claimforge_api.search.router import router as search_router
 from claimforge_api.storage.router import router as storage_router
@@ -42,6 +43,7 @@ v1_router.include_router(equipment_router)
 v1_router.include_router(pricing_router)
 v1_router.include_router(reports_router)
 v1_router.include_router(claim_reports_router)
+v1_router.include_router(shared_reports_router)
 v1_router.include_router(properties_router)
 v1_router.include_router(claims_router)
 v1_router.include_router(structures_router)
