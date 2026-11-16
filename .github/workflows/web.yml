@@ -1,15 +1,21 @@
 name: Web
 
+# Everything except the API, but including its OpenAPI contract: the typed client is
+# generated from it, and its tests fail when the two drift apart.
 on:
   pull_request:
-    paths-ignore:
-      - "apps/api/**"
-      - ".github/workflows/api.yml"
+    paths:
+      - "**"
+      - "!apps/api/**"
+      - "!.github/workflows/api.yml"
+      - "apps/api/openapi.json"
   push:
     branches: [main]
-    paths-ignore:
-      - "apps/api/**"
-      - ".github/workflows/api.yml"
+    paths:
+      - "**"
+      - "!apps/api/**"
+      - "!.github/workflows/api.yml"
+      - "apps/api/openapi.json"
 
 permissions:
   contents: read

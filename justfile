@@ -57,9 +57,10 @@ api-lock:
     cd {{ api_dir }} && {{ venv_bin }}/python -m piptools compile -q -o requirements.lock pyproject.toml
     cd {{ api_dir }} && {{ venv_bin }}/python -m piptools compile -q --extra dev -o requirements-dev.lock pyproject.toml
 
-# Regenerate the committed OpenAPI contract (apps/api/openapi.json)
+# Regenerate the committed OpenAPI contract (apps/api/openapi.json) and the client types
 api-openapi:
     cd {{ api_dir }} && {{ venv_bin }}/python -m claimforge_api.openapi
+    pnpm --filter @claimforge/api-client generate
 
 # Run the background worker (photo thumbnails, upload cleanup); add --once to drain and exit
 worker *args:

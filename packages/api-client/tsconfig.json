@@ -1,0 +1,9 @@
+{
+  "extends": "@claimforge/tsconfig/base.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "types": ["node"]
+  },
+  "include": ["src", "scripts", "eslint.config.js"]
+}
