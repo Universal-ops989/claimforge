@@ -4,10 +4,13 @@
  * - `ApiError`: the API (or something in front of it) answered with a non-2xx status.
  *   It always carries a `Problem`, synthesized when the answer wasn't problem details.
  * - `NetworkError`: no answer at all (offline, DNS, CORS, connection reset).
+ * - `ResponseValidationError`: a 2xx body that doesn't match the contract.
  *
  * An aborted request rejects with the abort reason itself, so TanStack Query can tell
  * a cancelled query from a failed one.
  */
+import { z } from "zod";
+
 import type { FieldError, Problem } from "./index";
 
 /** The `code` of a problem the client made up because the answer wasn't problem details. */
@@ -70,6 +73,28 @@ export class NetworkError extends Error {
 
   constructor(method: string, url: string, cause: unknown) {
     super(`Couldn't reach the API (${method.toUpperCase()} ${url})`, { cause });
+  }
+}
+
+export class ResponseValidationError extends Error {
+  override name = "ResponseValidationError";
+
+  constructor(
+    /** The call, as the contract names it: `get /v1/organizations/{organization_id}`. */
+    readonly operation: string,
+    readonly status: number,
+    /** The body as received. */
+    readonly body: unknown,
+    readonly error: z.ZodError,
+  ) {
+    super(
+      `${operation} answered ${String(status)} with a body that doesn't match the contract:
+` + z.prettifyError(error),
+    );
+  }
+
+  get issues(): z.core.$ZodIssue[] {
+    return this.error.issues;
   }
 }
 
