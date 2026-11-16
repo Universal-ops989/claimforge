@@ -15,6 +15,7 @@ EXCERPT = 80
 #: Columns that say where a record sits rather than what it is.
 _PLUMBING = frozenset({"organization_id", "claim_id"})
 _TITLE = frozenset({"title"})
+_READINGS_EDITED = frozenset({"readings_edited_at"})
 
 
 @dataclass(frozen=True)
@@ -193,6 +194,16 @@ def _moisture_point(event: Event, names: Names) -> str:
     return _with_fields(f"Updated {point}", event)
 
 
+def _moisture_log(event: Event, names: Names) -> str:
+    if event.verb == "created":
+        return "Logged moisture readings"
+    if event.verb == "deleted":
+        return "Deleted moisture readings"
+    if event.changed("readings_edited_at"):
+        return _with_fields("Corrected moisture readings", event, skip=_READINGS_EDITED)
+    return _with_fields("Updated moisture readings", event)
+
+
 def _note(event: Event, names: Names) -> str:
     verb = {"created": "Wrote", "updated": "Edited", "deleted": "Deleted"}.get(
         event.verb, "Changed"
@@ -233,6 +244,7 @@ SUMMARIES: dict[str, Callable[[Event, Names], str]] = {
     "photo": _photo,
     "document": _document,
     "moisture_point": _moisture_point,
+    "moisture_log": _moisture_log,
     "note": _note,
     "task": _task,
 }
