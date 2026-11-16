@@ -15,6 +15,7 @@ import type { components, operations, paths } from "./schema.gen";
 export type { components, operations, paths };
 
 export {
+  AUTHENTICATION_REQUIRED,
   createApiClient,
   raw,
   RawBody,
@@ -25,6 +26,15 @@ export {
   type RequestOptions,
 } from "./client";
 export { ApiError, isApiError, NetworkError, UNEXPECTED_RESPONSE } from "./errors";
+export {
+  memoryTokenStore,
+  tokensFrom,
+  webLock,
+  type AuthOptions,
+  type RefreshLock,
+  type Tokens,
+  type TokenStore,
+} from "./auth";
 
 // ─── Schemas ─────────────────────────────────────────────────────────────────
 

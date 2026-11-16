@@ -9,6 +9,7 @@
  * Paths, parameters, bodies and results all come from the generated contract types, so a
  * renamed field or a removed endpoint is a compile error in the calling code.
  */
+import { RefreshRefused, Session, type AuthOptions, type Exchange, type Tokens } from "./auth";
 import { ApiError, NetworkError } from "./errors";
 import type {
   ApiPath,
@@ -19,6 +20,7 @@ import type {
   QueryParams,
   RequestBody,
   ResponseBody,
+  Schema,
 } from "./index";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -89,6 +91,8 @@ export interface ApiClientOptions {
   fetch?: typeof fetch;
   /** Headers sent with every call. */
   headers?: HeadersInit;
+  /** Sign calls with a bearer token and keep the session fresh. */
+  auth?: AuthOptions;
 }
 
 type Call<M extends HttpMethod> = <P extends PathsFor<M>>(
@@ -108,6 +112,13 @@ export interface ApiClient {
   put: Call<"put">;
   patch: Call<"patch">;
   delete: Call<"delete">;
+  /** Sign in and keep the tokens. Needs the `auth` option. */
+  login(credentials: RequestBody<"/v1/auth/login", "post">): Promise<Tokens>;
+  /**
+   * Forget the tokens, then ask the API to revoke the session. Signing out locally always
+   * works; a failure to reach the API leaves the refresh token valid until it expires.
+   */
+  logout(): Promise<void>;
 }
 
 // ─── Implementation ──────────────────────────────────────────────────────────
@@ -122,6 +133,10 @@ interface LooseOptions {
 }
 
 const ACCEPT = "application/json, application/problem+json";
+/** The code of a 401 that a fresh access token can fix. */
+export const AUTHENTICATION_REQUIRED = "authentication_required";
+/** Calls that manage tokens themselves and never carry one. */
+const AUTH_PATHS = "/v1/auth/";
 
 export function createApiClient(options: ApiClientOptions): ApiClient {
   const send = options.fetch ?? ((input, init) => globalThis.fetch(input, init));
@@ -150,25 +165,87 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
       headers.set("Content-Type", "application/json");
     }
 
-    let response: Response;
-    try {
-      response = await send(url, {
-        method: method.toUpperCase(),
-        headers,
-        body: body ?? null,
-        signal: call.signal ?? null,
-      });
-    } catch (error) {
-      if (call.signal?.aborted) {
-        throw call.signal.reason ?? error;
+    async function attempt(tokens: Tokens | null): Promise<Response> {
+      const signed = new Headers(headers);
+      if (tokens !== null) {
+        signed.set("Authorization", `Bearer ${tokens.accessToken}`);
       }
-      throw new NetworkError(method, url, error);
+      try {
+        return await send(url, {
+          method: method.toUpperCase(),
+          headers: signed,
+          body: body ?? null,
+          signal: call.signal ?? null,
+        });
+      } catch (error) {
+        if (call.signal?.aborted) {
+          throw call.signal.reason ?? error;
+        }
+        throw new NetworkError(method, url, error);
+      }
+    }
+
+    const tokens = session && !template.startsWith(AUTH_PATHS) ? await session.current() : null;
+    let response = await attempt(tokens);
+    // An access token can expire or be revoked between the check above and the call:
+    // refresh once and retry once. A second 401 is the answer.
+    if (response.status === 401 && session !== null && tokens !== null) {
+      const error = await ApiError.from(response, url);
+      if (error.code !== AUTHENTICATION_REQUIRED) {
+        throw error;
+      }
+      const renewed = await session.renew(tokens);
+      if (renewed === null) {
+        throw error;
+      }
+      response = await attempt(renewed);
     }
 
     if (!response.ok) {
       throw await ApiError.from(response, url);
     }
     return { data: await readBody(response), status: response.status, headers: response.headers };
+  }
+
+  const exchange: Exchange = async (refreshToken) => {
+    try {
+      const { data } = await request("post", "/v1/auth/refresh", {
+        body: { refresh_token: refreshToken },
+      });
+      return data as Schema<"TokenResponse">;
+    } catch (error) {
+      if (error instanceof ApiError && isRefusal(error.status)) {
+        throw new RefreshRefused(error.code, { cause: error });
+      }
+      throw error;
+    }
+  };
+  const session = options.auth ? new Session(options.auth, exchange) : null;
+
+  function signedIn(): Session {
+    if (session === null) {
+      throw new TypeError("Pass `auth` to createApiClient to sign in");
+    }
+    return session;
+  }
+
+  async function login(credentials: unknown): Promise<Tokens> {
+    const current = signedIn();
+    const { data } = await request("post", "/v1/auth/login", { body: credentials });
+    const tokens = current.stamp(data as Schema<"TokenResponse">);
+    await current.save(tokens);
+    return tokens;
+  }
+
+  async function logout(): Promise<void> {
+    const current = signedIn();
+    const tokens = await current.tokens();
+    await current.save(null);
+    if (tokens !== null) {
+      await request("post", "/v1/auth/logout", {
+        body: { refresh_token: tokens.refreshToken },
+      }).catch(() => undefined);
+    }
   }
 
   const data =
@@ -185,7 +262,14 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     put: data("put") as ApiClient["put"],
     patch: data("patch") as ApiClient["patch"],
     delete: data("delete") as ApiClient["delete"],
+    login,
+    logout,
   };
+}
+
+/** The API refused the refresh token itself; anything else (408, 429, 5xx) may pass. */
+function isRefusal(status: number): boolean {
+  return status >= 400 && status < 500 && status !== 408 && status !== 429;
 }
 
 /** `/claims/{claim_id}` + `{ claim_id: "a b" }` → `/claims/a%20b`. */
