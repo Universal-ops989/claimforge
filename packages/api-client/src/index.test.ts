@@ -23,6 +23,8 @@ type PhotoComplete =
   "/v1/organizations/{organization_id}/claims/{claim_id}/photo-uploads/{upload_id}/complete";
 type Reports = "/v1/organizations/{organization_id}/claims/{claim_id}/reports";
 type Contact = "/v1/organizations/{organization_id}/contacts/{contact_id}";
+type Logo = "/v1/organizations/{organization_id}/report-templates/{template_id}/logo";
+type SharedReport = "/v1/shared-reports/{token}";
 
 describe("schemas", () => {
   test("named schemas resolve to their generated shape", () => {
@@ -86,6 +88,8 @@ describe("operations", () => {
     expectTypeOf<RequestBody<Claims, "post">>().toEqualTypeOf<Schema<"ClaimCreate">>();
     expectTypeOf<RequestBody<Claim, "patch">>().toEqualTypeOf<Schema<"ClaimUpdate">>();
     expectTypeOf<RequestBody<Claims, "get">>().toBeNever();
+    // Uploads send the file itself, not JSON.
+    expectTypeOf<RequestBody<Logo, "put">>().toBeNever();
   });
 
   test("response bodies default to the success status", () => {
@@ -103,7 +107,14 @@ describe("operations", () => {
     expectTypeOf<ResponseBody<Contact, "delete">>().toBeUndefined();
   });
 
-  test("error responses can be picked by status", () => {
+  test("redirects have no success body", () => {
+    expectTypeOf<SuccessStatus<SharedReport, "get">>().toBeNever();
+    expectTypeOf<ResponseBody<SharedReport, "get">>().toBeNever();
+  });
+
+  test("error responses are problem details, picked by status", () => {
     expectTypeOf<ResponseBody<Claims, "post", 422>>().toEqualTypeOf<Problem>();
+    expectTypeOf<ResponseBody<Claim, "get", 404>>().toEqualTypeOf<Problem>();
+    expectTypeOf<ResponseBody<SharedReport, "get", 404>>().toEqualTypeOf<Problem>();
   });
 });
