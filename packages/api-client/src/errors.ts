@@ -77,7 +77,9 @@ export class NetworkError extends Error {
 }
 
 /**
- * Sending a file to a signed upload link failed:
+ * Uploading a file failed:
+ * - `invalid`: the file doesn't meet the contract (its type, an empty file, a long name);
+ *   nothing was sent. `cause` is the `ZodError`.
  * - `expired`: the link ran out before anything was sent; ask the API for a new one.
  * - `rejected`: storage answered with an error (`status`, and `detail`: the start of its
  *   answer, usually XML naming the reason).
@@ -87,7 +89,7 @@ export class UploadError extends Error {
   override name = "UploadError";
 
   constructor(
-    readonly reason: "expired" | "rejected" | "unreachable",
+    readonly reason: "invalid" | "expired" | "rejected" | "unreachable",
     message: string,
     readonly status: number | null = null,
     readonly detail: string | null = null,

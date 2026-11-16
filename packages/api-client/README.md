@@ -221,6 +221,12 @@ function Header() {
   re-sort. A new note goes on top of the first loaded page; edits and deletes change the
   loaded pages of both `useNotes` and `useNotesMentioningMe`. Notes aren't optimistic,
   because only the API turns `<@user-id>` mentions into names.
+- **Photos and documents.** `useUploadPhoto` and `useUploadDocument` do all three upload
+  steps in one mutation (`mutate({ file, room_id, tags })`). The body is checked against
+  the contract first, so an unsupported type or an empty file fails with
+  `UploadError("invalid")` before any request. A finished upload goes on top of unfiltered
+  lists; filtered lists refetch. Photos whose thumbnails are still being made are polled
+  every `PROCESSING_POLL_MS`. Renaming or deleting a room refreshes the photos.
 - **Sessions.** `useLogin` and `useAcceptInvitation` reset the cache on success, so a
   new user never sees the last one's data. `useLogout` removes every cached query, even
   offline. When a session ends on its own, call `queryClient.removeQueries()` from

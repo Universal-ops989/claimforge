@@ -1,4 +1,4 @@
-import type { InfiniteData } from "@tanstack/react-query";
+import type { InfiniteData, QueryClient, QueryKey } from "@tanstack/react-query";
 
 import type { CursorPage } from "../index";
 
@@ -27,4 +27,30 @@ export function editPages<Item>(
       pages: data.pages.map((page, index) => ({ ...page, items: edit(page.items, index) })),
     }
   );
+}
+
+/**
+ * Bring every cached list under `prefix` (keys ending in the list's filters) in line with
+ * a change: lists `filtered` says are unfiltered are edited in place with `edit`; the
+ * others are refetched, because whether the item belongs in them is the API's call.
+ */
+// `Query` names what the key's last element holds; reading it back out is unchecked.
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+export async function editOrRefetch<Item, Query>(
+  queryClient: QueryClient,
+  prefix: QueryKey,
+  filtered: (query: Query) => boolean,
+  edit: (items: Item[], index: number) => Item[],
+): Promise<void> {
+  const refetch: Promise<void>[] = [];
+  for (const [queryKey] of queryClient.getQueriesData({ queryKey: prefix })) {
+    if (filtered(queryKey[queryKey.length - 1] as Query)) {
+      refetch.push(queryClient.invalidateQueries({ queryKey, exact: true }));
+    } else {
+      queryClient.setQueryData<InfiniteData<CursorPage<Item>>>(queryKey, (pages) =>
+        editPages(pages, edit),
+      );
+    }
+  }
+  await Promise.all(refetch);
 }
