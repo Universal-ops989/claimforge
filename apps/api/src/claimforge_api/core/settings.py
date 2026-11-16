@@ -100,6 +100,9 @@ class Settings(BaseSettings):
     photo_max_bytes: int = Field(
         default=25 * 1024 * 1024, ge=1, description="Largest photo that can be uploaded."
     )
+    document_max_bytes: int = Field(
+        default=50 * 1024 * 1024, ge=1, description="Largest document that can be attached."
+    )
 
     worker_poll_seconds: float = Field(
         default=5.0, gt=0, le=300, description="How often an idle worker looks for new photos."

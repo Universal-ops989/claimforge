@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from claimforge_api.documents.models import DocumentUpload
 from claimforge_api.photos import processing
 from claimforge_api.photos.models import PhotoUpload
 from claimforge_api.storage.base import ObjectStorage, StorageUnavailableError
@@ -27,7 +28,7 @@ logger = logging.getLogger(__name__)
 SessionFactory = Callable[[], AbstractAsyncContextManager[AsyncSession]]
 
 #: Every kind of pending upload the cleanup looks after.
-PENDING_UPLOADS: tuple[type[PendingUpload], ...] = (PhotoUpload,)
+PENDING_UPLOADS: tuple[type[PendingUpload], ...] = (PhotoUpload, DocumentUpload)
 
 
 @dataclass

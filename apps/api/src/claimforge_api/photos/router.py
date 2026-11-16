@@ -16,9 +16,9 @@ from claimforge_api.photos.schemas import (
     PhotoUpdate,
     PhotoUploadCreate,
     PhotoUploadRead,
-    SignedUploadRead,
     TagCount,
 )
+from claimforge_api.uploads.schemas import SignedUploadRead
 
 router = APIRouter(
     prefix="/organizations/{organization_id}/claims/{claim_id}",
@@ -61,12 +61,7 @@ async def start_photo_upload(
     )
     return PhotoUploadRead(
         id=upload.id,
-        upload=SignedUploadRead(
-            url=signed.url,
-            method=signed.method,
-            headers=signed.headers,
-            expires_at=signed.expires_at,
-        ),
+        upload=SignedUploadRead.of(signed),
     )
 
 
