@@ -55,4 +55,10 @@ export const queryKeys = {
     [...queryKeys.claim(organizationId, claimId), "timeline"] as const,
   timeline: (organizationId: string, claimId: string, query: TimelineQuery = {}) =>
     [...queryKeys.timelines(organizationId, claimId), query] as const,
+  /** A claim's structures, each with its rooms. */
+  structures: (organizationId: string, claimId: string) =>
+    [...queryKeys.claim(organizationId, claimId), "structures"] as const,
+  /** One room, and later whatever is recorded in it. */
+  room: (organizationId: string, claimId: string, roomId: string) =>
+    [...queryKeys.claim(organizationId, claimId), "rooms", roomId] as const,
 };

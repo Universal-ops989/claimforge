@@ -43,4 +43,19 @@ export {
   useUpdateOrganization,
 } from "./organizations";
 export { allItems, nextCursor } from "./pages";
+export {
+  roomQuery,
+  structuresQuery,
+  useCreateRoom,
+  useCreateStructure,
+  useDeleteRoom,
+  useDeleteStructure,
+  useRoom,
+  useStructures,
+  useUpdateRoom,
+  useUpdateStructure,
+  type NewRoom,
+  type RoomChange,
+  type StructureChange,
+} from "./rooms";
 export { meQuery, useAcceptInvitation, useLogin, useLogout, useMe } from "./session";

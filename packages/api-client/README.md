@@ -187,6 +187,10 @@ function Header() {
   status as `expected_status`, so if a teammate moved the claim first the API answers
   409 `status_changed` and the hook refetches instead of acting on a stale screen. Pass
   `expected_status: null` to skip the check. Unassigning is optimistic, like revoking.
+- **Layout.** `useStructures` is the whole layout (structures with their rooms nested),
+  and creating, renaming, moving or deleting a structure or room edits it in place, in
+  the API's order. `useRoom` starts from the layout's copy when it's loaded. Deletes wait
+  for the API, because a room holding drying evidence is refused with 409.
 - **Sessions.** `useLogin` and `useAcceptInvitation` reset the cache on success, so a
   new user never sees the last one's data. `useLogout` removes every cached query, even
   offline. When a session ends on its own, call `queryClient.removeQueries()` from
