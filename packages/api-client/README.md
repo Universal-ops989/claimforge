@@ -38,6 +38,50 @@ type Invalid = ResponseBody<ClaimsPath, "post", 422>; // Problem
 
 The raw generated `paths`, `operations` and `components` are exported too.
 
+## Calls
+
+```ts
+import { createApiClient, isApiError, raw } from "@claimforge/api-client";
+
+const api = createApiClient({ baseUrl: "https://api.example.com" });
+
+const claims = await api.get("/v1/organizations/{organization_id}/claims", {
+  path: { organization_id },
+  query: { status: ["new", "in_progress"], limit: 25 }, // arrays repeat the key
+});
+
+try {
+  await api.patch("/v1/organizations/{organization_id}/claims/{claim_id}", {
+    path: { organization_id, claim_id },
+    body: { carrier_name: "Lone Star Mutual" },
+  });
+} catch (error) {
+  if (isApiError(error, "claim_locked")) {
+    // error.status, error.problem, error.fieldErrors (422)
+  }
+}
+
+// Non-JSON bodies say what they are.
+await api.post("/v1/organizations/{organization_id}/price-lists/{list_id}/import", {
+  path: { organization_id, list_id },
+  body: raw(csvText, "text/csv"),
+});
+
+// request() also returns the status and headers: reports answer 202 with Location
+// and Retry-After.
+const { data: job, headers } = await api.request("post", reportsPath, {
+  path: { organization_id, claim_id },
+  body: { kind: "photo_report" },
+});
+```
+
+- Each method accepts only the paths that support it, and `path`, `query` and `body`
+  are checked against the contract. A 204 resolves to `undefined`.
+- Non-2xx answers throw `ApiError` with the RFC 9457 `problem`. A gateway page or other
+  non-problem answer gets a synthesized problem with code `unexpected_response`.
+- No answer at all throws `NetworkError` (the `fetch` failure is its `cause`).
+- Pass `signal` to cancel; the call then rejects with the abort reason, untouched.
+
 ## Regenerating
 
 ```bash
