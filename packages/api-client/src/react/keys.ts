@@ -144,6 +144,14 @@ export const queryKeys = {
     [...queryKeys.estimates(organizationId, claimId), "list"] as const,
   estimate: (organizationId: string, claimId: string, estimateId: string) =>
     [...queryKeys.estimates(organizationId, claimId), estimateId] as const,
+  reports: (organizationId: string, claimId: string) =>
+    [...queryKeys.claim(organizationId, claimId), "reports"] as const,
+  reportList: (organizationId: string, claimId: string) =>
+    [...queryKeys.reports(organizationId, claimId), "list"] as const,
+  report: (organizationId: string, claimId: string, reportId: string) =>
+    [...queryKeys.reports(organizationId, claimId), reportId] as const,
+  reportShares: (organizationId: string, claimId: string, reportId: string) =>
+    [...queryKeys.report(organizationId, claimId, reportId), "shares"] as const,
   /** Every task list of a claim, whatever it filters on. */
   tasks: (organizationId: string, claimId: string) =>
     [...queryKeys.claim(organizationId, claimId), "tasks"] as const,
