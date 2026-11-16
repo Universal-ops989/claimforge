@@ -128,6 +128,32 @@ PHOTO_ROOM_MOVES: list[tuple[list[str | None], str]] = [
             for room, summary in PHOTO_ROOM_MOVES
         ],
         (
+            Event("document", "created", created(title="WA-1042", category="authorization")),
+            "Attached authorization “WA-1042”",
+        ),
+        (
+            Event("document", "created", created(title="Notes", category="other")),
+            "Attached document “Notes”",
+        ),
+        (
+            Event(
+                "document",
+                "updated",
+                {"title": ["WA-1042", "Signed WA"], "category": ["other", "authorization"]},
+            ),
+            "Renamed document “WA-1042” to “Signed WA”: category",
+        ),
+        (
+            Event(
+                "document", "updated", {"category": ["other", "invoice"]}, facts={"title": "Bill"}
+            ),
+            "Recategorized document “Bill” as invoice",
+        ),
+        (
+            Event("document", "deleted", deleted(title="Bill", category="invoice")),
+            "Deleted document “Bill”",
+        ),
+        (
             Event(
                 "photo",
                 "updated",
