@@ -233,6 +233,11 @@ function Header() {
   sort by room and natural label order, visits by `taken_at`, which can be backdated);
   details are written from the answer, and a deleted visit leaves the loaded pages at
   once.
+- **Estimates.** Every change answers with the whole estimate, totals recomputed, so the
+  detail and its summary in `useEstimates` are written from the answer and editing lines
+  costs no refetch. Answers that arrive out of order (quick edits in a line grid) can't
+  undo each other: the copy with the later `updated_at` wins. A 409
+  `estimate_not_draft` refetches the estimate so the screen shows it locked.
 - **Sessions.** `useLogin` and `useAcceptInvitation` reset the cache on success, so a
   new user never sees the last one's data. `useLogout` removes every cached query, even
   offline. When a session ends on its own, call `queryClient.removeQueries()` from
