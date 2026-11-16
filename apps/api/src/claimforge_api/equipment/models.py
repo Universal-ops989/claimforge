@@ -14,6 +14,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
     func,
     text,
 )
@@ -168,6 +169,8 @@ class EquipmentPlacement(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             unique=True,
             postgresql_where=text("removed_at IS NULL"),
         ),
+        # Atmospheric readings point at (claim_id, id): only their own claim's placements.
+        UniqueConstraint("claim_id", "id"),
         Index("ix_equipment_placements_claim_id_placed_at", "claim_id", "placed_at"),
         Index("ix_equipment_placements_claim_id_room_id", "claim_id", "room_id"),
         CheckConstraint("removed_at >= placed_at", name="removed_after_placed"),

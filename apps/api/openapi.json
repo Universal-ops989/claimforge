@@ -142,6 +142,192 @@
         "title": "AssignmentRole",
         "type": "string"
       },
+      "AtmosphereIn": {
+        "additionalProperties": false,
+        "description": "One place's air. ``room_id`` for a room; ``placement_id`` for a dehumidifier's exhaust.",
+        "properties": {
+          "location": {
+            "$ref": "#/components/schemas/AtmosphereLocation"
+          },
+          "placement_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "With `location: dehumidifier`: the unit's placement",
+            "title": "Placement Id"
+          },
+          "relative_humidity": {
+            "description": "Relative humidity in percent, to a tenth",
+            "examples": [
+              55
+            ],
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Relative Humidity",
+            "type": "number"
+          },
+          "room_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "With `location: room`",
+            "title": "Room Id"
+          },
+          "temperature_f": {
+            "description": "Degrees Fahrenheit, to a tenth",
+            "examples": [
+              72.5
+            ],
+            "maximum": 160.0,
+            "minimum": -40.0,
+            "title": "Temperature F",
+            "type": "number"
+          }
+        },
+        "required": [
+          "location",
+          "temperature_f",
+          "relative_humidity"
+        ],
+        "title": "AtmosphereIn",
+        "type": "object"
+      },
+      "AtmosphereLocation": {
+        "description": "Where the air was read. Comparing them is what shows drying working.",
+        "enum": [
+          "outdoors",
+          "unaffected",
+          "room",
+          "dehumidifier"
+        ],
+        "title": "AtmosphereLocation",
+        "type": "string"
+      },
+      "AtmosphereRead": {
+        "properties": {
+          "dehumidifier": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AtmosphereUnit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dew_point_f": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null for bone-dry air (0% RH)",
+            "title": "Dew Point F"
+          },
+          "grains_per_pound": {
+            "description": "Grains of water per pound of dry air",
+            "title": "Grains Per Pound",
+            "type": "number"
+          },
+          "location": {
+            "$ref": "#/components/schemas/AtmosphereLocation"
+          },
+          "relative_humidity": {
+            "description": "Relative humidity in percent, to a tenth",
+            "examples": [
+              55
+            ],
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Relative Humidity",
+            "type": "number"
+          },
+          "room": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AtmosphereRoom"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "temperature_f": {
+            "description": "Degrees Fahrenheit, to a tenth",
+            "examples": [
+              72.5
+            ],
+            "maximum": 160.0,
+            "minimum": -40.0,
+            "title": "Temperature F",
+            "type": "number"
+          }
+        },
+        "required": [
+          "location",
+          "room",
+          "dehumidifier",
+          "temperature_f",
+          "relative_humidity",
+          "grains_per_pound",
+          "dew_point_f"
+        ],
+        "title": "AtmosphereRead",
+        "type": "object"
+      },
+      "AtmosphereRoom": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "AtmosphereRoom",
+        "type": "object"
+      },
+      "AtmosphereUnit": {
+        "properties": {
+          "asset_tag": {
+            "title": "Asset Tag",
+            "type": "string"
+          },
+          "placement_id": {
+            "format": "uuid",
+            "title": "Placement Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "placement_id",
+          "asset_tag"
+        ],
+        "title": "AtmosphereUnit",
+        "type": "object"
+      },
       "AuditActor": {
         "properties": {
           "full_name": {
@@ -2965,6 +3151,14 @@
       "MoistureLogCreate": {
         "additionalProperties": false,
         "properties": {
+          "atmosphere": {
+            "items": {
+              "$ref": "#/components/schemas/AtmosphereIn"
+            },
+            "maxItems": 500,
+            "title": "Atmosphere",
+            "type": "array"
+          },
           "notes": {
             "anyOf": [
               {
@@ -2982,7 +3176,6 @@
               "$ref": "#/components/schemas/ReadingIn"
             },
             "maxItems": 500,
-            "minItems": 1,
             "title": "Readings",
             "type": "array"
           },
@@ -3000,14 +3193,19 @@
             "title": "Taken At"
           }
         },
-        "required": [
-          "readings"
-        ],
         "title": "MoistureLogCreate",
         "type": "object"
       },
       "MoistureLogRead": {
         "properties": {
+          "atmosphere": {
+            "description": "Outdoors, unaffected, rooms, then dehumidifiers",
+            "items": {
+              "$ref": "#/components/schemas/AtmosphereRead"
+            },
+            "title": "Atmosphere",
+            "type": "array"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -3078,6 +3276,7 @@
           "taken_by",
           "notes",
           "readings",
+          "atmosphere",
           "readings_edited_at",
           "created_at",
           "updated_at"
@@ -3087,8 +3286,23 @@
       },
       "MoistureLogUpdate": {
         "additionalProperties": false,
-        "description": "Only the fields sent change. ``readings`` sets, adds or (with null) removes values.",
+        "description": "Only the fields sent change. ``readings`` sets, adds or (with null) removes values;\n``atmosphere``, when sent, replaces the visit's atmospheric readings.",
         "properties": {
+          "atmosphere": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/AtmosphereIn"
+                },
+                "maxItems": 500,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atmosphere"
+          },
           "notes": {
             "anyOf": [
               {
@@ -10629,7 +10843,7 @@
         ]
       },
       "post": {
-        "description": "Needs `field_data:write`. One visit: a reading for each point read, on the point's own scale. `taken_at` defaults to now and can be earlier when readings are entered later, but not in the future (`taken_in_future`). Every point must be on this claim (`unknown_moisture_point`, with `point_ids`).",
+        "description": "Needs `field_data:write`. One visit: a reading for each point read, on the point's own scale, and the air (temperature and relative humidity) outdoors, in an unaffected area, in rooms and at dehumidifier exhausts. Either can be left out, not both. Grains per pound and dew point are calculated, assuming sea-level air pressure. `taken_at` defaults to now and can be earlier when readings are entered later, but not in the future (`taken_in_future`). Points, rooms and dehumidifier placements must be on this claim (`unknown_moisture_point`, `unknown_room`, `unknown_dehumidifier`).",
         "operationId": "create_moisture_log",
         "parameters": [
           {
@@ -10991,7 +11205,7 @@
         ]
       },
       "patch": {
-        "description": "Only the fields sent change. Each entry in `readings` sets a point's value on this visit (adding it if the point wasn't read); `value: null` removes it. A visit keeps at least one reading (`no_readings`): delete it instead.",
+        "description": "Only the fields sent change. Each entry in `readings` sets a point's value on this visit (adding it if the point wasn't read); `value: null` removes it. `atmosphere`, when sent, replaces the visit's atmospheric readings. A visit keeps at least one reading of either kind (`no_readings`): delete it instead.",
         "operationId": "update_moisture_log",
         "parameters": [
           {

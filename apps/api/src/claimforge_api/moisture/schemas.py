@@ -18,7 +18,7 @@ from pydantic import (
 
 from claimforge_api.claims.schemas import ClaimActor
 from claimforge_api.damage.models import Surface
-from claimforge_api.moisture.models import MoistureScale
+from claimforge_api.moisture.models import AtmosphereLocation, MoistureScale
 
 Label = Annotated[
     str,
@@ -130,6 +130,70 @@ def _one_per_point(points: list[UUID]) -> None:
         raise ValueError("Each point can be read once per visit")
 
 
+Fahrenheit = Annotated[
+    Decimal,
+    Field(ge=-40, le=160, decimal_places=1),
+    WithJsonSchema(
+        {
+            "type": "number",
+            "minimum": -40,
+            "maximum": 160,
+            "description": "Degrees Fahrenheit, to a tenth",
+            "examples": [72.5],
+        }
+    ),
+    PlainSerializer(float, return_type=float, when_used="json"),
+]
+Humidity = Annotated[
+    Decimal,
+    Field(ge=0, le=100, decimal_places=1),
+    WithJsonSchema(
+        {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Relative humidity in percent, to a tenth",
+            "examples": [55],
+        }
+    ),
+    PlainSerializer(float, return_type=float, when_used="json"),
+]
+Grains = Annotated[Decimal, PlainSerializer(float, return_type=float, when_used="json")]
+
+
+class AtmosphereIn(BaseModel):
+    """One place's air. ``room_id`` for a room; ``placement_id`` for a dehumidifier's exhaust."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    location: AtmosphereLocation
+    room_id: UUID | None = Field(default=None, description="With `location: room`")
+    placement_id: UUID | None = Field(
+        default=None, description="With `location: dehumidifier`: the unit's placement"
+    )
+    temperature_f: Fahrenheit
+    relative_humidity: Humidity
+
+    @model_validator(mode="after")
+    def _place(self) -> Self:
+        room, unit = AtmosphereLocation.ROOM, AtmosphereLocation.DEHUMIDIFIER
+        if (self.location == room) != (self.room_id is not None):
+            raise ValueError("room_id goes with location room, and only with it")
+        if (self.location == unit) != (self.placement_id is not None):
+            raise ValueError("placement_id goes with location dehumidifier, and only with it")
+        return self
+
+    @property
+    def place(self) -> tuple[AtmosphereLocation, UUID | None]:
+        return self.location, self.room_id or self.placement_id
+
+
+def _one_per_place(atmosphere: list[AtmosphereIn]) -> None:
+    places = [a.place for a in atmosphere]
+    if len(set(places)) != len(places):
+        raise ValueError("Each place's air can be read once per visit")
+
+
 class MoistureLogCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -137,28 +201,35 @@ class MoistureLogCreate(BaseModel):
         default=None, description="When the readings were taken. Defaults to now."
     )
     notes: Notes = None
-    readings: list[ReadingIn] = Field(min_length=1, max_length=MAX_READINGS)
+    readings: list[ReadingIn] = Field(default_factory=list, max_length=MAX_READINGS)
+    atmosphere: list[AtmosphereIn] = Field(default_factory=list, max_length=MAX_READINGS)
 
     @model_validator(mode="after")
-    def _distinct_points(self) -> Self:
+    def _valid(self) -> Self:
+        if not self.readings and not self.atmosphere:
+            raise ValueError("A visit needs moisture readings, atmospheric readings or both")
         _one_per_point([r.point_id for r in self.readings])
+        _one_per_place(self.atmosphere)
         return self
 
 
 class MoistureLogUpdate(BaseModel):
-    """Only the fields sent change. ``readings`` sets, adds or (with null) removes values."""
+    """Only the fields sent change. ``readings`` sets, adds or (with null) removes values;
+    ``atmosphere``, when sent, replaces the visit's atmospheric readings."""
 
     model_config = ConfigDict(extra="forbid")
 
     taken_at: AwareDatetime | None = None
     notes: Notes = None
     readings: list[ReadingChange] = Field(default_factory=list, max_length=MAX_READINGS)
+    atmosphere: list[AtmosphereIn] | None = Field(default=None, max_length=MAX_READINGS)
 
     @model_validator(mode="after")
     def _valid(self) -> Self:
         if "taken_at" in self.model_fields_set and self.taken_at is None:
             raise ValueError("taken_at cannot be cleared")
         _one_per_point([r.point_id for r in self.readings])
+        _one_per_place(self.atmosphere or [])
         return self
 
 
@@ -168,12 +239,35 @@ class ReadingRead(BaseModel):
     value: Value
 
 
+class AtmosphereRoom(BaseModel):
+    id: UUID
+    name: str
+
+
+class AtmosphereUnit(BaseModel):
+    placement_id: UUID
+    asset_tag: str
+
+
+class AtmosphereRead(BaseModel):
+    location: AtmosphereLocation
+    room: AtmosphereRoom | None
+    dehumidifier: AtmosphereUnit | None
+    temperature_f: Fahrenheit
+    relative_humidity: Humidity
+    grains_per_pound: Grains = Field(description="Grains of water per pound of dry air")
+    dew_point_f: Grains | None = Field(description="Null for bone-dry air (0% RH)")
+
+
 class MoistureLogRead(BaseModel):
     id: UUID
     taken_at: datetime
     taken_by: ClaimActor | None = Field(description="Null once the account is gone")
     notes: str | None
     readings: list[ReadingRead] = Field(description="In the points' order")
+    atmosphere: list[AtmosphereRead] = Field(
+        description="Outdoors, unaffected, rooms, then dehumidifiers"
+    )
     readings_edited_at: datetime | None = Field(description="When readings were last corrected")
     created_at: datetime
     updated_at: datetime
