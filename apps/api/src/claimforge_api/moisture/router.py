@@ -13,6 +13,7 @@ from claimforge_api.moisture import service
 from claimforge_api.moisture.schemas import (
     DryingLog,
     DryingLogQuery,
+    DryingStatusRead,
     MoistureLogCreate,
     MoistureLogRead,
     MoistureLogUpdate,
@@ -208,3 +209,18 @@ async def get_drying_log(
     query: Annotated[DryingLogQuery, Query()],
 ) -> DryingLog:
     return await service.drying_log(session, organization_id, claim_id, query, user=user)
+
+
+@router.get(
+    "/drying-status",
+    summary="Drying status and alerts",
+    description="How many points are dry, drying, without a goal or not read yet, and what "
+    "needs attention: points read without a dry standard, points that stopped improving, "
+    "a gap of over 24 hours in monitoring while points are still drying, and equipment "
+    "still running in rooms where every point is dry (days a carrier won't pay for). "
+    "Worked out from the current records each time.",
+)
+async def get_drying_status(
+    organization_id: UUID, claim_id: UUID, session: DbSession, user: CurrentUser
+) -> DryingStatusRead:
+    return await service.drying_status(session, organization_id, claim_id, user=user)

@@ -21,7 +21,7 @@ from claimforge_api.claims.schemas import ClaimActor
 from claimforge_api.core.errors import BusinessRuleError, ConflictError, NotFoundError
 from claimforge_api.db.pagination import Page, SortKey, paginate
 from claimforge_api.equipment.models import EquipmentKind, EquipmentPlacement
-from claimforge_api.moisture import goals
+from claimforge_api.moisture import alerts, goals
 from claimforge_api.moisture.models import (
     AtmosphereLocation,
     AtmosphericReading,
@@ -30,10 +30,13 @@ from claimforge_api.moisture.models import (
     MoistureReading,
 )
 from claimforge_api.moisture.schemas import (
+    AlertEquipment,
+    AlertPoint,
     AtmosphereIn,
     AtmosphereRead,
     AtmosphereRoom,
     AtmosphereUnit,
+    DryingAlert,
     DryingLog,
     DryingLogAir,
     DryingLogAirValue,
@@ -41,6 +44,8 @@ from claimforge_api.moisture.schemas import (
     DryingLogQuery,
     DryingLogRoom,
     DryingLogVisit,
+    DryingStatusRead,
+    DryingSummary,
     MoistureLogCreate,
     MoistureLogRead,
     MoistureLogUpdate,
@@ -709,4 +714,78 @@ async def drying_log(
         ],
         rooms=list(rooms.values()),
         atmosphere=_air_rows(air, logs, room_order),
+    )
+
+
+async def drying_status(
+    session: AsyncSession,
+    organization_id: UUID,
+    claim_id: UUID,
+    *,
+    user: User,
+    now: datetime | None = None,
+) -> DryingStatusRead:
+    """Where drying stands on the claim, and what needs attention right now."""
+    now = now or datetime.now(UTC)
+    points = await list_points(session, organization_id, claim_id, user=user)
+    history: dict[UUID, list[tuple[datetime, Decimal]]] = {p.id: [] for p in points}
+    rows = await session.execute(
+        select(MoistureReading.point_id, MoistureLog.taken_at, MoistureReading.value)
+        .join(MoistureLog, MoistureLog.id == MoistureReading.log_id)
+        .where(MoistureReading.claim_id == claim_id)
+        .order_by(MoistureLog.taken_at, MoistureLog.id)
+    )
+    for point_id, taken_at, value in rows:
+        history[point_id].append((taken_at, value))
+    last_visit = await session.scalar(
+        select(func.max(MoistureLog.taken_at)).where(MoistureLog.claim_id == claim_id)
+    )
+    running = list(
+        await session.scalars(
+            select(EquipmentPlacement)
+            .where(
+                EquipmentPlacement.claim_id == claim_id,
+                EquipmentPlacement.removed_at.is_(None),
+            )
+            .options(selectinload(EquipmentPlacement.room))
+        )
+    )
+
+    facts = [alerts.Point(p.id, p.label, p.room_id, p.dry_standard, history[p.id]) for p in points]
+    found = alerts.alerts(
+        facts,
+        [alerts.Running(u.id, u.asset_tag, u.room_id, u.placed_at) for u in running],
+        last_visit,
+        now=now,
+    )
+    statuses = [f.progress.status for f in facts]
+    labels = {p.id: p.label for p in points}
+    rooms = {p.room.id: p.room.name for p in points} | {u.room.id: u.room.name for u in running}
+    tags = {u.id: u.asset_tag for u in running}
+    return DryingStatusRead(
+        summary=DryingSummary(
+            points=len(points),
+            dry=statuses.count(goals.DryingStatus.DRY),
+            drying=statuses.count(goals.DryingStatus.DRYING),
+            no_goal=statuses.count(goals.DryingStatus.NO_GOAL),
+            not_read=statuses.count(goals.DryingStatus.NOT_READ),
+            all_dry=bool(statuses) and all(s == goals.DryingStatus.DRY for s in statuses),
+            last_visit_at=last_visit,
+        ),
+        alerts=[
+            DryingAlert(
+                kind=a.kind,
+                message=a.message,
+                point=AlertPoint(id=a.point_id, label=labels[a.point_id]) if a.point_id else None,
+                room=AtmosphereRoom(id=a.room_id, name=rooms[a.room_id]) if a.room_id else None,
+                equipment=(
+                    AlertEquipment(placement_id=a.placement_id, asset_tag=tags[a.placement_id])
+                    if a.placement_id
+                    else None
+                ),
+                since=a.since,
+                details={k: int(v) for k, v in a.extra.items() if isinstance(v, int)},
+            )
+            for a in found
+        ],
     )

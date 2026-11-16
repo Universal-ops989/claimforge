@@ -18,6 +18,7 @@ from pydantic import (
 
 from claimforge_api.claims.schemas import ClaimActor
 from claimforge_api.damage.models import Surface
+from claimforge_api.moisture.alerts import AlertKind
 from claimforge_api.moisture.goals import DryingStatus
 from claimforge_api.moisture.models import AtmosphereLocation, GoalBasis, MoistureScale
 
@@ -364,3 +365,42 @@ class DryingLog(BaseModel):
 
 class DryingLogQuery(BaseModel):
     room_id: UUID | None = Field(default=None, description="Only this room's points")
+
+
+class DryingSummary(BaseModel):
+    points: int
+    dry: int
+    drying: int
+    no_goal: int
+    not_read: int
+    all_dry: bool = Field(description="There are points, and every one is dry")
+    last_visit_at: datetime | None
+
+
+class AlertPoint(BaseModel):
+    id: UUID
+    label: str
+
+
+class AlertEquipment(BaseModel):
+    placement_id: UUID
+    asset_tag: str
+
+
+class DryingAlert(BaseModel):
+    kind: AlertKind = Field(
+        description="`no_goal`: read but no dry standard; `stalled`: no improvement over "
+        "the last 3 readings; `monitoring_gap`: still drying, not read for over 24 hours; "
+        "`equipment_in_dry_room`: equipment running where every point is dry"
+    )
+    message: str
+    point: AlertPoint | None
+    room: AtmosphereRoom | None
+    equipment: AlertEquipment | None
+    since: datetime | None = Field(description="Since when it holds, where that's known")
+    details: dict[str, int]
+
+
+class DryingStatusRead(BaseModel):
+    summary: DryingSummary
+    alerts: list[DryingAlert]
