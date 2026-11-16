@@ -3334,6 +3334,67 @@
         "title": "HealthResponse",
         "type": "object"
       },
+      "ImportMode": {
+        "enum": [
+          "merge",
+          "replace"
+        ],
+        "title": "ImportMode",
+        "type": "string"
+      },
+      "ImportResult": {
+        "properties": {
+          "added": {
+            "title": "Added",
+            "type": "integer"
+          },
+          "dry_run": {
+            "description": "True: nothing was changed",
+            "title": "Dry Run",
+            "type": "boolean"
+          },
+          "ignored_columns": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ignored Columns",
+            "type": "array"
+          },
+          "mode": {
+            "title": "Mode",
+            "type": "string"
+          },
+          "removed": {
+            "description": "Codes missing from the file; only in `replace` mode",
+            "title": "Removed",
+            "type": "integer"
+          },
+          "rows": {
+            "title": "Rows",
+            "type": "integer"
+          },
+          "unchanged": {
+            "title": "Unchanged",
+            "type": "integer"
+          },
+          "updated": {
+            "title": "Updated",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "mode",
+          "dry_run",
+          "rows",
+          "added",
+          "updated",
+          "unchanged",
+          "removed",
+          "ignored_columns"
+        ],
+        "title": "ImportResult",
+        "type": "object"
+      },
       "InvitationAccept": {
         "additionalProperties": false,
         "properties": {
@@ -5186,6 +5247,19 @@
             "title": "Id",
             "type": "string"
           },
+          "imported_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When items last came in from a file",
+            "title": "Imported At"
+          },
           "is_default": {
             "title": "Is Default",
             "type": "boolean"
@@ -5211,6 +5285,7 @@
           "effective_on",
           "is_default",
           "item_count",
+          "imported_at",
           "created_at",
           "updated_at"
         ],
@@ -18802,6 +18877,151 @@
           }
         ],
         "summary": "Edit a price list",
+        "tags": [
+          "pricing"
+        ]
+      }
+    },
+    "/v1/organizations/{organization_id}/price-lists/{list_id}/import": {
+      "post": {
+        "description": "Send the CSV as the request body (`text/csv`, UTF-8, up to 5 MB and 50,000 rows). The header row names the columns, in any order and case: `code`, `description`, `unit`, `unit_price` (or `price`) and optional `category`; others are ignored and listed back. Commas, semicolons or tabs; prices may be written `$1,234.50`. Every row is checked first: any problem (or a repeated code) answers `import_invalid` with `row_errors` by line, and nothing changes. `merge` adds new codes and updates changed ones; `replace` also removes codes the file doesn't have. `dry_run=true` reports what would happen without doing it.",
+        "operationId": "import_price_items",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Organization Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "list_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "List Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mode",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ImportMode",
+              "default": "merge"
+            }
+          },
+          {
+            "in": "query",
+            "name": "dry_run",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Dry Run",
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "text/csv": {
+              "example": "code,description,unit,unit_price,category\nWTR DHM,Dehumidifier - Large,DA,123.40,WTR\n",
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Authentication required"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Permission denied"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Validation failed or business rule violated"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Import items from CSV",
         "tags": [
           "pricing"
         ]

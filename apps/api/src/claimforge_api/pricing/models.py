@@ -5,7 +5,7 @@ them, and estimates copy each line's price when it's added, so an estimate never
 because a list did.
 """
 
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -13,6 +13,7 @@ from sqlalchemy import (
     Boolean,
     CheckConstraint,
     Date,
+    DateTime,
     ForeignKey,
     Index,
     Numeric,
@@ -42,6 +43,8 @@ class PriceList(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     #: Published lists change monthly; this is the month or day the prices are from.
     effective_on: Mapped[date | None] = mapped_column(Date, default=None)
     is_default: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
+    #: When items last came in from a file: the audited record of an import.
+    imported_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
 
     # Items go with their list, in the database (they aren't audited one by one).
     items: Mapped[list["PriceItem"]] = relationship(

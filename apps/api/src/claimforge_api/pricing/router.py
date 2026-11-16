@@ -3,14 +3,15 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Query, Request, status
 
 from claimforge_api.api.deps import DbSession, PageParamsDep
 from claimforge_api.api.problems import PROBLEM_RESPONSES
 from claimforge_api.auth.deps import CurrentUser
 from claimforge_api.db.pagination import CursorPage
-from claimforge_api.pricing import service
+from claimforge_api.pricing import imports, service
 from claimforge_api.pricing.schemas import (
+    ImportResult,
     PriceItemCreate,
     PriceItemQuery,
     PriceItemRead,
@@ -150,3 +151,54 @@ async def delete_price_item(
     organization_id: UUID, list_id: UUID, item_id: UUID, session: DbSession, user: CurrentUser
 ) -> None:
     await service.delete_item(session, organization_id, list_id, item_id, user=user)
+
+
+async def _read_capped(request: Request) -> bytes:
+    declared = request.headers.get("content-length")
+    if declared is not None and declared.isdigit() and int(declared) > imports.MAX_BYTES:
+        raise imports.ImportInvalidError("Files can be at most 5 MB", limit=imports.MAX_BYTES)
+    body = bytearray()
+    async for chunk in request.stream():
+        body.extend(chunk)
+        if len(body) > imports.MAX_BYTES:
+            raise imports.ImportInvalidError("Files can be at most 5 MB", limit=imports.MAX_BYTES)
+    return bytes(body)
+
+
+@router.post(
+    "/{list_id}/import",
+    summary="Import items from CSV",
+    description="Send the CSV as the request body (`text/csv`, UTF-8, up to 5 MB and 50,000 "
+    "rows). The header row names the columns, in any order and case: `code`, "
+    "`description`, `unit`, `unit_price` (or `price`) and optional `category`; others "
+    "are ignored and listed back. Commas, semicolons or tabs; prices may be written "
+    "`$1,234.50`. Every row is checked first: any problem (or a repeated code) answers "
+    "`import_invalid` with `row_errors` by line, and nothing changes. `merge` adds new "
+    "codes and updates changed ones; `replace` also removes codes the file doesn't have. "
+    "`dry_run=true` reports what would happen without doing it.",
+    openapi_extra={
+        "requestBody": {
+            "required": True,
+            "content": {
+                "text/csv": {
+                    "schema": {"type": "string"},
+                    "example": "code,description,unit,unit_price,category\n"
+                    "WTR DHM,Dehumidifier - Large,DA,123.40,WTR\n",
+                }
+            },
+        }
+    },
+)
+async def import_price_items(
+    organization_id: UUID,
+    list_id: UUID,
+    request: Request,
+    session: DbSession,
+    user: CurrentUser,
+    mode: imports.ImportMode = imports.ImportMode.MERGE,
+    dry_run: bool = False,
+) -> ImportResult:
+    data = await _read_capped(request)
+    return await service.import_items(
+        session, organization_id, list_id, data, mode, dry_run=dry_run, user=user
+    )

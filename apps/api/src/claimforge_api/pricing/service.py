@@ -12,8 +12,10 @@ from claimforge_api.auth.permissions import Permission, authorize
 from claimforge_api.core.errors import ConflictError, NotFoundError
 from claimforge_api.db.pagination import Page, SortKey, paginate
 from claimforge_api.db.search import icontains
+from claimforge_api.pricing import imports
 from claimforge_api.pricing.models import PriceItem, PriceList
 from claimforge_api.pricing.schemas import (
+    ImportResult,
     PriceItemCreate,
     PriceItemQuery,
     PriceItemUpdate,
@@ -74,6 +76,7 @@ def _read(price_list: PriceList, item_count: int) -> PriceListRead:
         effective_on=price_list.effective_on,
         is_default=price_list.is_default,
         item_count=item_count,
+        imported_at=price_list.imported_at,
         created_at=price_list.created_at,
         updated_at=price_list.updated_at,
     )
@@ -284,3 +287,39 @@ async def delete_item(
     item = await _get_item(session, organization_id, list_id, item_id)
     await session.delete(item)
     await session.commit()
+
+
+async def import_items(
+    session: AsyncSession,
+    organization_id: UUID,
+    list_id: UUID,
+    data: bytes,
+    mode: imports.ImportMode,
+    *,
+    dry_run: bool,
+    user: User,
+) -> ImportResult:
+    """Bring a CSV file's items into a list: all of them, or none if any row is wrong."""
+    await authorize(session, user, organization_id, Permission.ESTIMATES_WRITE)
+    price_list = await _get_list(session, organization_id, list_id)
+    parsed = imports.parse(data)
+    if parsed.errors:
+        raise imports.ImportInvalidError(
+            f"{len(parsed.errors)} problem(s) in the file; nothing was imported",
+            error_count=len(parsed.errors),
+            row_errors=[
+                {"line": e.line, "column": e.column, "message": e.message}
+                for e in parsed.errors[: imports.MAX_ERRORS]
+            ],
+        )
+    outcome = await imports.apply(session, price_list, parsed.rows, mode, dry_run=dry_run)
+    return ImportResult(
+        mode=mode.value,
+        dry_run=dry_run,
+        rows=outcome.rows,
+        added=outcome.added,
+        updated=outcome.updated,
+        unchanged=outcome.unchanged,
+        removed=outcome.removed,
+        ignored_columns=parsed.ignored_columns,
+    )

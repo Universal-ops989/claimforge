@@ -99,6 +99,7 @@ class PriceListRead(BaseModel):
     effective_on: date | None
     is_default: bool
     item_count: int
+    imported_at: datetime | None = Field(description="When items last came in from a file")
     created_at: datetime
     updated_at: datetime
 
@@ -145,3 +146,14 @@ class PriceItemRead(BaseModel):
     unit_price: Money
     category: str | None
     updated_at: datetime
+
+
+class ImportResult(BaseModel):
+    mode: str
+    dry_run: bool = Field(description="True: nothing was changed")
+    rows: int
+    added: int
+    updated: int
+    unchanged: int
+    removed: int = Field(description="Codes missing from the file; only in `replace` mode")
+    ignored_columns: list[str]
