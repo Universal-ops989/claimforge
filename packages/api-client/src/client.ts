@@ -129,6 +129,11 @@ export interface ApiClient {
   /** Sign in and keep the tokens. Needs the `auth` option. */
   login(credentials: RequestBody<"/v1/auth/login", "post">): Promise<Tokens>;
   /**
+   * Accept an invitation, which signs in (creating the account when it's new), and keep
+   * the tokens. Needs the `auth` option.
+   */
+  acceptInvitation(invitation: RequestBody<"/v1/invitations/accept", "post">): Promise<Tokens>;
+  /**
    * Forget the tokens, then ask the API to revoke the session. Signing out locally always
    * works; a failure to reach the API leaves the refresh token valid until it expires.
    */
@@ -151,8 +156,10 @@ const ACCEPT = "application/json, application/problem+json";
 export const AUTHENTICATION_REQUIRED = "authentication_required";
 /** The generated schemas, looked up by `"get /v1/me"` and status. */
 const SUCCESS_BODIES: Partial<Record<string, Partial<Record<number, z.ZodType>>>> = responses;
-/** Calls that manage tokens themselves and never carry one. */
-const AUTH_PATHS = "/v1/auth/";
+/** Calls that issue or revoke tokens themselves, and so never carry one. */
+function carriesNoToken(template: string): boolean {
+  return template.startsWith("/v1/auth/") || template === "/v1/invitations/accept";
+}
 
 export function createApiClient(options: ApiClientOptions): ApiClient {
   const send = options.fetch ?? ((input, init) => globalThis.fetch(input, init));
@@ -201,7 +208,7 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
       }
     }
 
-    const tokens = session && !template.startsWith(AUTH_PATHS) ? await session.current() : null;
+    const tokens = session && !carriesNoToken(template) ? await session.current() : null;
     let response = await attempt(tokens);
     // An access token can expire or be revoked between the check above and the call:
     // refresh once and retry once. A second 401 is the answer.
@@ -264,9 +271,10 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     return session;
   }
 
-  async function login(credentials: unknown): Promise<Tokens> {
+  /** Call an endpoint that answers with a token pair, and keep it. */
+  async function signIn(path: string, body: unknown): Promise<Tokens> {
     const current = signedIn();
-    const { data } = await request("post", "/v1/auth/login", { body: credentials });
+    const { data } = await request("post", path, { body });
     const tokens = current.stamp(data as Schema<"TokenResponse">);
     await current.save(tokens);
     return tokens;
@@ -297,7 +305,8 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     put: data("put") as ApiClient["put"],
     patch: data("patch") as ApiClient["patch"],
     delete: data("delete") as ApiClient["delete"],
-    login,
+    login: (credentials) => signIn("/v1/auth/login", credentials),
+    acceptInvitation: (invitation) => signIn("/v1/invitations/accept", invitation),
     logout,
   };
 }
