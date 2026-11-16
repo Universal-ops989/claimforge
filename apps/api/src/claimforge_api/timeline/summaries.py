@@ -6,9 +6,11 @@ a database. Names (members, contacts) are looked up by the caller and passed in.
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
+from claimforge_api.equipment.models import equipment_days
 from claimforge_api.notes import mentions
 
 EXCERPT = 80
@@ -204,6 +206,24 @@ def _moisture_log(event: Event, names: Names) -> str:
     return _with_fields("Updated moisture readings", event)
 
 
+def _placement(event: Event, names: Names) -> str:
+    unit = f"{label(event.value('kind'))} {event.value('asset_tag')}"
+    if event.verb == "created":
+        return f"Placed {unit}"
+    if event.verb == "deleted":
+        return f"Deleted the placement of {unit}"
+    if event.changed("removed_at"):
+        _, removed_at = event.became("removed_at")
+        if removed_at is None:
+            return f"Put {unit} back to running"
+        placed_at = datetime.fromisoformat(str(event.value("placed_at")))
+        days = equipment_days(placed_at, datetime.fromisoformat(str(removed_at)))
+        return f"Removed {unit} after {days} day{'s' if days != 1 else ''}"
+    if event.changed("room_id"):
+        return f"Moved {unit} to another room"
+    return _with_fields(f"Corrected the placement of {unit}", event)
+
+
 def _note(event: Event, names: Names) -> str:
     verb = {"created": "Wrote", "updated": "Edited", "deleted": "Deleted"}.get(
         event.verb, "Changed"
@@ -245,6 +265,7 @@ SUMMARIES: dict[str, Callable[[Event, Names], str]] = {
     "document": _document,
     "moisture_point": _moisture_point,
     "moisture_log": _moisture_log,
+    "equipment_placement": _placement,
     "note": _note,
     "task": _task,
 }
