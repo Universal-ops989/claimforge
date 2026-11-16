@@ -11,10 +11,10 @@ it: a file that doesn't match is deleted.
 """
 
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from uuid import UUID
 
-from sqlalchemy import Select, delete, func, select, true
+from sqlalchemy import Select, func, select, true
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -22,7 +22,7 @@ from claimforge_api.auth.permissions import Permission, authorize
 from claimforge_api.claims import service as claims
 from claimforge_api.claims.models import Claim
 from claimforge_api.claims.schemas import ClaimActor
-from claimforge_api.core.errors import BusinessRuleError, ConflictError, NotFoundError
+from claimforge_api.core.errors import BusinessRuleError, NotFoundError
 from claimforge_api.core.ids import uuid7
 from claimforge_api.db.pagination import Page, SortKey, paginate
 from claimforge_api.db.search import LIKE_ESCAPE, escape_like
@@ -45,36 +45,19 @@ from claimforge_api.photos.schemas import (
 )
 from claimforge_api.storage.base import ObjectStorage, SignedUpload, StorageUnavailableError
 from claimforge_api.structures.models import Room
+from claimforge_api.uploads.service import UPLOAD_LINK_LIFETIME, check_received
 from claimforge_api.users.models import User
 
 logger = logging.getLogger(__name__)
 
-#: How long a client has to send the file once it asks to.
-UPLOAD_LINK_LIFETIME = timedelta(minutes=30)
 #: How long the links on a photo work. Clients fetch the photo again for fresh ones.
 VIEW_LINK_LIFETIME = timedelta(hours=1)
-#: How long an unfinished upload is kept after its link expires: a client on a slow
-#: connection may have sent the file just in time and still be reporting back.
-UPLOAD_GRACE = timedelta(hours=1)
-#: Abandoned uploads discarded per call of :func:`discard_expired_uploads`.
-DISCARD_BATCH = 100
-
 NEWEST_FIRST = SortKey([Photo.id], direction="desc")  # UUIDv7: creation order
 
 
 class PhotoTooLargeError(BusinessRuleError):
     code = "photo_too_large"
     title = "Photo too large"
-
-
-class UploadNotReceivedError(ConflictError):
-    code = "upload_not_received"
-    title = "The file hasn't been uploaded yet"
-
-
-class UploadMismatchError(BusinessRuleError):
-    code = "upload_mismatch"
-    title = "The uploaded file isn't the one described"
 
 
 class UnknownRoomError(BusinessRuleError):
@@ -266,24 +249,8 @@ async def complete_upload(
     if upload is None:
         raise NotFoundError("Upload not found", upload_id=str(upload_id))
 
-    stored = await storage.stat(upload.storage_key)
-    if stored is None:
-        raise UploadNotReceivedError(
-            "Upload the file to the link first, then complete the upload",
-            upload_id=str(upload_id),
-        )
-    if stored.size != upload.size_bytes or stored.content_type != upload.content_type:
-        # Remove it, so a retry with the same link starts clean (and nothing unchecked stays).
-        await storage.delete(upload.storage_key)
-        raise UploadMismatchError(
-            f"Expected {upload.size_bytes} bytes of {upload.content_type}, "
-            f"received {stored.size} bytes of {stored.content_type}",
-            expected_size=upload.size_bytes,
-            received_size=stored.size,
-            # A str once loaded from the database (the column is a plain string).
-            expected_content_type=str(upload.content_type),
-            received_content_type=stored.content_type,
-        )
+    # str(): a plain string once loaded from the database (the column is a String).
+    await check_received(storage, upload, str(upload.content_type))
 
     session.add(
         Photo(
@@ -382,34 +349,3 @@ async def delete_photo(
             await storage.delete(key)
     except StorageUnavailableError:
         logger.warning("Photo %s deleted but its files remain", photo_id, exc_info=True)
-
-
-async def discard_expired_uploads(
-    session: AsyncSession, storage: ObjectStorage, *, now: datetime | None = None
-) -> int:
-    """Forget uploads nobody completed, and delete any file that was sent. Returns how many.
-
-    Handles up to :data:`DISCARD_BATCH` per call; run it periodically. An upload whose
-    file can't be deleted (storage down) is kept and tried again next time.
-    """
-    cutoff = (now or datetime.now(UTC)) - UPLOAD_GRACE
-    abandoned = list(
-        await session.execute(
-            select(PhotoUpload.id, PhotoUpload.storage_key)
-            .where(PhotoUpload.expires_at < cutoff)
-            .order_by(PhotoUpload.expires_at)
-            .limit(DISCARD_BATCH)
-        )
-    )
-    discarded: list[UUID] = []
-    for upload_id, key in abandoned:
-        try:
-            await storage.delete(key)
-        except StorageUnavailableError:
-            logger.warning("Couldn't delete abandoned upload %s", key, exc_info=True)
-            continue
-        discarded.append(upload_id)
-    if discarded:
-        await session.execute(delete(PhotoUpload).where(PhotoUpload.id.in_(discarded)))
-        await session.commit()
-    return len(discarded)
