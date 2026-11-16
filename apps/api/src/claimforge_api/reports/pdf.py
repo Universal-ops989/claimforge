@@ -141,6 +141,9 @@ class Document:
     def heading(self, text: str) -> None:
         self.story.append(Paragraph(safe(text), self.styles.heading))
 
+    def subheading(self, text: str) -> None:
+        self.story.append(Paragraph(f"<b>{safe(text)}</b>", self.styles.body))
+
     def paragraph(self, text: str, *, small: bool = False) -> None:
         self.story.append(Paragraph(safe(text), self.styles.small if small else self.styles.body))
 
