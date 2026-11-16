@@ -40,6 +40,8 @@ HEADER_HEIGHT = 0.75 * inch
 FOOTER_HEIGHT = 0.45 * inch
 #: Width available to the content.
 CONTENT_WIDTH = PAGE_WIDTH - 2 * MARGIN
+#: Height available to the content, between the header and the footer.
+FRAME_HEIGHT = PAGE_HEIGHT - 2 * MARGIN - HEADER_HEIGHT - 6 - FOOTER_HEIGHT
 LIGHT = colors.HexColor("#F2F4F7")
 MUTED = colors.HexColor("#5B6472")
 
