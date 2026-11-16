@@ -11,7 +11,6 @@ from enum import StrEnum
 from uuid import UUID
 
 from sqlalchemy import (
-    BigInteger,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -30,6 +29,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from claimforge_api.db.base import Base
 from claimforge_api.db.mixins import TimestampMixin, UUIDPrimaryKeyMixin
 from claimforge_api.structures.models import Room
+from claimforge_api.uploads.models import ClaimFile, PendingUpload
 from claimforge_api.users.models import User
 
 
@@ -70,17 +70,10 @@ def rendition_key(original_key: str, rendition: Rendition) -> str:
     return f"{folder}/{rendition.value}"
 
 
-class _File:
-    """What is known about a file before and after it is uploaded."""
+class _PhotoFile(ClaimFile):
+    """What is known about a photo before and after it is uploaded."""
 
-    organization_id: Mapped[UUID] = mapped_column(
-        ForeignKey("organizations.id", ondelete="CASCADE")
-    )
-    claim_id: Mapped[UUID] = mapped_column(ForeignKey("claims.id", ondelete="CASCADE"))
-    storage_key: Mapped[str] = mapped_column(String(512), unique=True)
-    original_filename: Mapped[str] = mapped_column(String(255))
     content_type: Mapped[PhotoType] = mapped_column(String(20))
-    size_bytes: Mapped[int] = mapped_column(BigInteger)
     #: When the picture was taken, as the device reports it (EXIF); not checked.
     taken_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
     caption: Mapped[str | None] = mapped_column(Text, default=None)
@@ -99,14 +92,8 @@ def _in_its_claims_room() -> ForeignKeyConstraint:
 _AT_MOST_20_TAGS = "cardinality(tags) <= 20"
 
 
-class PhotoUpload(_File, UUIDPrimaryKeyMixin, TimestampMixin, Base):
+class PhotoUpload(_PhotoFile, PendingUpload, TimestampMixin, Base):
     __tablename__ = "photo_uploads"
-
-    created_by_id: Mapped[UUID | None] = mapped_column(
-        ForeignKey("users.id", ondelete="SET NULL"), default=None
-    )
-    #: When the signed upload link stops working.
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
     __table_args__ = (
         CheckConstraint(f"content_type IN ({_PHOTO_TYPES})", name="content_type_valid"),
@@ -119,7 +106,7 @@ class PhotoUpload(_File, UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
 
 
-class Photo(_File, UUIDPrimaryKeyMixin, TimestampMixin, Base):
+class Photo(_PhotoFile, UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "photos"
     __audited__ = True
 

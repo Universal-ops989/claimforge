@@ -17,12 +17,17 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from claimforge_api.photos import processing
-from claimforge_api.photos import service as photos
+from claimforge_api.photos.models import PhotoUpload
 from claimforge_api.storage.base import ObjectStorage, StorageUnavailableError
+from claimforge_api.uploads import service as uploads
+from claimforge_api.uploads.models import PendingUpload
 
 logger = logging.getLogger(__name__)
 
 SessionFactory = Callable[[], AbstractAsyncContextManager[AsyncSession]]
+
+#: Every kind of pending upload the cleanup looks after.
+PENDING_UPLOADS: tuple[type[PendingUpload], ...] = (PhotoUpload,)
 
 
 @dataclass
@@ -54,12 +59,13 @@ class Worker:
             return 0
         self._last_cleanup = now
         discarded = 0
-        while True:
-            async with self.sessions() as session:
-                batch = await photos.discard_expired_uploads(session, self.storage)
-            discarded += batch
-            if batch < photos.DISCARD_BATCH:
-                break
+        for model in PENDING_UPLOADS:
+            while True:
+                async with self.sessions() as session:
+                    batch = await uploads.discard_expired(session, self.storage, model)
+                discarded += batch
+                if batch < uploads.DISCARD_BATCH:
+                    break
         if discarded:
             logger.info("Discarded %d abandoned uploads", discarded)
         return discarded

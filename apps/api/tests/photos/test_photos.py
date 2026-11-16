@@ -24,6 +24,7 @@ from claimforge_api.core.errors import NotFoundError, PermissionDeniedError
 from claimforge_api.photos import service
 from claimforge_api.photos.models import Photo, PhotoUpload
 from claimforge_api.storage.base import StorageUnavailableError
+from claimforge_api.uploads import service as uploads
 from claimforge_api.users import service as users
 from claimforge_api.users.models import Role
 
@@ -94,7 +95,7 @@ async def test_completing_again_returns_the_same_photo(site: Site) -> None:
 async def test_the_file_must_be_sent_first(site: Site) -> None:
     upload = await site.start()
 
-    with pytest.raises(service.UploadNotReceivedError):
+    with pytest.raises(uploads.UploadNotReceivedError):
         await site.complete(upload.id)
     # Still open: send it and try again.
     await site.send(upload)
@@ -115,7 +116,7 @@ async def test_the_file_must_match_what_was_described(
     upload = await site.start()
     await site.send(upload, data, content_type)
 
-    with pytest.raises(service.UploadMismatchError) as caught:
+    with pytest.raises(uploads.UploadMismatchError) as caught:
         await site.complete(upload.id)
 
     assert received.items() <= caught.value.extra.items()
@@ -276,13 +277,14 @@ async def test_abandoned_uploads_are_discarded(site: Site) -> None:
     await site.send(sent)
     never_sent = await site.start()
     recent = await site.start()
-    later = datetime.now(UTC) + service.UPLOAD_LINK_LIFETIME + service.UPLOAD_GRACE
+    later = datetime.now(UTC) + uploads.UPLOAD_LINK_LIFETIME + uploads.UPLOAD_GRACE
 
     # Down for one call: the uploads are kept for the next.
     assert (
-        await service.discard_expired_uploads(
+        await uploads.discard_expired(
             site.session,
             UnreachableDeletes(),  # type: ignore[arg-type]
+            PhotoUpload,
             now=later + timedelta(minutes=1),
         )
         == 0
@@ -292,8 +294,8 @@ async def test_abandoned_uploads_are_discarded(site: Site) -> None:
     # Only uploads whose link expired more than the grace period ago go.
     recent.expires_at = later + timedelta(hours=1)
     await site.session.commit()
-    discarded = await service.discard_expired_uploads(
-        site.session, site.storage, now=later + timedelta(minutes=1)
+    discarded = await uploads.discard_expired(
+        site.session, site.storage, PhotoUpload, now=later + timedelta(minutes=1)
     )
 
     assert discarded == 2
