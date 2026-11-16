@@ -4,11 +4,12 @@ A line keeps its own code, description, unit and unit price, copied from the pri
 when it's added (or written by hand), so an estimate never changes because a list did.
 """
 
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 from enum import StrEnum
 from uuid import UUID
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     ForeignKey,
     ForeignKeyConstraint,
@@ -18,18 +19,21 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from claimforge_api.db.base import Base
 from claimforge_api.db.mixins import TimestampMixin, UUIDPrimaryKeyMixin
+from claimforge_api.estimates import totals as arithmetic
 from claimforge_api.pricing.models import Money, PriceList
 from claimforge_api.structures.models import Room
 from claimforge_api.users.models import User
 
 #: Quantities to a hundredth: 125.5 SF, 3 DA, 0.25 HR.
 Quantity = Numeric(12, 2)
-CENT = Decimal("0.01")
+#: Percentages to a thousandth: 8.25 % sales tax, 10 % overhead.
+Percent = Numeric(6, 3)
 
 
 class EstimateStatus(StrEnum):
@@ -63,6 +67,16 @@ class Estimate(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     created_by_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), default=None
     )
+    #: Sales tax on taxable lines; then overhead and profit on the subtotal plus tax.
+    tax_percent: Mapped[Decimal] = mapped_column(
+        Percent, default=Decimal(0), server_default=text("0")
+    )
+    overhead_percent: Mapped[Decimal] = mapped_column(
+        Percent, default=Decimal(0), server_default=text("0")
+    )
+    profit_percent: Mapped[Decimal] = mapped_column(
+        Percent, default=Decimal(0), server_default=text("0")
+    )
 
     price_list: Mapped[PriceList | None] = relationship(lazy="raise")
     created_by: Mapped[User | None] = relationship(lazy="raise")
@@ -81,7 +95,23 @@ class Estimate(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         CheckConstraint(_in("status", EstimateStatus), name="status_valid"),
         CheckConstraint("number > 0", name="number_positive"),
         CheckConstraint("btrim(title) <> ''", name="title_not_blank"),
+        CheckConstraint("tax_percent BETWEEN 0 AND 100", name="tax_percent_valid"),
+        CheckConstraint("overhead_percent BETWEEN 0 AND 100", name="overhead_percent_valid"),
+        CheckConstraint("profit_percent BETWEEN 0 AND 100", name="profit_percent_valid"),
     )
+
+    @property
+    def totals(self) -> arithmetic.Totals:
+        return arithmetic.totals(
+            (arithmetic.Line(line.total, line.taxable) for line in self.lines),
+            tax_percent=Decimal(self.tax_percent),
+            overhead_percent=Decimal(self.overhead_percent),
+            profit_percent=Decimal(self.profit_percent),
+        )
+
+    @property
+    def total(self) -> Decimal:
+        return self.totals.total
 
 
 class EstimateLine(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -105,6 +135,8 @@ class EstimateLine(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     unit: Mapped[str] = mapped_column(String(10))
     quantity: Mapped[Decimal] = mapped_column(Quantity)
     unit_price: Mapped[Decimal] = mapped_column(Money)
+    #: Sales tax applies (often to materials only, so labor lines can be exempt).
+    taxable: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text("true"))
     notes: Mapped[str | None] = mapped_column(Text, default=None)
 
     estimate: Mapped[Estimate] = relationship(back_populates="lines", lazy="raise")
@@ -113,9 +145,7 @@ class EstimateLine(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     @property
     def total(self) -> Decimal:
         """Quantity times unit price, to the cent (half up, as invoices round)."""
-        return (Decimal(self.quantity) * Decimal(self.unit_price)).quantize(
-            CENT, rounding=ROUND_HALF_UP
-        )
+        return arithmetic.cents(Decimal(self.quantity) * Decimal(self.unit_price))
 
     __table_args__ = (
         ForeignKeyConstraint(

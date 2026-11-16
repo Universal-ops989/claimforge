@@ -3285,6 +3285,16 @@
             ],
             "title": "Notes"
           },
+          "overhead_percent": {
+            "default": "0",
+            "description": "Percent, as a decimal string to a thousandth",
+            "examples": [
+              "8.25"
+            ],
+            "pattern": "^\\d{1,3}(\\.\\d{1,3})?$",
+            "title": "Overhead Percent",
+            "type": "string"
+          },
           "price_list_id": {
             "anyOf": [
               {
@@ -3297,6 +3307,26 @@
             ],
             "description": "Defaults to the organization's default price list",
             "title": "Price List Id"
+          },
+          "profit_percent": {
+            "default": "0",
+            "description": "Percent, as a decimal string to a thousandth",
+            "examples": [
+              "8.25"
+            ],
+            "pattern": "^\\d{1,3}(\\.\\d{1,3})?$",
+            "title": "Profit Percent",
+            "type": "string"
+          },
+          "tax_percent": {
+            "default": "0",
+            "description": "Sales tax on taxable lines",
+            "examples": [
+              "8.25"
+            ],
+            "pattern": "^\\d{1,3}(\\.\\d{1,3})?$",
+            "title": "Tax Percent",
+            "type": "string"
           },
           "title": {
             "examples": [
@@ -3390,6 +3420,15 @@
             "title": "Number",
             "type": "integer"
           },
+          "overhead_percent": {
+            "description": "Percent, as a decimal string to a thousandth",
+            "examples": [
+              "8.25"
+            ],
+            "pattern": "^\\d{1,3}(\\.\\d{1,3})?$",
+            "title": "Overhead Percent",
+            "type": "string"
+          },
           "price_list": {
             "anyOf": [
               {
@@ -3400,12 +3439,42 @@
               }
             ]
           },
+          "profit_percent": {
+            "description": "Percent, as a decimal string to a thousandth",
+            "examples": [
+              "8.25"
+            ],
+            "pattern": "^\\d{1,3}(\\.\\d{1,3})?$",
+            "title": "Profit Percent",
+            "type": "string"
+          },
           "status": {
             "$ref": "#/components/schemas/EstimateStatus"
+          },
+          "tax_percent": {
+            "description": "Percent, as a decimal string to a thousandth",
+            "examples": [
+              "8.25"
+            ],
+            "pattern": "^\\d{1,3}(\\.\\d{1,3})?$",
+            "title": "Tax Percent",
+            "type": "string"
           },
           "title": {
             "title": "Title",
             "type": "string"
+          },
+          "total": {
+            "description": "Dollars as a decimal string, to the cent",
+            "examples": [
+              "42.15"
+            ],
+            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
+            "title": "Total",
+            "type": "string"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/EstimateTotals"
           },
           "updated_at": {
             "format": "date-time",
@@ -3419,10 +3488,15 @@
           "number",
           "title",
           "status",
+          "total",
           "created_at",
           "updated_at",
           "price_list",
           "notes",
+          "tax_percent",
+          "overhead_percent",
+          "profit_percent",
+          "totals",
           "created_by",
           "next_statuses",
           "lines"
@@ -3481,6 +3555,15 @@
             "title": "Title",
             "type": "string"
           },
+          "total": {
+            "description": "Dollars as a decimal string, to the cent",
+            "examples": [
+              "42.15"
+            ],
+            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
+            "title": "Total",
+            "type": "string"
+          },
           "updated_at": {
             "format": "date-time",
             "title": "Updated At",
@@ -3493,10 +3576,79 @@
           "number",
           "title",
           "status",
+          "total",
           "created_at",
           "updated_at"
         ],
         "title": "EstimateSummary",
+        "type": "object"
+      },
+      "EstimateTotals": {
+        "properties": {
+          "overhead": {
+            "description": "(Subtotal + tax) times the overhead rate",
+            "examples": [
+              "42.15"
+            ],
+            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
+            "title": "Overhead",
+            "type": "string"
+          },
+          "profit": {
+            "description": "(Subtotal + tax) times the profit rate",
+            "examples": [
+              "42.15"
+            ],
+            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
+            "title": "Profit",
+            "type": "string"
+          },
+          "subtotal": {
+            "description": "The lines' totals",
+            "examples": [
+              "42.15"
+            ],
+            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
+            "title": "Subtotal",
+            "type": "string"
+          },
+          "tax": {
+            "description": "Taxable subtotal times the tax rate",
+            "examples": [
+              "42.15"
+            ],
+            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
+            "title": "Tax",
+            "type": "string"
+          },
+          "taxable_subtotal": {
+            "description": "The taxable lines' totals",
+            "examples": [
+              "42.15"
+            ],
+            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
+            "title": "Taxable Subtotal",
+            "type": "string"
+          },
+          "total": {
+            "description": "Subtotal + tax + overhead + profit",
+            "examples": [
+              "42.15"
+            ],
+            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subtotal",
+          "taxable_subtotal",
+          "tax",
+          "overhead",
+          "profit",
+          "total"
+        ],
+        "title": "EstimateTotals",
         "type": "object"
       },
       "EstimateUpdate": {
@@ -3515,6 +3667,22 @@
             ],
             "title": "Notes"
           },
+          "overhead_percent": {
+            "anyOf": [
+              {
+                "description": "Percent, as a decimal string to a thousandth",
+                "examples": [
+                  "8.25"
+                ],
+                "pattern": "^\\d{1,3}(\\.\\d{1,3})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overhead Percent"
+          },
           "price_list_id": {
             "anyOf": [
               {
@@ -3526,6 +3694,38 @@
               }
             ],
             "title": "Price List Id"
+          },
+          "profit_percent": {
+            "anyOf": [
+              {
+                "description": "Percent, as a decimal string to a thousandth",
+                "examples": [
+                  "8.25"
+                ],
+                "pattern": "^\\d{1,3}(\\.\\d{1,3})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profit Percent"
+          },
+          "tax_percent": {
+            "anyOf": [
+              {
+                "description": "Percent, as a decimal string to a thousandth",
+                "examples": [
+                  "8.25"
+                ],
+                "pattern": "^\\d{1,3}(\\.\\d{1,3})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax Percent"
           },
           "title": {
             "anyOf": [
@@ -3864,6 +4064,12 @@
             "description": "A room of this claim",
             "title": "Room Id"
           },
+          "taxable": {
+            "default": true,
+            "description": "Sales tax applies",
+            "title": "Taxable",
+            "type": "boolean"
+          },
           "unit": {
             "anyOf": [
               {
@@ -3971,6 +4177,10 @@
               }
             ]
           },
+          "taxable": {
+            "title": "Taxable",
+            "type": "boolean"
+          },
           "total": {
             "description": "Quantity times unit price, to the cent",
             "examples": [
@@ -4005,6 +4215,7 @@
           "quantity",
           "unit_price",
           "total",
+          "taxable",
           "notes"
         ],
         "title": "LineRead",
@@ -4117,6 +4328,17 @@
               }
             ],
             "title": "Room Id"
+          },
+          "taxable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Taxable"
           },
           "unit": {
             "anyOf": [
