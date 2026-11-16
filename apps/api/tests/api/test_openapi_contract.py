@@ -40,6 +40,26 @@ def test_versioned_operations_document_problem_responses(
         assert status in operation["responses"], f"{method.upper()} {path} lacks {status}"
 
 
+PROBLEM_CONTENT = {"application/problem+json": {"schema": {"$ref": "#/components/schemas/Problem"}}}
+
+
+@pytest.mark.parametrize(
+    ("method", "path", "operation"),
+    [o for o in OPERATIONS if o[1].startswith("/v1/")],
+    ids=lambda v: str(v)[:40],
+)
+def test_error_bodies_are_problems_sent_as_problem_json(
+    method: str, path: str, operation: dict[str, Any]
+) -> None:
+    # Generated clients type error bodies from this: it must name the media type the
+    # handlers actually send, and no error may go undocumented. (The health probes are
+    # unversioned; /readyz answers 503 with its own readiness report.)
+    errors = {s: r for s, r in operation["responses"].items() if s.startswith(("4", "5"))}
+
+    wrong = {s: r.get("content") for s, r in errors.items() if r.get("content") != PROBLEM_CONTENT}
+    assert wrong == {}, f"{method.upper()} {path}"
+
+
 def test_committed_schema_is_current() -> None:
     assert openapi.main(["--check"]) == 0, "Run `just api-openapi` and commit openapi.json"
 

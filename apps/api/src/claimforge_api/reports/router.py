@@ -329,7 +329,12 @@ public_router = APIRouter(prefix="/shared-reports", tags=["reports"], responses=
     "for five minutes. Expired, revoked and unknown links all answer 404.",
     response_class=RedirectResponse,
     status_code=status.HTTP_302_FOUND,
-    responses={404: {"description": "The link doesn't work (expired, revoked or unknown)"}},
+    responses={
+        404: {
+            **PROBLEM_RESPONSES[404],
+            "description": "The link doesn't work (expired, revoked or unknown)",
+        }
+    },
 )
 async def open_shared_report(
     token: str, session: DbSession, storage: StorageDep

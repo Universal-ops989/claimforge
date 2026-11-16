@@ -158,6 +158,24 @@ def register_problem_handlers(app: FastAPI) -> None:
     app.add_exception_handler(Exception, handle_unexpected_error)
 
 
+def document_problem_media_type(schema: dict[str, Any]) -> dict[str, Any]:
+    """File error bodies under the media type they are sent with.
+
+    FastAPI documents a response ``model`` under the route's own media type
+    (``application/json``), but problems go out as ``application/problem+json``. Responses
+    that declare that media type (``PROBLEM_RESPONSES``) get the schema moved there, so
+    generated clients type the error body they will actually receive.
+    """
+    for path_item in schema.get("paths", {}).values():
+        for operation in path_item.values():
+            for response in operation.get("responses", {}).values():
+                content = response.get("content", {})
+                as_json = content.get("application/json", {})
+                if PROBLEM_MEDIA_TYPE in content and "schema" in as_json:
+                    content[PROBLEM_MEDIA_TYPE] = content.pop("application/json")
+    return schema
+
+
 #: For rate-limited routes: `responses=RATE_LIMITED_RESPONSE`.
 RATE_LIMITED_RESPONSE: dict[int | str, dict[str, Any]] = {
     429: {
