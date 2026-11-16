@@ -18,6 +18,7 @@ dependencies = [
     "boto3>=1.40",
     "pillow>=11.0",
     "pillow-heif>=1.0",
+    "reportlab>=4.2",
 ]
 
 [project.optional-dependencies]
@@ -34,6 +35,9 @@ dev = [
     "flask>=3.1",
     "flask-cors>=5.0",
     "types-boto3[s3]>=1.40",
+    # Reads generated PDFs back in tests.
+    "pypdf>=5.0",
+    "types-reportlab>=4.2",
 ]
 
 [build-system]
