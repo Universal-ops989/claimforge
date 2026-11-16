@@ -23,6 +23,19 @@ const ROOT = "claimforge";
 
 type OrganizationsQuery = Omit<QueryParams<"/v1/organizations", "get">, "cursor">;
 type ClaimsQuery = Omit<QueryParams<"/v1/organizations/{organization_id}/claims", "get">, "cursor">;
+type TasksQuery = QueryParams<"/v1/organizations/{organization_id}/claims/{claim_id}/tasks", "get">;
+type MyTasksQuery = Omit<
+  QueryParams<"/v1/organizations/{organization_id}/tasks/assigned-to-me", "get">,
+  "cursor"
+>;
+type NotesQuery = Omit<
+  QueryParams<"/v1/organizations/{organization_id}/claims/{claim_id}/notes", "get">,
+  "cursor"
+>;
+type MentionsQuery = Omit<
+  QueryParams<"/v1/organizations/{organization_id}/notes/mentioning-me", "get">,
+  "cursor"
+>;
 type TimelineQuery = Omit<
   QueryParams<"/v1/organizations/{organization_id}/claims/{claim_id}/timeline", "get">,
   "cursor"
@@ -58,6 +71,24 @@ export const queryKeys = {
   /** A claim's structures, each with its rooms. */
   structures: (organizationId: string, claimId: string) =>
     [...queryKeys.claim(organizationId, claimId), "structures"] as const,
+  /** Every task list of a claim, whatever it filters on. */
+  tasks: (organizationId: string, claimId: string) =>
+    [...queryKeys.claim(organizationId, claimId), "tasks"] as const,
+  taskList: (organizationId: string, claimId: string, query: TasksQuery = {}) =>
+    [...queryKeys.tasks(organizationId, claimId), query] as const,
+  /** Every page of "assigned to me", whatever it filters on. */
+  myTasks: (organizationId: string) =>
+    [...queryKeys.organization(organizationId), "tasks", "assigned-to-me"] as const,
+  myTaskList: (organizationId: string, query: MyTasksQuery = {}) =>
+    [...queryKeys.myTasks(organizationId), query] as const,
+  notes: (organizationId: string, claimId: string) =>
+    [...queryKeys.claim(organizationId, claimId), "notes"] as const,
+  noteList: (organizationId: string, claimId: string, query: NotesQuery = {}) =>
+    [...queryKeys.notes(organizationId, claimId), query] as const,
+  mentions: (organizationId: string) =>
+    [...queryKeys.organization(organizationId), "notes", "mentioning-me"] as const,
+  mentionList: (organizationId: string, query: MentionsQuery = {}) =>
+    [...queryKeys.mentions(organizationId), query] as const,
   /** One room, and later whatever is recorded in it. */
   room: (organizationId: string, claimId: string, roomId: string) =>
     [...queryKeys.claim(organizationId, claimId), "rooms", roomId] as const,

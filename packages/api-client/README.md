@@ -191,6 +191,11 @@ function Header() {
   and creating, renaming, moving or deleting a structure or room edits it in place, in
   the API's order. `useRoom` starts from the layout's copy when it's loaded. Deletes wait
   for the API, because a room holding drying evidence is refused with 409.
+- **Tasks and notes.** Ticking a task (`changes: { done: true }`) shows at once in the
+  claim's list and in `useMyTasks`, is undone if refused, and the lists then refetch to
+  re-sort. A new note goes on top of the first loaded page; edits and deletes change the
+  loaded pages of both `useNotes` and `useNotesMentioningMe`. Notes aren't optimistic,
+  because only the API turns `<@user-id>` mentions into names.
 - **Sessions.** `useLogin` and `useAcceptInvitation` reset the cache on success, so a
   new user never sees the last one's data. `useLogout` removes every cached query, even
   offline. When a session ends on its own, call `queryClient.removeQueries()` from

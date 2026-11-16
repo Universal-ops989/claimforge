@@ -30,6 +30,16 @@ export { ApiProvider, useApi, type ApiProviderProps } from "./context";
 export { queryKeys } from "./keys";
 export { createQueryClient, MAX_RETRIES, shouldRetry } from "./query-client";
 export {
+  mentionsQuery,
+  notesQuery,
+  useCreateNote,
+  useDeleteNote,
+  useNotes,
+  useNotesMentioningMe,
+  useUpdateNote,
+  type NoteChange,
+} from "./notes";
+export {
   invitationsQuery,
   organizationQuery,
   organizationsQuery,
@@ -42,7 +52,7 @@ export {
   useRevokeInvitation,
   useUpdateOrganization,
 } from "./organizations";
-export { allItems, nextCursor } from "./pages";
+export { allItems, editPages, nextCursor } from "./pages";
 export {
   roomQuery,
   structuresQuery,
@@ -59,3 +69,13 @@ export {
   type StructureChange,
 } from "./rooms";
 export { meQuery, useAcceptInvitation, useLogin, useLogout, useMe } from "./session";
+export {
+  myTasksQuery,
+  tasksQuery,
+  useCreateTask,
+  useDeleteTask,
+  useMyTasks,
+  useTasks,
+  useUpdateTask,
+  type TaskChange,
+} from "./tasks";

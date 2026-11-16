@@ -86,8 +86,9 @@ async function withLayout<Mutation>(server: FakeServer, useMutation: () => Mutat
     { server },
   );
   await waitFor(() => {
+    // Read `data`, not just a status: hooks re-render only for what was read.
     const { layout, timeline } = rendered.result.current;
-    expect(layout.isSuccess && timeline.isSuccess).toBe(true);
+    expect(layout.data && timeline.data).toBeDefined();
   });
   return rendered;
 }
