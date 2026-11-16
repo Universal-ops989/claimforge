@@ -252,6 +252,21 @@ def _estimate(event: Event, names: Names) -> str:
     return _with_fields(f"Updated {estimate}", event)
 
 
+def _report(event: Event, names: Names) -> str:
+    report = label(event.value("kind"))  # "photo report"
+    if event.verb == "created":
+        return f"Requested a {report}"
+    if event.verb == "deleted":
+        return f"Deleted a {report}"
+    if event.changed("status"):
+        _, status = event.became("status")
+        if status == "ready":
+            return f"Generated the {report}"
+        if status == "failed":
+            return f"The {report} couldn't be made"
+    return f"Retrying the {report}"
+
+
 def _note(event: Event, names: Names) -> str:
     verb = {"created": "Wrote", "updated": "Edited", "deleted": "Deleted"}.get(
         event.verb, "Changed"
@@ -295,6 +310,7 @@ SUMMARIES: dict[str, Callable[[Event, Names], str]] = {
     "moisture_log": _moisture_log,
     "equipment_placement": _placement,
     "estimate": _estimate,
+    "report_job": _report,
     "note": _note,
     "task": _task,
 }

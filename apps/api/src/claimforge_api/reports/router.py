@@ -2,14 +2,20 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, Request, Response, status
 
 from claimforge_api.api.deps import DbSession, StorageDep
 from claimforge_api.api.problems import PROBLEM_RESPONSES
 from claimforge_api.auth.deps import CurrentUser
-from claimforge_api.reports import logos, service
-from claimforge_api.reports.models import ReportKind
-from claimforge_api.reports.schemas import TemplateCreate, TemplateRead, TemplateUpdate
+from claimforge_api.reports import jobs, logos, service
+from claimforge_api.reports.models import JobStatus, ReportKind
+from claimforge_api.reports.schemas import (
+    ReportJobRead,
+    ReportRequest,
+    TemplateCreate,
+    TemplateRead,
+    TemplateUpdate,
+)
 
 router = APIRouter(
     prefix="/organizations/{organization_id}/report-templates",
@@ -161,3 +167,92 @@ async def remove_report_template_logo(
 ) -> TemplateRead:
     template = await service.remove_logo(session, storage, organization_id, template_id, user=user)
     return await service.present(storage, template)
+
+
+claim_router = APIRouter(
+    prefix="/organizations/{organization_id}/claims/{claim_id}/reports",
+    tags=["reports"],
+    responses=PROBLEM_RESPONSES,
+)
+#: Seconds a client should wait before asking about a queued report again.
+POLL_SECONDS = "2"
+
+
+@claim_router.post(
+    "",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Request a report",
+    description="Needs `reports:generate`. The report is made in the background, from the "
+    "organization's default template for the kind (or the built-in one), with the "
+    "requester's access. Follow `Location` to poll, waiting `Retry-After` seconds between "
+    "requests. Closed claims can have reports.",
+)
+async def request_report(
+    organization_id: UUID,
+    claim_id: UUID,
+    session: DbSession,
+    storage: StorageDep,
+    user: CurrentUser,
+    body: ReportRequest,
+    request: Request,
+    response: Response,
+) -> ReportJobRead:
+    job = await jobs.request(session, organization_id, claim_id, body.kind, user=user)
+    response.headers["Location"] = str(
+        request.url_for(
+            "get_report", organization_id=organization_id, claim_id=claim_id, job_id=job.id
+        ).path
+    )
+    response.headers["Retry-After"] = POLL_SECONDS
+    job = await jobs.get_job(session, organization_id, claim_id, job.id, user=user)
+    return await jobs.present(session, storage, job)
+
+
+@claim_router.get("", summary="List a claim's reports", description="Newest first.")
+async def list_reports(
+    organization_id: UUID,
+    claim_id: UUID,
+    session: DbSession,
+    storage: StorageDep,
+    user: CurrentUser,
+) -> list[ReportJobRead]:
+    found = await jobs.list_jobs(session, organization_id, claim_id, user=user)
+    return [await jobs.present(session, storage, job) for job in found]
+
+
+@claim_router.get(
+    "/{job_id}",
+    summary="Get a report",
+    description="While it's `queued` the answer carries `Retry-After`. When `ready` it has a "
+    "`download_url`; when `failed`, the reason in `error`.",
+)
+async def get_report(
+    organization_id: UUID,
+    claim_id: UUID,
+    job_id: UUID,
+    session: DbSession,
+    storage: StorageDep,
+    user: CurrentUser,
+    response: Response,
+) -> ReportJobRead:
+    job = await jobs.get_job(session, organization_id, claim_id, job_id, user=user)
+    if job.status == JobStatus.QUEUED:
+        response.headers["Retry-After"] = POLL_SECONDS
+    return await jobs.present(session, storage, job)
+
+
+@claim_router.delete(
+    "/{job_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a report",
+    description="Needs `reports:generate`. Deletes the PDF too; a queued report won't be made.",
+)
+async def delete_report(
+    organization_id: UUID,
+    claim_id: UUID,
+    job_id: UUID,
+    session: DbSession,
+    storage: StorageDep,
+    user: CurrentUser,
+) -> None:
+    await jobs.delete_job(session, storage, organization_id, claim_id, job_id, user=user)
