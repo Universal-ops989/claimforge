@@ -20,6 +20,7 @@ from claimforge_api.organizations import models as organizations_models
 from claimforge_api.photos import models as photos_models
 from claimforge_api.pricing import models as pricing_models
 from claimforge_api.properties import models as properties_models
+from claimforge_api.reports import models as reports_models
 from claimforge_api.structures import models as structures_models
 from claimforge_api.tasks import models as tasks_models
 from claimforge_api.users import models as users_models
@@ -43,6 +44,7 @@ __all__ = [
     "photos_models",
     "pricing_models",
     "properties_models",
+    "reports_models",
     "structures_models",
     "tasks_models",
     "users_models",
