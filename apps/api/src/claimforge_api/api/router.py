@@ -8,6 +8,7 @@ from claimforge_api.auth.router import router as auth_router
 from claimforge_api.claims.router import router as claims_router
 from claimforge_api.contacts.router import router as contacts_router
 from claimforge_api.damage.router import router as damage_router
+from claimforge_api.documents.router import router as documents_router
 from claimforge_api.invitations.router import accept_router as invitation_accept_router
 from claimforge_api.invitations.router import organization_router as invitations_router
 from claimforge_api.notes.router import router as notes_router
@@ -36,6 +37,7 @@ v1_router.include_router(structures_router)
 v1_router.include_router(damage_router)
 v1_router.include_router(photos_router)
 v1_router.include_router(photo_tags_router)
+v1_router.include_router(documents_router)
 v1_router.include_router(notes_router)
 v1_router.include_router(tasks_router)
 v1_router.include_router(timeline_router)

@@ -14,6 +14,7 @@ from claimforge_api.notes import mentions
 EXCERPT = 80
 #: Columns that say where a record sits rather than what it is.
 _PLUMBING = frozenset({"organization_id", "claim_id"})
+_TITLE = frozenset({"title"})
 
 
 @dataclass(frozen=True)
@@ -162,6 +163,22 @@ def _photo(event: Event, names: Names) -> str:
     return _with_fields(f"Updated photo {name}", event)
 
 
+def _document(event: Event, names: Names) -> str:
+    title = f"“{event.value('title')}”"
+    if event.verb == "created":
+        category = event.value("category")
+        kind = "document" if category in (None, "other") else label(category)
+        return f"Attached {kind} {title}"
+    if event.verb == "deleted":
+        return f"Deleted document {title}"
+    if event.changed("title"):
+        before, after = event.became("title")
+        return _with_fields(f"Renamed document “{before}” to “{after}”", event, skip=_TITLE)
+    if event.changed("category"):
+        return f"Recategorized document {title} as {label(event.value('category'))}"
+    return _with_fields(f"Updated document {title}", event)
+
+
 def _note(event: Event, names: Names) -> str:
     verb = {"created": "Wrote", "updated": "Edited", "deleted": "Deleted"}.get(
         event.verb, "Changed"
@@ -200,6 +217,7 @@ SUMMARIES: dict[str, Callable[[Event, Names], str]] = {
     "room": _named("room"),
     "damage_item": _damage,
     "photo": _photo,
+    "document": _document,
     "note": _note,
     "task": _task,
 }

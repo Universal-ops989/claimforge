@@ -45,21 +45,35 @@ def _event(row: AuditEvent, facts: dict[UUID, dict[str, Any]]) -> summaries.Even
         entity_type=row.entity_type,
         verb=row.action.rpartition(".")[2],
         changes=row.changes,
-        facts=facts.get(row.entity_id, {}),
+        facts=facts.get(row.id, {}),
     )
 
 
 async def _facts(session: AsyncSession, rows: list[AuditEvent]) -> dict[UUID, dict[str, Any]]:
-    """Each record's values when it was created, from its created event."""
-    ids = {r.entity_id for r in rows if r.entity_type != "claim"}
-    if not ids:
+    """For each event, its record as it stood just before: replayed from the record's history.
+
+    Not just the values it was created with: a room renamed to "Kitchen" is the Kitchen in
+    every later entry, and was something else before.
+    """
+    page = {r.id for r in rows if r.entity_type != "claim"}
+    if not page:
         return {}
-    created = await session.execute(
-        select(AuditEvent.entity_id, AuditEvent.changes).where(
-            AuditEvent.entity_id.in_(ids), AuditEvent.action.like("%.created")
+    history = await session.execute(
+        select(AuditEvent.id, AuditEvent.entity_id, AuditEvent.changes)
+        .where(
+            AuditEvent.entity_id.in_({r.entity_id for r in rows if r.id in page}),
+            AuditEvent.id <= max(page),
         )
+        .order_by(AuditEvent.id)
     )
-    return {entity_id: {k: v[1] for k, v in changes.items()} for entity_id, changes in created}
+    state: dict[UUID, dict[str, Any]] = {}
+    facts: dict[UUID, dict[str, Any]] = {}
+    for event_id, entity_id, changes in history:
+        record = state.setdefault(entity_id, {})
+        if event_id in page:
+            facts[event_id] = dict(record)
+        record.update({field: after for field, (_, after) in changes.items()})
+    return facts
 
 
 async def _names(

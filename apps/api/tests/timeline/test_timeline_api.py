@@ -128,6 +128,26 @@ async def test_deleting_a_structure_shows_every_removal(
     assert sorted(removals) == ["Deleted room Shop", "Deleted structure Garage"]
 
 
+async def test_entries_name_records_as_they_were_then(
+    auth_client: httpx2.AsyncClient, base: str, claim: dict[str, Any]
+) -> None:
+    url = f"{base}/claims/{claim['id']}"
+    house = await send(auth_client, "POST", f"{url}/structures", name="House")
+    den = await send(auth_client, "POST", f"{url}/structures/{house['id']}/rooms", name="Den")
+    await send(auth_client, "PATCH", f"{url}/rooms/{den['id']}", length_ft=12)
+    await send(auth_client, "PATCH", f"{url}/rooms/{den['id']}", name="Kitchen")
+    await send(auth_client, "PATCH", f"{url}/rooms/{den['id']}", width_ft=10)
+    await send(auth_client, "DELETE", f"{url}/rooms/{den['id']}")
+
+    assert (await story(auth_client, url, kind="layout"))[:5] == [
+        "Deleted room Kitchen",
+        "Updated room Kitchen: width ft",
+        "Renamed room Den to Kitchen",
+        "Updated room Den: length ft",
+        "Added room Den",
+    ]
+
+
 async def test_who_can_read_it(
     auth_client: httpx2.AsyncClient, client_for: ClientFor, base: str, claim: dict[str, Any]
 ) -> None:
