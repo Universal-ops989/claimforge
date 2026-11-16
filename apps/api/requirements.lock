@@ -23,6 +23,8 @@ botocore==1.44.3
     # via
     #   boto3
     #   s3transfer
+charset-normalizer==3.5.2
+    # via reportlab
 click==8.5.1
     # via uvicorn
 dnspython==2.9.2
@@ -55,6 +57,7 @@ pillow==13.0.0
     # via
     #   claimforge-api (pyproject.toml)
     #   pillow-heif
+    #   reportlab
 pillow-heif==1.8.1
     # via claimforge-api (pyproject.toml)
 pydantic==2.14.3
@@ -75,6 +78,8 @@ python-dotenv==1.2.4
     #   uvicorn
 pyyaml==6.0.3
     # via uvicorn
+reportlab==5.1.0
+    # via claimforge-api (pyproject.toml)
 s3transfer==0.19.3
     # via boto3
 six==1.17.0

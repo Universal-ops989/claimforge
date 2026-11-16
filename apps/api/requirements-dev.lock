@@ -38,7 +38,9 @@ certifi==2026.10.23
 cffi==2.1.1
     # via cryptography
 charset-normalizer==3.5.2
-    # via requests
+    # via
+    #   reportlab
+    #   requests
 click==8.5.1
     # via
     #   flask
@@ -119,6 +121,7 @@ pillow==13.0.0
     # via
     #   claimforge-api (pyproject.toml)
     #   pillow-heif
+    #   reportlab
 pillow-heif==1.8.1
     # via claimforge-api (pyproject.toml)
 platformdirs==4.14.5
@@ -145,6 +148,8 @@ pygments==2.21.0
     # via pytest
 pyjwt==2.15.1
     # via claimforge-api (pyproject.toml)
+pypdf==7.1.0
+    # via claimforge-api (pyproject.toml)
 pytest==9.2.0
     # via
     #   claimforge-api (pyproject.toml)
@@ -165,6 +170,8 @@ pyyaml==6.0.3
     #   moto
     #   responses
     #   uvicorn
+reportlab==5.1.0
+    # via claimforge-api (pyproject.toml)
 requests==2.34.2
     # via
     #   moto
@@ -191,6 +198,8 @@ types-boto3==1.44.3
     # via claimforge-api (pyproject.toml)
 types-boto3-s3==1.44.0
     # via types-boto3
+types-reportlab==5.1.0.20261104
+    # via claimforge-api (pyproject.toml)
 types-s3transfer==0.19.3
     # via types-boto3
 typing-extensions==4.16.0
