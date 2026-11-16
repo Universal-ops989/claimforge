@@ -106,6 +106,7 @@ class TemplateRead(BaseModel):
     accent_color: str
     options: PhotoReportOptions | DryingReportOptions
     is_default: bool
+    logo_url: str | None = Field(description="The logo, a PNG; works for an hour")
     built_in: bool = Field(description="True: no template is set up, this is what's used")
     created_at: datetime | None
     updated_at: datetime | None

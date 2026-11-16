@@ -43,6 +43,8 @@ class ReportTemplate(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     #: Checked against the kind's options schema (reports/schemas.py) before it's stored.
     options: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
     is_default: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
+    #: Where the logo (a PNG, see reports/logos.py) is stored, if there is one.
+    logo_key: Mapped[str | None] = mapped_column(String(512), default=None)
 
     __table_args__ = (
         Index(
