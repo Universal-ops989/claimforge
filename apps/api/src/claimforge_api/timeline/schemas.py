@@ -22,6 +22,7 @@ class TimelineKind(StrEnum):
     PHOTOS = "photos"
     DOCUMENTS = "documents"
     MOISTURE = "moisture"
+    EQUIPMENT = "equipment"
     NOTES = "notes"
     TASKS = "tasks"
     OTHER = "other"
@@ -38,6 +39,7 @@ ENTITY_TYPES: dict[TimelineKind, tuple[str, ...]] = {
     TimelineKind.PHOTOS: ("photo",),
     TimelineKind.DOCUMENTS: ("document",),
     TimelineKind.MOISTURE: ("moisture_point", "moisture_log"),
+    TimelineKind.EQUIPMENT: ("equipment_placement",),
     TimelineKind.NOTES: ("note",),
     TimelineKind.TASKS: ("task",),
 }

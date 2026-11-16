@@ -13,6 +13,7 @@ from sqlalchemy.orm import selectinload
 from claimforge_api.auth.permissions import Permission, authorize
 from claimforge_api.claims import service as claims
 from claimforge_api.core.errors import BusinessRuleError, ConflictError, NotFoundError
+from claimforge_api.equipment import placements as equipment
 from claimforge_api.moisture import service as moisture
 from claimforge_api.structures.models import Room, Structure
 from claimforge_api.structures.schemas import (
@@ -39,13 +40,24 @@ class HasMoisturePointsError(ConflictError):
     title = "Moisture points are mapped here"
 
 
+class HasEquipmentPlacementsError(ConflictError):
+    code = "has_equipment_placements"
+    title = "Equipment has run here"
+
+
 async def _keep_drying_records(session: AsyncSession, room_ids: list[UUID]) -> None:
-    """Refuse to delete rooms with moisture points: drying records are evidence."""
+    """Refuse to delete rooms with moisture points or equipment history: it's evidence."""
     count = await moisture.points_in_rooms(session, room_ids)
     if count:
         raise HasMoisturePointsError(
             f"{count} moisture point(s) are mapped here; move or delete them first",
             moisture_points=count,
+        )
+    placed = await equipment.placements_in_rooms(session, room_ids)
+    if placed:
+        raise HasEquipmentPlacementsError(
+            f"Equipment has been placed here {placed} time(s); move or delete those first",
+            equipment_placements=placed,
         )
 
 

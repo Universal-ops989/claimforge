@@ -1296,6 +1296,36 @@
         "title": "ContactUpdate",
         "type": "object"
       },
+      "CurrentPlacement": {
+        "properties": {
+          "claim": {
+            "$ref": "#/components/schemas/ClaimRef"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "placed_at": {
+            "format": "date-time",
+            "title": "Placed At",
+            "type": "string"
+          },
+          "room_id": {
+            "format": "uuid",
+            "title": "Room Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "claim",
+          "room_id",
+          "placed_at"
+        ],
+        "title": "CurrentPlacement",
+        "type": "object"
+      },
       "CursorPage_AuditEventRead_": {
         "properties": {
           "has_more": {
@@ -2397,6 +2427,36 @@
         "title": "EquipmentCreate",
         "type": "object"
       },
+      "EquipmentDays": {
+        "description": "A claim's equipment use for one kind: what estimates bill.",
+        "properties": {
+          "days": {
+            "description": "Billable days, running placements counted up to now",
+            "title": "Days",
+            "type": "integer"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/EquipmentKind"
+          },
+          "placements": {
+            "title": "Placements",
+            "type": "integer"
+          },
+          "running": {
+            "description": "Placements still running",
+            "title": "Running",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kind",
+          "placements",
+          "running",
+          "days"
+        ],
+        "title": "EquipmentDays",
+        "type": "object"
+      },
       "EquipmentKind": {
         "enum": [
           "dehumidifier",
@@ -2441,6 +2501,17 @@
             "format": "date-time",
             "title": "Created At",
             "type": "string"
+          },
+          "current_placement": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CurrentPlacement"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Where it's running now"
           },
           "id": {
             "format": "uuid",
@@ -2495,6 +2566,7 @@
           "capacity_unit",
           "status",
           "notes",
+          "current_placement",
           "created_at",
           "updated_at"
         ],
@@ -3900,6 +3972,226 @@
         "title": "PhotoUploadRead",
         "type": "object"
       },
+      "PlacedEquipment": {
+        "properties": {
+          "asset_tag": {
+            "title": "Asset Tag",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/EquipmentKind"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "asset_tag"
+        ],
+        "title": "PlacedEquipment",
+        "type": "object"
+      },
+      "PlacementCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "equipment_id": {
+            "format": "uuid",
+            "title": "Equipment Id",
+            "type": "string"
+          },
+          "placed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Defaults to now.",
+            "title": "Placed At"
+          },
+          "room_id": {
+            "description": "A room of this claim.",
+            "format": "uuid",
+            "title": "Room Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "equipment_id",
+          "room_id"
+        ],
+        "title": "PlacementCreate",
+        "type": "object"
+      },
+      "PlacementRead": {
+        "properties": {
+          "days": {
+            "description": "Billable days: every started 24 hours (so far, if running)",
+            "title": "Days",
+            "type": "integer"
+          },
+          "equipment": {
+            "$ref": "#/components/schemas/PlacedEquipment"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "placed_at": {
+            "format": "date-time",
+            "title": "Placed At",
+            "type": "string"
+          },
+          "placed_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClaimActor"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "removed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Removed At"
+          },
+          "removed_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClaimActor"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "room": {
+            "$ref": "#/components/schemas/PlacementRoom"
+          },
+          "running": {
+            "title": "Running",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "equipment",
+          "room",
+          "placed_at",
+          "removed_at",
+          "running",
+          "days",
+          "placed_by",
+          "removed_by"
+        ],
+        "title": "PlacementRead",
+        "type": "object"
+      },
+      "PlacementRemove": {
+        "additionalProperties": false,
+        "properties": {
+          "removed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Defaults to now.",
+            "title": "Removed At"
+          }
+        },
+        "title": "PlacementRemove",
+        "type": "object"
+      },
+      "PlacementRoom": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "PlacementRoom",
+        "type": "object"
+      },
+      "PlacementUpdate": {
+        "additionalProperties": false,
+        "description": "Corrections. ``removed_at: null`` puts a unit pulled by mistake back to running.",
+        "properties": {
+          "placed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placed At"
+          },
+          "removed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Removed At"
+          },
+          "room_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Room Id"
+          }
+        },
+        "title": "PlacementUpdate",
+        "type": "object"
+      },
       "Problem": {
         "description": "RFC 9457 problem details, plus ClaimForge extensions.",
         "properties": {
@@ -5174,6 +5466,7 @@
           "photos",
           "documents",
           "moisture",
+          "equipment",
           "notes",
           "tasks",
           "other"
@@ -9404,6 +9697,788 @@
         "summary": "The claim's drying log",
         "tags": [
           "moisture"
+        ]
+      }
+    },
+    "/v1/organizations/{organization_id}/claims/{claim_id}/equipment-days": {
+      "get": {
+        "description": "What the claim's estimate bills: placements, units still running, and billable days per kind (every started 24 hours; running units counted up to now).",
+        "operationId": "get_equipment_days",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Organization Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "claim_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Claim Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EquipmentDays"
+                  },
+                  "title": "Response Get Equipment Days",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Authentication required"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Permission denied"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Validation failed or business rule violated"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Equipment-days by kind",
+        "tags": [
+          "equipment"
+        ]
+      }
+    },
+    "/v1/organizations/{organization_id}/claims/{claim_id}/equipment-placements": {
+      "get": {
+        "description": "In the order units were placed. `running=true` for what's on site now.",
+        "operationId": "list_equipment_placements",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Organization Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "claim_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Claim Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only running (or only removed)",
+            "in": "query",
+            "name": "running",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only running (or only removed)",
+              "title": "Running"
+            }
+          },
+          {
+            "in": "query",
+            "name": "room_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Room Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PlacementRead"
+                  },
+                  "title": "Response List Equipment Placements",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Authentication required"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Permission denied"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Validation failed or business rule violated"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List a claim's equipment placements",
+        "tags": [
+          "equipment"
+        ]
+      },
+      "post": {
+        "description": "Needs `field_data:write`. The unit must be in service (`equipment_unavailable`) and not running elsewhere (`equipment_running`, with the claim's id and number). `placed_at` defaults to now and can be earlier, not later (`time_in_future`). Closed and cancelled claims are read-only (`claim_locked`).",
+        "operationId": "place_equipment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Organization Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "claim_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Claim Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlacementCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlacementRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Authentication required"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Permission denied"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Validation failed or business rule violated"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Place equipment in a room",
+        "tags": [
+          "equipment"
+        ]
+      }
+    },
+    "/v1/organizations/{organization_id}/claims/{claim_id}/equipment-placements/{placement_id}": {
+      "delete": {
+        "description": "For placements entered by mistake; they no longer count towards billing.",
+        "operationId": "delete_equipment_placement",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Organization Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "claim_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Claim Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "placement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Placement Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Authentication required"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Permission denied"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Validation failed or business rule violated"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete an equipment placement",
+        "tags": [
+          "equipment"
+        ]
+      },
+      "patch": {
+        "description": "Only the fields sent change. `removed_at: null` puts a unit pulled by mistake back to running, if it isn't running elsewhere.",
+        "operationId": "update_equipment_placement",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Organization Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "claim_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Claim Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "placement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Placement Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlacementUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlacementRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Authentication required"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Permission denied"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Validation failed or business rule violated"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Correct an equipment placement",
+        "tags": [
+          "equipment"
+        ]
+      }
+    },
+    "/v1/organizations/{organization_id}/claims/{claim_id}/equipment-placements/{placement_id}/remove": {
+      "post": {
+        "description": "Records when the unit was pulled (default now). Works on closed claims too, so a unit is never stranded on a finished job. Already removed: `already_removed`.",
+        "operationId": "remove_equipment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Organization Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "claim_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Claim Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "placement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Placement Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlacementRemove"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlacementRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Authentication required"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Permission denied"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Validation failed or business rule violated"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Remove equipment",
+        "tags": [
+          "equipment"
         ]
       }
     },
@@ -14772,6 +15847,24 @@
               ],
               "description": "Matches asset tag, name or serial number",
               "title": "Q"
+            }
+          },
+          {
+            "description": "true: in service and not running anywhere (free to place); false: everything else",
+            "in": "query",
+            "name": "available",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "true: in service and not running anywhere (free to place); false: everything else",
+              "title": "Available"
             }
           },
           {

@@ -6,14 +6,15 @@ the trucks are the ones who know what's on them.
 
 from uuid import UUID
 
-from sqlalchemy import Select, func, or_, select
+from sqlalchemy import ColumnElement, Select, and_, exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from claimforge_api.auth.permissions import Permission, authorize
 from claimforge_api.core.errors import ConflictError, NotFoundError
 from claimforge_api.db.pagination import Page, SortKey, paginate
 from claimforge_api.db.search import icontains
-from claimforge_api.equipment.models import Equipment
+from claimforge_api.equipment.models import Equipment, EquipmentPlacement, EquipmentStatus
 from claimforge_api.equipment.schemas import EquipmentCreate, EquipmentQuery, EquipmentUpdate
 from claimforge_api.users.models import User
 
@@ -25,8 +26,23 @@ class AssetTagTakenError(ConflictError):
     title = "Asset tag already used"
 
 
+class EquipmentHasHistoryError(ConflictError):
+    code = "equipment_has_history"
+    title = "This unit has worked jobs"
+
+
 def _inventory(organization_id: UUID) -> Select[Equipment]:
-    return select(Equipment).where(Equipment.organization_id == organization_id)
+    return (
+        select(Equipment)
+        .where(Equipment.organization_id == organization_id)
+        .options(selectinload(Equipment.current_placement).selectinload(EquipmentPlacement.claim))
+    )
+
+
+def _running() -> ColumnElement[bool]:
+    return exists().where(
+        EquipmentPlacement.equipment_id == Equipment.id, EquipmentPlacement.removed_at.is_(None)
+    )
 
 
 async def _get(session: AsyncSession, organization_id: UUID, equipment_id: UUID) -> Equipment:
@@ -69,6 +85,9 @@ async def list_equipment(
         statement = statement.where(Equipment.kind == query.kind)
     if query.status is not None:
         statement = statement.where(Equipment.status == query.status)
+    if query.available is not None:
+        free = and_(Equipment.status == EquipmentStatus.IN_SERVICE, ~_running())
+        statement = statement.where(free if query.available else ~free)
     if query.q and query.q.strip():
         statement = statement.where(
             or_(
@@ -126,5 +145,12 @@ async def delete_equipment(
     """Remove a unit added by mistake. Units that worked jobs are retired instead."""
     await authorize(session, user, organization_id, Permission.FIELD_DATA_WRITE)
     unit = await _get(session, organization_id, equipment_id)
+    worked = await session.scalar(
+        select(exists().where(EquipmentPlacement.equipment_id == unit.id))
+    )
+    if worked:
+        raise EquipmentHasHistoryError(
+            f"{unit.asset_tag} has been placed on jobs; set its status to retired instead"
+        )
     await session.delete(unit)
     await session.commit()
