@@ -82,6 +82,39 @@ const { data: job, headers } = await api.request("post", reportsPath, {
 - No answer at all throws `NetworkError` (the `fetch` failure is its `cause`).
 - Pass `signal` to cancel; the call then rejects with the abort reason, untouched.
 
+## Sessions
+
+```ts
+import { createApiClient, memoryTokenStore, webLock } from "@claimforge/api-client";
+
+const api = createApiClient({
+  baseUrl,
+  auth: {
+    tokens: memoryTokenStore(), // or any { get, set }, sync or async
+    lock: webLock(), // one refresh across tabs that share the store
+    onSessionExpired: () => navigate("/login"),
+  },
+});
+
+await api.login({ email, password }); // keeps the tokens
+await api.get("/v1/me"); // sent with the access token
+await api.logout(); // forgets them, then revokes the session
+```
+
+Refresh tokens rotate, and the API revokes the whole session when one is presented
+twice. So the client exchanges each refresh token at most once:
+
+- The access token is refreshed 30 seconds before it expires (`refreshMargin`), and once
+  more on a 401 `authentication_required`, after which the call is retried once.
+- Concurrent calls share a single refresh. A token that another call or tab already
+  refreshed is used instead of being exchanged again. Across tabs this needs `lock`; where
+  Web Locks are missing, `webLock()` returns `undefined`.
+- If the API refuses the refresh token (expired, revoked or reused), the tokens are
+  cleared and `onSessionExpired` runs once. A network error, 429 or 5xx keeps them for the
+  next try.
+- `/v1/auth/*` calls never carry a token. A request body that's a stream can't be sent
+  twice, so send a string or a Blob to calls that may be retried.
+
 ## Regenerating
 
 ```bash
