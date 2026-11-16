@@ -238,6 +238,11 @@ function Header() {
   costs no refetch. Answers that arrive out of order (quick edits in a line grid) can't
   undo each other: the copy with the later `updated_at` wins. A 409
   `estimate_not_draft` refetches the estimate so the screen shows it locked.
+- **Reports.** `useRequestReport` shows the new report at once, queued; while any report
+  shown is queued it is polled every `REPORT_POLL_MS` until ready or failed. Ready
+  reports' download links last an hour, so they're refreshed every `LINK_REFRESH_MS`.
+  `useShareReport` returns the share's `url`, the only copy there will be; the cached
+  share list never holds it.
 - **Sessions.** `useLogin` and `useAcceptInvitation` reset the cache on success, so a
   new user never sees the last one's data. `useLogout` removes every cached query, even
   offline. When a session ends on its own, call `queryClient.removeQueries()` from
