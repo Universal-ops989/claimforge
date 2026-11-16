@@ -1,0 +1,39 @@
+{
+  "name": "@claimforge/api-client",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Typed client for the ClaimForge API, generated from its OpenAPI contract",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "generate": "node scripts/generate.mjs",
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rimraf dist coverage"
+  },
+  "devDependencies": {
+    "@claimforge/eslint-config": "workspace:^",
+    "@claimforge/tsconfig": "workspace:^",
+    "@types/node": "^22",
+    "eslint": "^10",
+    "globals": "^17.14.0",
+    "openapi-typescript": "^7.13.0",
+    "rimraf": "^6.1.4",
+    "typescript": "~5.9.3",
+    "vitest": "^5"
+  }
+}
