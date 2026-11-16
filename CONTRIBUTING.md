@@ -36,6 +36,13 @@ and `tsconfig`.
 - Business logic lives in services, not in route handlers.
 - Write tests with pytest functions and fixtures, not `unittest` classes.
 
+### Changing the API contract
+
+`apps/api/openapi.json` is the contract between the API and the frontends, and
+`@claimforge/api-client` generates its TypeScript types from it. After changing an
+endpoint or a schema, run `just api-openapi` and commit both files; CI fails when
+either one is stale.
+
 ## Running checks locally
 
 ```bash
