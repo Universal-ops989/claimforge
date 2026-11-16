@@ -6,7 +6,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
-from claimforge_api.reports.models import DEFAULT_ACCENT, ReportKind
+from claimforge_api.claims.schemas import ClaimActor
+from claimforge_api.reports.models import DEFAULT_ACCENT, JobStatus, ReportKind
 
 
 class PhotoReportOptions(BaseModel):
@@ -110,3 +111,24 @@ class TemplateRead(BaseModel):
     built_in: bool = Field(description="True: no template is set up, this is what's used")
     created_at: datetime | None
     updated_at: datetime | None
+
+
+class ReportRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: ReportKind
+
+
+class ReportJobRead(BaseModel):
+    id: UUID
+    claim_id: UUID
+    kind: ReportKind
+    status: JobStatus = Field(description="`queued` until it's `ready` or `failed`")
+    requested_by: ClaimActor | None
+    created_at: datetime
+    finished_at: datetime | None
+    size_bytes: int | None
+    error: str | None = Field(description="Why it failed, or the last retry's reason")
+    download_url: str | None = Field(
+        description="Ready reports: saves the PDF under a readable name; works for an hour"
+    )

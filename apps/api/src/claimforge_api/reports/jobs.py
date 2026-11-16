@@ -8,15 +8,18 @@ Storage outages back off and retry; anything else fails the job with its reason.
 
 import logging
 from collections.abc import Awaitable, Callable
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from claimforge_api.auth.permissions import Permission, authorize
 from claimforge_api.claims import service as claims
-from claimforge_api.core.errors import AppError
+from claimforge_api.claims.models import Claim
+from claimforge_api.claims.schemas import ClaimActor
+from claimforge_api.core.errors import AppError, NotFoundError
 from claimforge_api.photos.processing import MAX_ATTEMPTS, backoff
 from claimforge_api.reports import drying_report, photo_report
 from claimforge_api.reports.models import (
@@ -26,12 +29,15 @@ from claimforge_api.reports.models import (
     ReportKind,
     report_key,
 )
+from claimforge_api.reports.schemas import TITLES, ReportJobRead
 from claimforge_api.storage.base import ObjectStorage, StorageUnavailableError
 from claimforge_api.users.models import User
 
 logger = logging.getLogger(__name__)
 
 PDF = "application/pdf"
+#: How long a download link works.
+LINK_LIFETIME = timedelta(hours=1)
 
 
 Renderer = Callable[[AsyncSession, ObjectStorage, UUID, UUID, User], Awaitable[bytes]]
@@ -87,40 +93,41 @@ async def process_next(
     )
     if job is None:
         return None
-    job_id = job.id
+    # The job is only touched once the outcome is known: the renderer's queries flush the
+    # session, and an early change would reach the audit log as an update of its own.
+    job_id, kind = job.id, ReportKind(job.kind)
+    org_id, claim_id = job.organization_id, job.claim_id
+    user = await session.get(User, job.requested_by_id) if job.requested_by_id else None
+    retry: StorageUnavailableError | None = None
+    reason: str | None = None
+    if user is None:
+        reason = "The member who asked for this report is gone"
+    else:
+        try:
+            pdf = await RENDERERS[kind](session, storage, org_id, claim_id, user)
+            key = report_key(org_id, claim_id, job_id)
+            await storage.put(key, pdf, content_type=PDF)
+        except StorageUnavailableError as error:
+            retry = error
+        except AppError as error:  # the member lost access, the claim was deleted …
+            reason = error.detail
+        except Exception as error:
+            logger.exception("Report job %s failed", job_id)
+            reason = f"The report couldn't be made ({type(error).__name__})"
+        if retry is not None or reason is not None:
+            # The renderer may have left the session mid-read: start clean, lock again.
+            await session.rollback()
+            job = await session.get_one(ReportJob, job_id, with_for_update=True)
     job.attempts += 1
     job.started_at = now
-    user = await session.get(User, job.requested_by_id) if job.requested_by_id else None
-    if user is None:
-        _fail(job, "The member who asked for this report is gone", now)
-        await session.commit()
-        return job_id
-    try:
-        pdf = await RENDERERS[ReportKind(job.kind)](
-            session, storage, job.organization_id, job.claim_id, user
-        )
-        key = report_key(job.organization_id, job.claim_id, job.id)
-        await storage.put(key, pdf, content_type=PDF)
-    except StorageUnavailableError as error:
-        await session.rollback()  # the renderer may have left the session mid-read
-        job = await session.get_one(ReportJob, job_id, with_for_update=True)
-        job.attempts += 1
+    if retry is not None:
         if job.attempts >= MAX_ATTEMPTS:
-            _fail(job, f"Storage unavailable: {error}", now)
+            _fail(job, f"Storage unavailable: {retry}", now)
         else:
-            job.error = str(error)[:ERROR_LENGTH]
+            job.error = str(retry)[:ERROR_LENGTH]
             job.next_attempt_at = now + backoff(job.attempts)
-    except AppError as error:  # the member lost access, the claim was deleted …
-        await session.rollback()
-        job = await session.get_one(ReportJob, job_id, with_for_update=True)
-        job.attempts += 1
-        _fail(job, error.detail, now)
-    except Exception as error:
-        logger.exception("Report job %s failed", job_id)
-        await session.rollback()
-        job = await session.get_one(ReportJob, job_id, with_for_update=True)
-        job.attempts += 1
-        _fail(job, f"The report couldn't be made ({type(error).__name__})", now)
+    elif reason is not None:
+        _fail(job, reason, now)
     else:
         job.status = JobStatus.READY
         job.storage_key = key
@@ -129,3 +136,96 @@ async def process_next(
         job.finished_at = now
     await session.commit()
     return job_id
+
+
+# ─── Reading and deleting ─────────────────────────────────────────────────────
+
+
+def _jobs(organization_id: UUID, claim_id: UUID) -> Select[ReportJob]:
+    return (
+        select(ReportJob)
+        .where(ReportJob.claim_id == claim_id, ReportJob.organization_id == organization_id)
+        .options(selectinload(ReportJob.requested_by))
+        .execution_options(populate_existing=True)
+    )
+
+
+async def _get(
+    session: AsyncSession, organization_id: UUID, claim_id: UUID, job_id: UUID
+) -> ReportJob:
+    job = await session.scalar(_jobs(organization_id, claim_id).where(ReportJob.id == job_id))
+    if job is None:
+        raise NotFoundError("Report not found", report_id=str(job_id))
+    return job
+
+
+def filename(kind: ReportKind, claim_number: str) -> str:
+    """What a downloaded report is saved as: "Photo Report 2026-00042.pdf"."""
+    return f"{TITLES[kind]} {claim_number}.pdf"
+
+
+async def present(session: AsyncSession, storage: ObjectStorage, job: ReportJob) -> ReportJobRead:
+    url = None
+    if job.status == JobStatus.READY and job.storage_key is not None:
+        number = (
+            await session.execute(select(Claim.number).where(Claim.id == job.claim_id))
+        ).scalar_one()
+        url = await storage.download_url(
+            job.storage_key,
+            expires_in=LINK_LIFETIME,
+            filename=filename(ReportKind(job.kind), number),
+        )
+    return ReportJobRead(
+        id=job.id,
+        claim_id=job.claim_id,
+        kind=job.kind,
+        status=job.status,
+        requested_by=ClaimActor.model_validate(job.requested_by) if job.requested_by else None,
+        created_at=job.created_at,
+        finished_at=job.finished_at,
+        size_bytes=job.size_bytes,
+        error=job.error,
+        download_url=url,
+    )
+
+
+async def list_jobs(
+    session: AsyncSession, organization_id: UUID, claim_id: UUID, *, user: User
+) -> list[ReportJob]:
+    """A claim's reports, newest first."""
+    await authorize(session, user, organization_id, Permission.CLAIMS_READ)
+    await claims.require_live(session, organization_id, claim_id)
+    return list(
+        await session.scalars(_jobs(organization_id, claim_id).order_by(ReportJob.id.desc()))
+    )
+
+
+async def get_job(
+    session: AsyncSession, organization_id: UUID, claim_id: UUID, job_id: UUID, *, user: User
+) -> ReportJob:
+    await authorize(session, user, organization_id, Permission.CLAIMS_READ)
+    await claims.require_live(session, organization_id, claim_id)
+    return await _get(session, organization_id, claim_id, job_id)
+
+
+async def delete_job(
+    session: AsyncSession,
+    storage: ObjectStorage,
+    organization_id: UUID,
+    claim_id: UUID,
+    job_id: UUID,
+    *,
+    user: User,
+) -> None:
+    """Delete a report and its file (a queued one simply won't be made)."""
+    await authorize(session, user, organization_id, Permission.REPORTS_GENERATE)
+    await claims.require_live(session, organization_id, claim_id)
+    job = await _get(session, organization_id, claim_id, job_id)
+    key = job.storage_key
+    await session.delete(job)
+    await session.commit()
+    if key is not None:
+        try:
+            await storage.delete(key)
+        except StorageUnavailableError:
+            logger.warning("Report %s deleted but its file %s remains", job_id, key, exc_info=True)
