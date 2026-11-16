@@ -138,6 +138,12 @@ export const queryKeys = {
     [...queryKeys.drying(organizationId, claimId), "log", query] as const,
   dryingStatus: (organizationId: string, claimId: string) =>
     [...queryKeys.drying(organizationId, claimId), "status"] as const,
+  estimates: (organizationId: string, claimId: string) =>
+    [...queryKeys.claim(organizationId, claimId), "estimates"] as const,
+  estimateList: (organizationId: string, claimId: string) =>
+    [...queryKeys.estimates(organizationId, claimId), "list"] as const,
+  estimate: (organizationId: string, claimId: string, estimateId: string) =>
+    [...queryKeys.estimates(organizationId, claimId), estimateId] as const,
   /** Every task list of a claim, whatever it filters on. */
   tasks: (organizationId: string, claimId: string) =>
     [...queryKeys.claim(organizationId, claimId), "tasks"] as const,

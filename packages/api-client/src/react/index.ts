@@ -41,6 +41,20 @@ export {
 export { queryKeys } from "./keys";
 export { createQueryClient, MAX_RETRIES, shouldRetry } from "./query-client";
 export {
+  estimateQuery,
+  estimatesQuery,
+  useAddLine,
+  useChangeEstimateStatus,
+  useCreateEstimate,
+  useDeleteEstimate,
+  useDeleteLine,
+  useEstimate,
+  useEstimates,
+  useUpdateEstimate,
+  useUpdateLine,
+  type LineChange,
+} from "./estimates";
+export {
   mentionsQuery,
   notesQuery,
   useCreateNote,
