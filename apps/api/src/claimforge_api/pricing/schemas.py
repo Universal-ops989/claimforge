@@ -36,6 +36,28 @@ Money = Annotated[
     ),
     PlainSerializer(_money_text, return_type=str, when_used="json"),
 ]
+
+
+def _percent_text(value: Decimal) -> str:
+    return f"{value:.3f}".rstrip("0").rstrip(".")
+
+
+#: A percentage as a decimal string to a thousandth: "8.25", "10".
+Percent = Annotated[
+    Decimal,
+    Field(ge=0, le=100, decimal_places=3),
+    WithJsonSchema(
+        {
+            "type": "string",
+            "pattern": r"^\d{1,3}(\.\d{1,3})?$",
+            "description": "Percent, as a decimal string to a thousandth",
+            "examples": ["8.25"],
+        }
+    ),
+    PlainSerializer(_percent_text, return_type=str, when_used="json"),
+]
+
+
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
 Description = Annotated[str, StringConstraints(strip_whitespace=True, max_length=2000)] | None
 Code = Annotated[
