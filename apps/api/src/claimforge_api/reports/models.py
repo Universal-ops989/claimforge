@@ -1,17 +1,32 @@
 """Report templates: how an organization's reports look, kind by kind."""
 
+from datetime import datetime
 from enum import StrEnum
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Index, String, Text, func, text
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    SmallInteger,
+    String,
+    Text,
+    func,
+    text,
+)
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from claimforge_api.db.base import Base
 from claimforge_api.db.mixins import TimestampMixin, UUIDPrimaryKeyMixin
+from claimforge_api.users.models import User
 
 DEFAULT_ACCENT = "#1F4E79"
+ERROR_LENGTH = 500
 
 
 class ReportKind(StrEnum):
@@ -64,4 +79,58 @@ class ReportTemplate(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         CheckConstraint(_in("kind", ReportKind), name="kind_valid"),
         CheckConstraint("accent_color ~ '^#[0-9A-Fa-f]{6}$'", name="accent_color_valid"),
         CheckConstraint("btrim(name) <> ''", name="name_not_blank"),
+    )
+
+
+class JobStatus(StrEnum):
+    #: Until it's done: a worker renders it inside one locked transaction, so a worker
+    #: that dies mid-render leaves it queued (and retried), never stuck half-way.
+    QUEUED = "queued"
+    READY = "ready"
+    FAILED = "failed"
+
+
+def report_key(organization_id: UUID, claim_id: UUID, job_id: UUID) -> str:
+    return f"organizations/{organization_id}/claims/{claim_id}/reports/{job_id}.pdf"
+
+
+class ReportJob(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    __tablename__ = "report_jobs"
+    __audited__ = True
+
+    organization_id: Mapped[UUID] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE")
+    )
+    claim_id: Mapped[UUID] = mapped_column(ForeignKey("claims.id", ondelete="CASCADE"))
+    kind: Mapped[ReportKind] = mapped_column(String(30))
+    status: Mapped[JobStatus] = mapped_column(
+        String(20), default=JobStatus.QUEUED, server_default=JobStatus.QUEUED
+    )
+    #: Whose access the report is rendered with. A job whose member is gone can't run.
+    requested_by_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), default=None
+    )
+    attempts: Mapped[int] = mapped_column(SmallInteger, default=0, server_default="0")
+    next_attempt_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    storage_key: Mapped[str | None] = mapped_column(String(512), default=None)
+    size_bytes: Mapped[int | None] = mapped_column(Integer, default=None)
+    error: Mapped[str | None] = mapped_column(String(ERROR_LENGTH), default=None)
+
+    requested_by: Mapped[User | None] = relationship(lazy="raise")
+
+    __table_args__ = (
+        CheckConstraint(_in("kind", ReportKind), name="kind_valid"),
+        CheckConstraint(_in("status", JobStatus), name="status_valid"),
+        CheckConstraint("(status = 'ready') = (storage_key IS NOT NULL)", name="ready_has_file"),
+        # The worker's queue: queued jobs, soonest first.
+        Index(
+            "ix_report_jobs_queue",
+            "next_attempt_at",
+            postgresql_where=text("status = 'queued'"),
+        ),
+        Index("ix_report_jobs_claim_id_id", "claim_id", "id"),
     )
