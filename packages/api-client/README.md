@@ -145,6 +145,41 @@ responses["get /v1/me"][200]; // success bodies by operation and status
 
 A type-level test proves that each schema infers exactly the generated TypeScript type.
 
+## React
+
+`@claimforge/api-client/react` has TanStack Query hooks over the client (`react` and
+`@tanstack/react-query` are peer dependencies; the main entry point needs neither).
+
+```tsx
+import { QueryClientProvider } from "@tanstack/react-query";
+import { ApiProvider, createQueryClient, useLogin, useMe } from "@claimforge/api-client/react";
+
+const queryClient = createQueryClient();
+
+<QueryClientProvider client={queryClient}>
+  <ApiProvider client={api}>
+    <App />
+  </ApiProvider>
+</QueryClientProvider>;
+
+function Header() {
+  const me = useMe(); // me.data?.memberships, me.error is an ApiError
+  const login = useLogin(); // login.mutate({ email, password })
+}
+```
+
+- **Query client.** `createQueryClient()` retries queries only when that may help
+  (`shouldRetry`: no answer, 5xx, 429, 408; at most 3 times). It never retries other 4xx
+  or a body that failed validation. Mutations aren't retried.
+- **Router loaders.** Every data hook has query options to match (`meQuery(api)`), so a
+  loader can prefetch what the component will read.
+- **Query keys.** Keys come from `queryKeys` and nest: invalidating
+  `queryKeys.organization(id)` reaches everything cached under that organization.
+- **Sessions.** `useLogin` and `useAcceptInvitation` reset the cache on success, so a
+  new user never sees the last one's data. `useLogout` removes every cached query, even
+  offline. When a session ends on its own, call `queryClient.removeQueries()` from
+  `onSessionExpired`.
+
 ## Regenerating
 
 ```bash

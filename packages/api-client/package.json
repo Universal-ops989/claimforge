@@ -2,7 +2,7 @@
   "name": "@claimforge/api-client",
   "version": "0.1.0",
   "private": true,
-  "description": "Typed client for the ClaimForge API, generated from its OpenAPI contract",
+  "description": "Typed client for the ClaimForge API, generated from its OpenAPI contract, with React Query hooks",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -11,6 +11,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.js"
     }
   },
   "files": [
@@ -28,15 +32,33 @@
   "devDependencies": {
     "@claimforge/eslint-config": "workspace:^",
     "@claimforge/tsconfig": "workspace:^",
+    "@tanstack/react-query": "^5",
+    "@testing-library/react": "^16",
     "@types/node": "^22",
+    "@types/react": "^19",
     "eslint": "^10",
     "globals": "^17.14.0",
+    "jsdom": "^31",
     "openapi-typescript": "^7.13.0",
+    "react": "^19",
+    "react-dom": "^19",
     "rimraf": "^6.1.4",
     "typescript": "~5.9.3",
     "vitest": "^5"
   },
   "dependencies": {
     "zod": "^4.6.7"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5",
+    "react": "^19"
+  },
+  "peerDependenciesMeta": {
+    "@tanstack/react-query": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
   }
 }

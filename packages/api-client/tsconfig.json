@@ -2,6 +2,7 @@
   "extends": "@claimforge/tsconfig/base.json",
   "compilerOptions": {
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
     "allowJs": true,
     "checkJs": true,
     "types": ["node"]
