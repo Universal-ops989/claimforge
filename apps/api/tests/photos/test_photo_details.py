@@ -68,9 +68,10 @@ async def find(site: Site, **filters: Any) -> list[UUID]:
 
 async def updates(session: AsyncSession, photo_id: UUID) -> list[dict[str, Any]]:
     events = await session.scalars(
-        select(AuditEvent.changes).where(
-            AuditEvent.entity_id == photo_id, AuditEvent.action == "photo.updated"
-        )
+        select(AuditEvent.changes)
+        .where(AuditEvent.entity_id == photo_id, AuditEvent.action == "photo.updated")
+        # Oldest first: without an order, Postgres may return them either way.
+        .order_by(AuditEvent.id)
     )
     return list(events)
 
