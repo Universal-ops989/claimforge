@@ -14,9 +14,13 @@ function calendarDate(date: string): string {
   return new Date(`${date}T00:00:00`).toLocaleDateString(undefined, { dateStyle: "medium" });
 }
 
-/** The claims table's columns; `claimPath` gives a claim's address in this organization. */
+/**
+ * The claims table's columns; `claimPath` gives a claim's address in this organization.
+ * Headers don't sort: the API sorts (the sort menu), and sorting only the loaded page of
+ * a paged list would mislead.
+ */
 export function claimColumns(claimPath: (number: string) => string, now: Date) {
-  return [
+  const columns = [
     column.accessor("number", {
       header: "Claim",
       cell: ({ getValue }) => <Link to={claimPath(getValue())}>{getValue()}</Link>,
@@ -65,4 +69,5 @@ export function claimColumns(claimPath: (number: string) => string, now: Date) {
       meta: { width: "8rem", align: "end" },
     }),
   ];
+  return columns.map((definition) => ({ ...definition, enableSorting: false }));
 }

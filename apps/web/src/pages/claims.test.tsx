@@ -1,3 +1,4 @@
+import { claim, fixtureId, ids } from "@claimforge/api-client/fixtures";
 import { mockApi, problem } from "@claimforge/api-client/msw";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -163,5 +164,75 @@ describe("filters", () => {
       expect(numbers()).toHaveLength(2);
     });
     expect(screen.queryByRole("button", { name: "Clear filters" })).not.toBeInTheDocument();
+  });
+});
+
+describe("sorting and paging", () => {
+  const numbers = () =>
+    within(screen.getByRole("table", { name: "Claims" }))
+      .queryAllByRole("link")
+      .map((link) => link.textContent);
+  const at = (path: string) => renderApp(path, { signedInAs: "morgan@example.com" });
+
+  /** 30 more claims, opened in November after the seeded ones. */
+  function thirtyMore() {
+    for (let n = 1; n <= 30; n += 1) {
+      const number = `2026-${String(100 + n).padStart(5, "0")}`;
+      backend.db.claims.push({
+        organizationId: ids.organization,
+        claim: claim({
+          id: fixtureId("claim", 100 + n),
+          number,
+          created_at: `2026-11-${String(n).padStart(2, "0")}T18:00:00Z`,
+        }),
+      });
+    }
+  }
+
+  test("an address with a sort lists in that order, and the menu says which", async () => {
+    await at("/lone-star/claims?sort=created_at");
+
+    await waitFor(() => {
+      expect(numbers()).toEqual(["2026-00041", "2026-00042"]);
+    });
+    expect(screen.getByRole("combobox", { name: "Sort claims" })).toHaveTextContent("Oldest first");
+  });
+
+  test("choosing a sort reorders and writes it into the address, beside the filters", async () => {
+    const { router } = await at("/lone-star/claims?status=new&status=inspected");
+    await waitFor(() => {
+      expect(numbers()).toEqual(["2026-00042", "2026-00041"]);
+    });
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("combobox", { name: "Sort claims" }));
+    await user.click(await screen.findByRole("option", { name: "Oldest first" }));
+
+    await waitFor(() => {
+      expect(numbers()).toEqual(["2026-00041", "2026-00042"]);
+    });
+    expect(router.state.location.search).toBe("?status=new&status=inspected&sort=created_at");
+  });
+
+  test("headers don't pretend to sort the whole list", async () => {
+    await at("/lone-star/claims");
+    await screen.findByRole("link", { name: "2026-00042" });
+
+    for (const header of screen.getAllByRole("columnheader")) {
+      expect(within(header).queryByRole("button")).not.toBeInTheDocument();
+    }
+  });
+
+  test("Load more adds the next page, until everything is in", async () => {
+    thirtyMore();
+    await at("/lone-star/claims");
+
+    expect(await screen.findByText("Showing 25 claims")).toBeInTheDocument();
+    expect(numbers()).toHaveLength(25);
+    await userEvent.setup().click(screen.getByRole("button", { name: "Load more claims" }));
+
+    expect(await screen.findByText("Showing all 32 claims")).toBeInTheDocument();
+    expect(numbers()).toHaveLength(32);
+    expect(screen.queryByRole("button", { name: "Load more claims" })).not.toBeInTheDocument();
   });
 });
