@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { draftProblems, EMPTY_DRAFT, type ClaimDraft } from "./draft";
+import { draftProblems, EMPTY_DRAFT, fieldFor, toClaimCreate, type ClaimDraft } from "./draft";
 
 const TODAY = "2026-11-17";
 const filled: ClaimDraft = {
@@ -58,4 +58,64 @@ describe("draftProblems", () => {
       "property.postal_code": "Keep this to 16 characters or fewer.",
     });
   });
+});
+
+describe("toClaimCreate", () => {
+  test("sends what was entered, trimmed, and leaves blanks out", () => {
+    const draft: ClaimDraft = {
+      property: {
+        ...EMPTY_DRAFT.property,
+        line1: " 5 Elm St ",
+        city: "Round Rock",
+        region: "TX",
+        year_built: "1998",
+      },
+      loss: {
+        ...EMPTY_DRAFT.loss,
+        loss_type: "water",
+        loss_date: "2026-11-15",
+        policy_number: "  ",
+      },
+    };
+
+    expect(toClaimCreate(draft)).toEqual({
+      loss_type: "water",
+      loss_date: "2026-11-15",
+      description: undefined,
+      carrier_name: undefined,
+      policy_number: undefined,
+      carrier_claim_number: undefined,
+      property: {
+        address: {
+          line1: "5 Elm St",
+          line2: undefined,
+          city: "Round Rock",
+          region: "TX",
+          postal_code: undefined,
+        },
+        property_type: "residential",
+        year_built: 1998,
+        access_notes: undefined,
+      },
+    });
+    expect(JSON.parse(JSON.stringify(toClaimCreate(draft)))).not.toHaveProperty("policy_number");
+  });
+});
+
+describe("fieldFor", () => {
+  test.each([
+    [["body", "property", "address", "postal_code"], "property.postal_code"],
+    [["body", "property", "year_built"], "property.year_built"],
+    [["body", "loss_date"], "loss.loss_date"],
+    [["body", "carrier_claim_number"], "loss.carrier_claim_number"],
+  ])("%j is %s", (loc, field) => {
+    expect(fieldFor(loc)).toBe(field);
+  });
+
+  test.each([[["query", "limit"]], [["body", "contacts", 0, "role"]], [["body"]]])(
+    "%j names nothing the form shows",
+    (loc) => {
+      expect(fieldFor(loc)).toBeNull();
+    },
+  );
 });

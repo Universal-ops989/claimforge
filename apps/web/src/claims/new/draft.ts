@@ -1,3 +1,4 @@
+import type { RequestBody } from "@claimforge/api-client";
 import type { FieldErrors, Resolver } from "react-hook-form";
 
 import type { LossType } from "../status";
@@ -125,4 +126,68 @@ export const draftResolver: Resolver<ClaimDraft> = (values) => {
     (errors as Record<string, unknown>)[section] = group;
   }
   return Object.keys(errors).length > 0 ? { values: {}, errors } : { values, errors: {} };
+};
+
+type ClaimCreate = RequestBody<"/v1/organizations/{organization_id}/claims", "post">;
+
+/** Trimmed text, or `undefined` when there's none, so blanks aren't sent as "". */
+const text = (value: string) => value.trim() || undefined;
+
+/** The API's body for a checked draft: the claim with its property inline. */
+export function toClaimCreate(draft: ClaimDraft): ClaimCreate {
+  const { property, loss } = draft;
+  const year = property.year_built.trim();
+  return {
+    loss_type: loss.loss_type || "other",
+    loss_date: loss.loss_date || undefined,
+    description: text(loss.description),
+    carrier_name: text(loss.carrier_name),
+    policy_number: text(loss.policy_number),
+    carrier_claim_number: text(loss.carrier_claim_number),
+    property: {
+      address: {
+        line1: property.line1.trim(),
+        line2: text(property.line2),
+        city: property.city.trim(),
+        region: text(property.region),
+        postal_code: text(property.postal_code),
+      },
+      property_type: property.property_type || undefined,
+      year_built: year ? Number(year) : undefined,
+      access_notes: text(property.access_notes),
+    },
+  };
+}
+
+/**
+ * The draft field an API error points at: its `loc` (`["body", "property", "address",
+ * "line1"]`) read back into the form, or `null` when it names nothing the form shows.
+ */
+export function fieldFor(loc: readonly (string | number)[]): DraftField | null {
+  const [where, ...path] = loc;
+  if (where !== "body") return null;
+  if (path[0] === "property") {
+    const name = path[1] === "address" ? path[2] : path[1];
+    const field = `property.${String(name)}`;
+    return field in FIELD_NAMES ? (field as DraftField) : null;
+  }
+  const field = `loss.${String(path[0])}`;
+  return field in FIELD_NAMES ? (field as DraftField) : null;
+}
+
+const FIELD_NAMES: Record<DraftField, true> = {
+  "property.line1": true,
+  "property.line2": true,
+  "property.city": true,
+  "property.region": true,
+  "property.postal_code": true,
+  "property.property_type": true,
+  "property.year_built": true,
+  "property.access_notes": true,
+  "loss.loss_type": true,
+  "loss.loss_date": true,
+  "loss.description": true,
+  "loss.carrier_name": true,
+  "loss.policy_number": true,
+  "loss.carrier_claim_number": true,
 };
