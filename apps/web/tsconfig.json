@@ -1,0 +1,7 @@
+{
+  "extends": "@claimforge/tsconfig/react-app.json",
+  "compilerOptions": {
+    "types": ["vite/client", "node", "@testing-library/jest-dom/vitest"]
+  },
+  "include": ["src", "*.config.ts", "eslint.config.js"]
+}

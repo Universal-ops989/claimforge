@@ -1,0 +1,39 @@
+{
+  "name": "@claimforge/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The ClaimForge web app for adjusters, technicians and office staff",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rimraf dist coverage"
+  },
+  "dependencies": {
+    "@claimforge/ui": "workspace:^",
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@claimforge/eslint-config": "workspace:^",
+    "@claimforge/tsconfig": "workspace:^",
+    "@testing-library/jest-dom": "^7",
+    "@testing-library/react": "^16",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6",
+    "eslint": "^10",
+    "jsdom": "^31",
+    "rimraf": "^6.1.4",
+    "typescript": "~5.9.3",
+    "vite": "^8",
+    "vitest": "^5"
+  }
+}
