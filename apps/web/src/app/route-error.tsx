@@ -1,28 +1,35 @@
+import { ApiError, NetworkError } from "@claimforge/api-client";
 import { Button, EmptyState, Stack } from "@claimforge/ui";
 import { isRouteErrorResponse, Link, useRouteError } from "react-router";
 
 import { PageTitle } from "./page-title";
+import { errorCopy } from "./states";
 
 /**
- * What a route shows when it, or anything under it, throws: a 404 from the router reads as
- * "not found"; anything else as a failure the user can retry, with the details in dev.
+ * What a route shows when it, or anything under it, throws: a 404 (from the router or the
+ * API) reads as "not found"; anything else is told in the words `errorCopy` uses, with a
+ * retry, and a bug's own message in development.
  */
 export function RouteError() {
   const error = useRouteError();
-  if (isRouteErrorResponse(error) && error.status === 404) {
+  if (
+    (isRouteErrorResponse(error) && error.status === 404) ||
+    (error instanceof ApiError && error.status === 404)
+  ) {
     return <NotFound />;
   }
   console.error(error);
+  const copy = errorCopy(error);
+  // A bug (not an API or connection failure) shows its message in development.
+  const bug = !(error instanceof ApiError) && !(error instanceof NetworkError);
   return (
     <Stack as="main" align="center" justify="center" style={{ minHeight: "100dvh" }}>
-      <PageTitle title="Something went wrong" />
+      <PageTitle title={copy.title} />
       <EmptyState
         headingLevel={1}
-        title="Something went wrong"
+        title={copy.title}
         description={
-          import.meta.env.DEV && error instanceof Error
-            ? error.message
-            : "The page couldn't be shown. Try again, or go back to the dashboard."
+          import.meta.env.DEV && bug && error instanceof Error ? error.message : copy.description
         }
         actions={
           <>
