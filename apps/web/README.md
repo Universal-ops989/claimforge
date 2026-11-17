@@ -28,6 +28,9 @@ pnpm --filter @claimforge/web dev    # http://localhost:5173
   `/login` sits outside the signed-in layout.
 - `src/app/organization.tsx`: `useOrganization()` (the organization in the address, with
   the user's role and permissions), the chooser behind `/`, and the no-organization page.
+- `src/app/states.tsx`: the states pages share. `QueryView` (skeleton, then the data, or
+  why it failed: not found, no access, no connection, anything else with a retry and the
+  request id), `ErrorPanel`, `errorCopy`, and `OfflineBar` in the shell.
 - `src/app/shell/`: the signed-in frame's parts: `Navigation` (sections, the current one
   marked) and `UserMenu` (email, Settings, Sign out), inside the design system's `AppShell`.
 - `src/app/`: what pages share: `RootLayout` (the shell, behind `RequireSession`), `Page` (the `<h1>` and the tab title,

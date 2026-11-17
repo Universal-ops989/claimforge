@@ -6,6 +6,7 @@ import { OrganizationLayout } from "./organization";
 import { Navigation } from "./shell/navigation";
 import { OrganizationSwitcher } from "./shell/organization-switcher";
 import { UserMenu } from "./shell/user-menu";
+import { OfflineBar } from "./states";
 
 const COLLAPSED_KEY = "claimforge.sidebar-collapsed";
 
@@ -20,7 +21,7 @@ export function RootLayout() {
 
 /**
  * `/:org/*`: an organization's pages in the app shell (sidebar navigation, organization
- * switcher, top bar with the user menu, the `<main>` landmark).
+ * switcher, top bar with the user menu, the `<main>` landmark), and word when offline.
  */
 export function ShellLayout() {
   return (
@@ -33,6 +34,7 @@ export function ShellLayout() {
         defaultCollapsed={readCollapsed()}
         onCollapsedChange={writeCollapsed}
       >
+        <OfflineBar />
         <Outlet />
       </AppShell>
     </OrganizationLayout>
