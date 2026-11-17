@@ -1,6 +1,8 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
-import { afterEach } from "vitest";
+import { afterAll, afterEach, beforeAll } from "vitest";
+
+import { backend, server } from "./render";
 
 // jsdom lacks these; the design system's Radix primitives call them.
 if (!("hasPointerCapture" in Element.prototype)) {
@@ -29,6 +31,15 @@ if (typeof window.matchMedia !== "function") {
   });
 }
 
+// Every test talks to the mock backend; anything else it fetches is a mistake.
+beforeAll(() => {
+  server.listen({ onUnhandledFrame: "error" });
+});
 afterEach(() => {
   cleanup();
+  server.resetHandlers();
+  backend.reset();
+});
+afterAll(() => {
+  server.close();
 });
