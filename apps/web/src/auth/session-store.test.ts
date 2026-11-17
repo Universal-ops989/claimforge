@@ -101,6 +101,49 @@ describe("the session store", () => {
   });
 });
 
+describe("how a session ended", () => {
+  test("is nothing before anyone signed in, and while signed in", () => {
+    const store = createSessionStore(null, SESSION_KEY, tab());
+    const before = store.endedBy();
+    store.set(TOKENS);
+
+    expect([before, store.endedBy()]).toEqual([null, null]);
+  });
+
+  test("is the user's own sign-out only when it was announced", () => {
+    const store = createSessionStore(null, SESSION_KEY, tab());
+    store.set(TOKENS);
+    store.expectSignOut();
+    store.set(null);
+    const signedOut = store.endedBy();
+
+    store.set(TOKENS);
+    store.set(null); // a refused refresh
+    const ended = store.endedBy();
+
+    expect([signedOut, ended]).toEqual(["sign-out", "ended"]);
+  });
+
+  test("an announced sign-out doesn't linger to a later end", () => {
+    const store = createSessionStore(null, SESSION_KEY, tab());
+    store.expectSignOut();
+    store.set(TOKENS); // signed in instead
+    store.set(null);
+
+    expect(store.endedBy()).toBe("ended");
+  });
+
+  test("another tab ending it reads as ended", () => {
+    const here = tab();
+    const store = createSessionStore(localStorage, SESSION_KEY, here);
+    store.set(TOKENS);
+
+    tellTab(here, SESSION_KEY, null);
+
+    expect(store.endedBy()).toBe("ended");
+  });
+});
+
 describe("two tabs, one session", () => {
   /**
    * Tab A refreshes, rotating the refresh token; then tab B's access token runs out too.

@@ -6,7 +6,17 @@ export interface SessionStore extends TokenStore {
   set: (tokens: Tokens | null) => void;
   /** Called after every change, from this tab or another; returns the unsubscribe. */
   subscribe: (listener: () => void) => () => void;
+  /**
+   * How the last session ended: `"sign-out"` when the user signed out here, `"ended"` when
+   * it ended on its own (a refused refresh, another tab, cleared site data), `null` while
+   * signed in or before anyone was.
+   */
+  endedBy: () => SessionEnd | null;
+  /** The next end of the session is the user signing out. */
+  expectSignOut: () => void;
 }
+
+export type SessionEnd = "sign-out" | "ended";
 
 export const SESSION_KEY = "claimforge.session";
 
@@ -26,6 +36,19 @@ export function createSessionStore(
 ): SessionStore {
   const listeners = new Set<() => void>();
   let current = read(storage, key);
+  let endedBy: SessionEnd | null = null;
+  let signingOut = false;
+
+  /** Take `next` as the session, noting how it ended if it did. */
+  const become = (next: Tokens | null) => {
+    if (next === null && current !== null) {
+      endedBy = signingOut ? "sign-out" : "ended";
+    } else if (next !== null) {
+      endedBy = null;
+    }
+    signingOut = false;
+    current = next;
+  };
 
   const notify = () => {
     for (const listener of listeners) listener();
@@ -35,7 +58,7 @@ export function createSessionStore(
     events?.addEventListener("storage", (event) => {
       // `key === null` means the other tab cleared all of storage.
       if (event.storageArea === storage && (event.key === key || event.key === null)) {
-        current = event.key === null ? null : parse(event.newValue);
+        become(event.key === null ? null : parse(event.newValue));
         notify();
       }
     });
@@ -44,7 +67,7 @@ export function createSessionStore(
   return {
     get: () => current,
     set: (tokens) => {
-      current = tokens;
+      become(tokens);
       try {
         if (tokens) storage?.setItem(key, JSON.stringify(tokens));
         else storage?.removeItem(key);
@@ -58,6 +81,10 @@ export function createSessionStore(
       return () => {
         listeners.delete(listener);
       };
+    },
+    endedBy: () => endedBy,
+    expectSignOut: () => {
+      signingOut = true;
     },
   };
 }
