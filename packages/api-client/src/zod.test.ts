@@ -14,7 +14,7 @@ import type {
   Schema,
   SchemaName,
 } from "./index";
-import { responses, schemas, successStatuses, type requests } from "./zod.gen";
+import { responses, schemas, successStatuses, workflows, type requests } from "./zod.gen";
 
 /** `A` and `B` accept exactly the same values (readonly markers aside). */
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
@@ -128,6 +128,41 @@ describe("schemas", () => {
   });
 });
 
+describe("workflows", () => {
+  test("cover every status, and lead only to real ones", () => {
+    for (const [name, workflow] of [
+      ["ClaimStatus", workflows.ClaimStatus.transitions],
+      ["ClaimStatus", workflows.ClaimStatus.reasonRequired],
+      ["EstimateStatus", workflows.EstimateStatus.transitions],
+    ] as const) {
+      const statuses = new Set<string>(schemas[name].options);
+      const targets: string[] = Object.values<readonly string[]>(workflow).flat();
+      expect(new Set(Object.keys(workflow))).toEqual(statuses);
+      expect(targets.filter((status) => !statuses.has(status))).toEqual([]);
+    }
+  });
+
+  test("say what the API enforces", () => {
+    expect(workflows.ClaimStatus.transitions.new).toEqual([
+      "inspected",
+      "in_progress",
+      "on_hold",
+      "cancelled",
+    ]);
+    expect(workflows.ClaimStatus.reasonRequired.closed).toEqual(["in_progress"]); // reopening
+    expect(workflows.EstimateStatus.transitions.approved).toEqual(["draft"]);
+  });
+
+  test("are typed by status", () => {
+    expectTypeOf<keyof typeof workflows.ClaimStatus.transitions>().toEqualTypeOf<
+      Schema<"ClaimStatus">
+    >();
+    expectTypeOf<
+      (typeof workflows.EstimateStatus.transitions)[Schema<"EstimateStatus">][number]
+    >().toExtend<Schema<"EstimateStatus">>();
+  });
+});
+
 describe("renderer", () => {
   const contract = (schema: unknown) => ({
     paths: {},
@@ -141,6 +176,19 @@ describe("renderer", () => {
     expect(() => renderZod(contract({ type: "string", format: "ipv4" }))).toThrow(
       'Unsupported string format "ipv4"',
     );
+  });
+
+  test("reads vendor extensions as annotations, and publishes workflows", () => {
+    const source = renderZod(
+      contract({
+        type: "string",
+        enum: ["open", "done"],
+        "x-transitions": { open: ["done"], done: ["open"] },
+      }),
+    );
+
+    expect(source).toContain('const Thing = z.enum(["open","done"]);');
+    expect(source).toContain('Thing: {"transitions":{"open":["done"],"done":["open"]}},');
   });
 
   test("refuses recursive schemas", () => {

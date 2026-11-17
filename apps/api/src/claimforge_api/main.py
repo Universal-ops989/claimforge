@@ -12,6 +12,7 @@ from claimforge_api import __version__
 from claimforge_api.api.middleware import REQUEST_ID_HEADER, RequestContextMiddleware
 from claimforge_api.api.problems import document_problem_media_type, register_problem_handlers
 from claimforge_api.api.router import api_router
+from claimforge_api.api.workflows import document_workflows
 from claimforge_api.audit import recorder as audit_recorder
 from claimforge_api.core.database import create_engine, create_session_factory
 from claimforge_api.core.logging import configure_logging
@@ -32,7 +33,7 @@ def _customize_openapi(app: FastAPI) -> None:
 
     def openapi() -> dict[str, Any]:
         if app.openapi_schema is None:
-            app.openapi_schema = document_problem_media_type(generate())
+            app.openapi_schema = document_workflows(document_problem_media_type(generate()))
         return app.openapi_schema
 
     app.openapi = openapi  # type: ignore[method-assign]  # FastAPI's documented extension point

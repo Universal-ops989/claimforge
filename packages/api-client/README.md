@@ -170,6 +170,18 @@ responses["get /v1/me"][200]; // success bodies by operation and status
 
 A type-level test proves that each schema infers exactly the generated TypeScript type.
 
+### Workflows
+
+`workflows` has the status workflows as the API enforces them, read from the contract
+(`x-transitions` on the status enums), for diagrams, mocks or anything else that needs the
+whole table rather than one claim's `next_statuses`:
+
+```ts
+workflows.ClaimStatus.transitions.completed; // ["in_progress", "closed"]
+workflows.ClaimStatus.reasonRequired.new; // ["on_hold", "cancelled"]
+workflows.EstimateStatus.transitions.submitted; // ["draft", "approved", "rejected"]
+```
+
 ## React
 
 `@claimforge/api-client/react` has TanStack Query hooks over the client (`react` and

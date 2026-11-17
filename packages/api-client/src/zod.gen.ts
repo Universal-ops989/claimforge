@@ -674,3 +674,9 @@ export const successStatuses: Record<string, readonly number[]> = {
   "get /v1/organizations/{organization_id}/tasks/assigned-to-me": [200],
   "get /v1/shared-reports/{token}": [],
 };
+
+/** Status workflows, as the API enforces them: `workflows.ClaimStatus.transitions.new`. */
+export const workflows = {
+  ClaimStatus: {"transitions":{"cancelled":["new"],"closed":["in_progress"],"completed":["in_progress","closed"],"in_progress":["on_hold","completed","cancelled"],"inspected":["in_progress","on_hold","cancelled"],"new":["inspected","in_progress","on_hold","cancelled"],"on_hold":["new","inspected","in_progress","cancelled"]},"reasonRequired":{"cancelled":["new"],"closed":["in_progress"],"completed":[],"in_progress":["on_hold","cancelled"],"inspected":["on_hold","cancelled"],"new":["on_hold","cancelled"],"on_hold":["cancelled"]}},
+  EstimateStatus: {"transitions":{"approved":["draft"],"draft":["submitted"],"rejected":["draft"],"submitted":["draft","approved","rejected"]}},
+} as const;

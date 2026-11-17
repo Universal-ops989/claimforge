@@ -7,6 +7,10 @@ from typing import Any
 import pytest
 
 from claimforge_api import openapi
+from claimforge_api.claims import workflow as claim_workflow
+from claimforge_api.claims.models import ClaimStatus
+from claimforge_api.estimates.models import EstimateStatus
+from claimforge_api.estimates.service import TRANSITIONS as ESTIMATE_TRANSITIONS
 
 SCHEMA = openapi.build_schema()
 OPERATIONS: list[tuple[str, str, dict[str, Any]]] = [
@@ -71,3 +75,38 @@ def test_check_detects_stale_files(tmp_path: Path) -> None:
     assert openapi.main(["--check", "--output", str(stale)]) == 1
     assert openapi.main(["--output", str(stale)]) == 0
     assert openapi.main(["--check", "--output", str(stale)]) == 0
+
+
+def test_status_workflows_are_published_from_the_enforced_tables() -> None:
+    # Clients that need a whole workflow (a diagram, a mock backend) read it from here, so
+    # it must be exactly what the API enforces: what next_statuses says, status by status.
+    schemas = SCHEMA["components"]["schemas"]
+
+    assert schemas["ClaimStatus"]["x-transitions"] == {
+        status.value: [t.value for t in claim_workflow.next_statuses(status)]
+        for status in ClaimStatus
+    }
+    assert schemas["ClaimStatus"]["x-reason-required"] == {
+        status.value: [
+            t.value
+            for t in ClaimStatus
+            if claim_workflow.is_allowed(status, t) and claim_workflow.needs_reason(status, t)
+        ]
+        for status in ClaimStatus
+    }
+    assert schemas["EstimateStatus"]["x-transitions"] == {
+        status.value: [t.value for t in ESTIMATE_TRANSITIONS[status]] for status in EstimateStatus
+    }
+
+
+def test_published_workflows_name_only_real_statuses() -> None:
+    schemas = SCHEMA["components"]["schemas"]
+    for name, extension in [
+        ("ClaimStatus", "x-transitions"),
+        ("ClaimStatus", "x-reason-required"),
+        ("EstimateStatus", "x-transitions"),
+    ]:
+        statuses = set(schemas[name]["enum"])
+        table = schemas[name][extension]
+        assert set(table) == statuses, (name, extension)
+        assert {t for targets in table.values() for t in targets} <= statuses, (name, extension)

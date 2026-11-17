@@ -150,6 +150,8 @@ describe("the data hangs together", () => {
 
   test("overrides replace fields, and derived fields follow", () => {
     expect(claim({ status: "inspected" }).status).toBe("inspected");
+    expect(claim({ status: "completed" }).next_statuses).toEqual(["in_progress", "closed"]);
+    expect(estimate({ status: "approved" }).next_statuses).toEqual(["draft"]);
     expect(task({ done: true }).completed_at).not.toBeNull();
     expect(report({ status: "queued" }).download_url).toBeNull();
     expect(photo({ id: fixtureId("photo", 2) }).url).toContain(fixtureId("photo", 2));

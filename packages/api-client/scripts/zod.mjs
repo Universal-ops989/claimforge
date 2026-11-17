@@ -120,8 +120,33 @@ export function renderZod(contract) {
       lines.push(`  ${JSON.stringify(`${method} ${path}`)}: [${statuses.join(", ")}],`);
     }
   }
-  lines.push("};", "");
+  lines.push("};", "", ...renderWorkflows(named));
   return lines.join("\n");
+}
+
+/**
+ * The status workflows the API publishes on its status enums: `x-transitions` (status →
+ * where it can go) and `x-reason-required` (status → targets that need a reason).
+ *
+ * @param {Record<string, JsonSchema>} named
+ * @returns {string[]}
+ */
+function renderWorkflows(named) {
+  const entries = Object.entries(named).flatMap(([name, schema]) => {
+    const transitions = schema["x-transitions"];
+    if (transitions === undefined) return [];
+    const reasons = schema["x-reason-required"];
+    const workflow =
+      reasons === undefined ? { transitions } : { transitions, reasonRequired: reasons };
+    return [`  ${name}: ${JSON.stringify(workflow)},`];
+  });
+  return [
+    "/** Status workflows, as the API enforces them: `workflows.ClaimStatus.transitions.new`. */",
+    "export const workflows = {",
+    ...entries,
+    "} as const;",
+    "",
+  ];
 }
 
 /**
@@ -180,7 +205,7 @@ function render(schema, where) {
   if (schema === true || (typeof schema === "object" && isEmpty(schema))) return "z.unknown()";
   if (schema === false) throw new Error(`A schema that accepts nothing at ${where}`);
   for (const key of Object.keys(schema)) {
-    if (!ANNOTATIONS.has(key) && !CHECKS.has(key)) {
+    if (!isAnnotation(key) && !CHECKS.has(key)) {
       throw new Error(`Unsupported JSON Schema keyword "${key}" at ${where}`);
     }
   }
@@ -215,7 +240,18 @@ function render(schema, where) {
  * @returns {boolean}
  */
 function isEmpty(schema) {
-  return Object.keys(schema).every((key) => ANNOTATIONS.has(key));
+  return Object.keys(schema).every(isAnnotation);
+}
+
+/**
+ * Keywords that describe rather than constrain, vendor extensions (`x-…`) included:
+ * OpenAPI never lets them change what's valid.
+ *
+ * @param {string} key
+ * @returns {boolean}
+ */
+function isAnnotation(key) {
+  return ANNOTATIONS.has(key) || key.startsWith("x-");
 }
 
 /**
