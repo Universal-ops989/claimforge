@@ -7,7 +7,7 @@ import { useLocation, useNavigate, useSearchParams } from "react-router";
 
 import { PageTitle } from "../app/page-title";
 import { safeNextPath } from "../auth/next-path";
-import type { SignInState } from "../auth/session";
+import { RequireNoSession, type SignInState } from "../auth/session";
 import { signInErrorMessage } from "../auth/sign-in-error";
 
 interface Credentials {
@@ -109,5 +109,14 @@ export function LoginPage() {
         </CardBody>
       </Card>
     </Stack>
+  );
+}
+
+/** `/login`: the sign-in page, for someone signed out; anyone else goes on. */
+export function SignInPage() {
+  return (
+    <RequireNoSession>
+      <LoginPage />
+    </RequireNoSession>
   );
 }

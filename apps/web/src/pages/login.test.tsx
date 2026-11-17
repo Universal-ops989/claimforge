@@ -11,7 +11,8 @@ const mock = mockApi(API_URL);
 
 async function signIn(email: string, password: string) {
   const user = userEvent.setup();
-  if (email) await user.type(screen.getByLabelText(/^Email/), email);
+  const emailField = await screen.findByLabelText(/^Email/);
+  if (email) await user.type(emailField, email);
   if (password) await user.type(screen.getByLabelText(/^Password/), password);
   await user.click(screen.getByRole("button", { name: "Sign in" }));
 }
@@ -41,7 +42,7 @@ describe("signing in", () => {
   test("the email field is ready to type into, and password managers can fill both", async () => {
     await renderApp("/login");
 
-    const email = screen.getByLabelText(/^Email/);
+    const email = await screen.findByLabelText(/^Email/);
     expect(email).toHaveFocus();
     expect(email).toHaveAttribute("autocomplete", "username");
     expect(screen.getByLabelText(/^Password/)).toHaveAttribute("autocomplete", "current-password");

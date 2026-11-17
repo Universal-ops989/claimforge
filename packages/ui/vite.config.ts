@@ -30,6 +30,13 @@ export default defineConfig({
     rollupOptions: {
       // Never bundle dependencies or their subpaths (react/jsx-runtime, radix-ui/...).
       external: (id) => externals.some((dep) => id === dep || id.startsWith(`${dep}/`)),
+      output: {
+        // One file per source module, so an app's bundler can leave out the components
+        // (and their dependencies, like TanStack Table) that a chunk doesn't use.
+        preserveModules: true,
+        preserveModulesRoot: "src",
+        entryFileNames: "[name].js",
+      },
     },
     sourcemap: true,
   },

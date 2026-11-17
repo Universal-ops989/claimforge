@@ -47,7 +47,9 @@ describe("navigation", () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/lone-star/claims");
     });
-    expect(await current()).toEqual(["Claims"]);
+    await waitFor(async () => {
+      expect(await current()).toEqual(["Claims"]);
+    });
   });
 
   test("pages sit in the main landmark", async () => {
