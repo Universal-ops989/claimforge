@@ -93,8 +93,9 @@ describe("moving between steps", () => {
     await open();
     const user = userEvent.setup();
     await fillProperty(user);
+    await onStep("Loss"); // not the property step's Next, still on screen for a moment
 
-    await user.click(await screen.findByRole("button", { name: "Next" }));
+    await user.click(screen.getByRole("button", { name: "Next" }));
     expect(await screen.findByText("Choose what caused the damage.")).toBeInTheDocument();
     await chooseCause(user, "Water");
     await user.type(screen.getByRole("textbox", { name: /^Policy number/ }), "HO-123");
