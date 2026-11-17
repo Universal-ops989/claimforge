@@ -1,5 +1,5 @@
 import { allItems, useClaims } from "@claimforge/api-client/react";
-import { Button, DataTable, EmptyState } from "@claimforge/ui";
+import { Button, DataTable, EmptyState, Inline, Select, Stack, Text } from "@claimforge/ui";
 import { Plus } from "lucide-react";
 import { useCallback, useMemo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
@@ -17,14 +17,17 @@ import {
   writeFilters,
   type ClaimFilters,
 } from "../claims/filters";
+import { readSort, SORTS, writeSort, type ClaimSort } from "../claims/sort";
 
-/** The organization's claims, newest first, filtered by what the address says. */
+/** The organization's claims, filtered and sorted as the address says, a page at a time. */
 export function ClaimsPage() {
   const organization = useOrganization();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const filters = useMemo(() => readFilters(params), [params]);
-  const claims = useClaims(organization.id, filtersQuery(filters));
+  const sort = readSort(params);
+  const claims = useClaims(organization.id, { ...filtersQuery(filters), sort });
+  const loaded = allItems(claims.data);
   const changeFilters = useCallback(
     (next: ClaimFilters) => {
       // Typing a search replaces the entry; picking a filter is a step Back can undo.
@@ -55,7 +58,18 @@ export function ClaimsPage() {
 
   return (
     <Page title="Claims" actions={newClaim}>
-      <FilterBar filters={filters} onChange={changeFilters} />
+      <Inline justify="between" align="center" gap={3}>
+        <FilterBar filters={filters} onChange={changeFilters} />
+        <Select
+          aria-label="Sort claims"
+          size="sm"
+          options={SORTS}
+          value={sort}
+          onValueChange={(value) => {
+            setParams((current) => writeSort(current, value as ClaimSort));
+          }}
+        />
+      </Inline>
       {claims.isError ? (
         <ErrorPanel
           error={claims.error}
@@ -66,7 +80,7 @@ export function ClaimsPage() {
       ) : (
         <DataTable<ClaimRow>
           caption="Claims"
-          data={allItems(claims.data)}
+          data={loaded}
           columns={columns}
           getRowId={(claim) => claim.id}
           getRowLabel={(claim) => `Claim ${claim.number}`}
@@ -101,6 +115,26 @@ export function ClaimsPage() {
             )
           }
         />
+      )}
+      {claims.isSuccess && loaded.length > 0 && (
+        <Stack gap={2} align="center">
+          <Text size="sm" tone="muted" role="status">
+            {claims.hasNextPage
+              ? `Showing ${String(loaded.length)} claims`
+              : `Showing all ${String(loaded.length)} ${loaded.length === 1 ? "claim" : "claims"}`}
+          </Text>
+          {claims.hasNextPage && (
+            <Button
+              variant="secondary"
+              loading={claims.isFetchingNextPage}
+              onClick={() => {
+                void claims.fetchNextPage();
+              }}
+            >
+              Load more claims
+            </Button>
+          )}
+        </Stack>
       )}
     </Page>
   );
