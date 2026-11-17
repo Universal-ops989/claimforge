@@ -84,7 +84,7 @@ describe("signing in and out", () => {
   test("login starts the cache over and refetches as the new user", async () => {
     let user = "Previous Person";
     const server = new FakeServer()
-      .on("GET", "/v1/me", () => json(me(user)))
+      .on("GET", "/v1/me", () => json(me({ full_name: user })))
       .on("POST", "/v1/auth/login", () => json(tokenPair(2)));
     const { result } = renderWithApi(() => ({ me: useMe(), login: useLogin() }), {
       server,
