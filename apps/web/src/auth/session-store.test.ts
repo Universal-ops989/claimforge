@@ -161,7 +161,7 @@ describe("two tabs, one session", () => {
     storeA.subscribe(() => {
       if (sync) tellTab(windowB, SESSION_KEY, localStorage.getItem(SESSION_KEY));
     });
-    const config = { apiUrl: API_URL, mockApi: false, production: false };
+    const config = { apiUrl: API_URL, mockApi: false, basename: "/", production: false };
     const tabA = createAppApiClient(config, storeA);
     const tabB = createAppApiClient(config, storeB);
     let ended = false;

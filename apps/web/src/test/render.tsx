@@ -32,7 +32,7 @@ export interface RenderAppOptions {
 export async function renderApp(path: string, options: RenderAppOptions = {}) {
   const session = options.session ?? createSessionStore(null);
   const api: ApiClient = createAppApiClient(
-    { apiUrl: API_URL, mockApi: false, production: false },
+    { apiUrl: API_URL, mockApi: false, basename: "/", production: false },
     session,
   );
   if (options.signedInAs) {
