@@ -3,10 +3,11 @@ import { useLogin } from "@claimforge/api-client/react";
 import { Button, Card, CardBody, CardHeader, Stack, Text } from "@claimforge/ui";
 import { FormInput } from "@claimforge/ui/form";
 import { FormProvider, useForm } from "react-hook-form";
-import { useNavigate, useSearchParams } from "react-router";
+import { useLocation, useNavigate, useSearchParams } from "react-router";
 
 import { PageTitle } from "../app/page-title";
 import { safeNextPath } from "../auth/next-path";
+import type { SignInState } from "../auth/session";
 import { signInErrorMessage } from "../auth/sign-in-error";
 
 interface Credentials {
@@ -18,6 +19,7 @@ interface Credentials {
 export function LoginPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
+  const sessionEnded = (useLocation().state as SignInState | null)?.sessionEnded === true;
   const login = useLogin();
   const form = useForm<Credentials>({ defaultValues: { email: "", password: "" } });
 
@@ -68,6 +70,11 @@ export function LoginPage() {
               }}
             >
               <Stack gap={4}>
+                {sessionEnded && !failure && (
+                  <Text as="p" role="status">
+                    Your session ended. Sign in again to pick up where you left off.
+                  </Text>
+                )}
                 {failure && (
                   <Text as="p" role="alert" tone="danger">
                     {failure}

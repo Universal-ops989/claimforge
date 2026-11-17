@@ -44,5 +44,10 @@ events: the API revokes a refresh token presented twice, so a tab must refresh w
 token another tab rotated, never the old one. Every page in the signed-in layout sends a
 signed-out visitor to `/login?next=…`; `/login` sends someone signed in on.
 
+Signing out (`useSignOut()`) revokes the session at the API, empties the query cache and
+starts over at `/login`. A session that ends on its own (a refused refresh, another tab,
+cleared site data) sends the user to sign in with `next` set and says so; the store's
+`endedBy()` tells the two apart.
+
 An address nothing matches, and a loader that throws a 404, both show the not-found page;
 any other error shows "Something went wrong" with a retry (and the error itself in dev).

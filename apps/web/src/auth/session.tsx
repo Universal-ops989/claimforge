@@ -1,4 +1,5 @@
 import type { Tokens } from "@claimforge/api-client";
+import { useLogout } from "@claimforge/api-client/react";
 import { createContext, use, useSyncExternalStore, type ReactNode } from "react";
 import { Navigate, useLocation, useSearchParams } from "react-router";
 
@@ -11,21 +12,53 @@ export function SessionProvider({ store, children }: { store: SessionStore; chil
   return <SessionContext value={store}>{children}</SessionContext>;
 }
 
-/** The current session's tokens, or `null` when signed out; re-renders when it changes. */
-export function useSession(): Tokens | null {
+function useSessionStore(): SessionStore {
   const store = use(SessionContext);
   if (!store) {
     throw new Error("useSession() needs a <SessionProvider> above it");
   }
+  return store;
+}
+
+/** The current session's tokens, or `null` when signed out; re-renders when it changes. */
+export function useSession(): Tokens | null {
+  const store = useSessionStore();
   return useSyncExternalStore(store.subscribe, store.get, store.get);
+}
+
+/** What the sign-in page is told when the session ended without the user signing out. */
+export interface SignInState {
+  sessionEnded?: boolean;
+}
+
+/**
+ * Sign out: revoke the session at the API and forget every cached query. The sign-in
+ * page follows (through `RequireSession`), without a message: the user chose this.
+ */
+export function useSignOut() {
+  const store = useSessionStore();
+  const logout = useLogout();
+  return {
+    signOut: () => {
+      store.expectSignOut();
+      logout.mutate();
+    },
+    isPending: logout.isPending,
+  };
 }
 
 /** Show `children` to a signed-in user; send anyone else to sign in, and back here after. */
 export function RequireSession({ children }: { children: ReactNode }) {
   const session = useSession();
+  const store = useSessionStore();
   const { pathname, search, hash } = useLocation();
   if (!session) {
-    return <Navigate to={loginPathFor(`${pathname}${search}${hash}`)} replace />;
+    // Signing out starts over; a session that ended on its own comes back here after.
+    if (store.endedBy() === "sign-out") {
+      return <Navigate to="/login" replace />;
+    }
+    const state: SignInState = { sessionEnded: store.endedBy() === "ended" };
+    return <Navigate to={loginPathFor(`${pathname}${search}${hash}`)} state={state} replace />;
   }
   return children;
 }
