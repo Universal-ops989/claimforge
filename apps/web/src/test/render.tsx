@@ -11,6 +11,7 @@ import { createMemoryRouter, RouterProvider, type RouteObject } from "react-rout
 
 import { createAppApiClient } from "../api/client";
 import { Providers } from "../app/providers";
+import { createSessionStore, type SessionStore } from "../auth/session-store";
 import { routes as appRoutes } from "../routes";
 
 export const API_URL = "https://api.test";
@@ -24,23 +25,25 @@ export interface RenderAppOptions {
   signedInAs?: "morgan@example.com" | "riley@example.com";
   /** Routes to render instead of the app's. */
   routes?: RouteObject[];
+  /** The session store; one in memory by default. */
+  session?: SessionStore;
 }
 
 export async function renderApp(path: string, options: RenderAppOptions = {}) {
-  const api: ApiClient = createAppApiClient({
-    apiUrl: API_URL,
-    mockApi: false,
-    production: false,
-  });
+  const session = options.session ?? createSessionStore(null);
+  const api: ApiClient = createAppApiClient(
+    { apiUrl: API_URL, mockApi: false, production: false },
+    session,
+  );
   if (options.signedInAs) {
     await api.login({ email: options.signedInAs, password: MOCK_PASSWORD });
   }
   const queryClient = createQueryClient({ defaultOptions: { queries: { retry: false } } });
   const router = createMemoryRouter(options.routes ?? appRoutes, { initialEntries: [path] });
   const rendered = render(
-    <Providers api={api} queryClient={queryClient} themeStorageKey={null}>
+    <Providers api={api} queryClient={queryClient} session={session} themeStorageKey={null}>
       <RouterProvider router={router} />
     </Providers>,
   );
-  return { ...rendered, api, queryClient, router };
+  return { ...rendered, api, queryClient, router, session };
 }

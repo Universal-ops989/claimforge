@@ -1,4 +1,4 @@
-import { createApiClient, memoryTokenStore, webLock, type ApiClient } from "@claimforge/api-client";
+import { createApiClient, webLock, type ApiClient, type TokenStore } from "@claimforge/api-client";
 
 import type { AppConfig } from "../config";
 
@@ -7,12 +7,12 @@ import type { AppConfig } from "../config";
  * reported in production, where an older build may meet a newer API. Tabs take turns
  * refreshing the session (`webLock`), since the API revokes a refresh token used twice.
  *
- * Tokens live in memory for now; keeping a session across reloads comes with sign-in.
+ * The session's tokens are kept in `tokens` (the app's `SessionStore`).
  */
-export function createAppApiClient(config: AppConfig): ApiClient {
+export function createAppApiClient(config: AppConfig, tokens: TokenStore): ApiClient {
   return createApiClient({
     baseUrl: config.apiUrl,
-    auth: { tokens: memoryTokenStore(), lock: webLock() },
+    auth: { tokens, lock: webLock() },
     validate: config.production ? "report" : "throw",
     onInvalidResponse: (error) => {
       console.warn(error.message);

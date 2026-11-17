@@ -6,7 +6,12 @@ import { RootLayout } from "./app/root-layout";
 import { RouteError } from "./app/route-error";
 import { renderApp } from "./test/render";
 
-const open = (path: string, routes?: RouteObject[]) => renderApp(path, routes ? { routes } : {});
+/** Open `path` signed in as Morgan, except the sign-in page, which wants nobody signed in. */
+const open = (path: string, routes?: RouteObject[]) =>
+  renderApp(path, {
+    ...(routes ? { routes } : {}),
+    ...(path.startsWith("/login") ? {} : { signedInAs: "morgan@example.com" as const }),
+  });
 
 const heading = () => screen.getByRole("heading", { level: 1 });
 
