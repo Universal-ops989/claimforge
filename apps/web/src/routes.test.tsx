@@ -1,21 +1,12 @@
-import { ThemeProvider } from "@claimforge/ui";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { createMemoryRouter, data, RouterProvider, type RouteObject } from "react-router";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+import { data, type RouteObject } from "react-router";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
 import { RootLayout } from "./app/root-layout";
 import { RouteError } from "./app/route-error";
-import { routes } from "./routes";
+import { renderApp } from "./test/render";
 
-function open(path: string, table: RouteObject[] = routes) {
-  const router = createMemoryRouter(table, { initialEntries: [path] });
-  render(
-    <ThemeProvider storageKey={null}>
-      <RouterProvider router={router} />
-    </ThemeProvider>,
-  );
-  return router;
-}
+const open = (path: string, routes?: RouteObject[]) => renderApp(path, routes ? { routes } : {});
 
 const heading = () => screen.getByRole("heading", { level: 1 });
 
@@ -32,7 +23,7 @@ describe("pages", () => {
     ["/claims/2026-00042", "Claim 2026-00042"],
     ["/settings", "Settings"],
   ])("%s shows %s, in the tab too", async (path, title) => {
-    open(path);
+    await open(path);
 
     expect(heading()).toHaveTextContent(title);
     await waitFor(() => {
@@ -40,8 +31,8 @@ describe("pages", () => {
     });
   });
 
-  test("signed-in pages sit in the layout; sign-in doesn't", () => {
-    open("/claims");
+  test("signed-in pages sit in the layout; sign-in doesn't", async () => {
+    await open("/claims");
     expect(screen.getByRole("main")).toContainElement(heading());
   });
 });
@@ -49,15 +40,15 @@ describe("pages", () => {
 describe("addresses that lead nowhere", () => {
   test.each(["/nope", "/claims/2026-00042/nope", "/settings/nope"])(
     "%s shows the not-found page",
-    (path) => {
-      open(path);
+    async (path) => {
+      await open(path);
 
       expect(heading()).toHaveTextContent("Page not found");
     },
   );
 
   test("the not-found page leads back to the dashboard", async () => {
-    const router = open("/nope");
+    const { router } = await open("/nope");
 
     act(() => {
       fireEvent.click(screen.getByRole("link", { name: "Go to the dashboard" }));
@@ -87,10 +78,10 @@ describe("errors", () => {
     },
   ];
 
-  test("a page that throws shows an error page, not a blank screen", () => {
+  test("a page that throws shows an error page, not a blank screen", async () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-    open("/", throwing(new Error("The claims list broke")));
+    await open("/", throwing(new Error("The claims list broke")));
 
     expect(heading()).toHaveTextContent("Something went wrong");
     expect(screen.getByText("The claims list broke")).toBeInTheDocument(); // dev shows why
@@ -98,7 +89,7 @@ describe("errors", () => {
   });
 
   test("a 404 from a loader reads as not found", async () => {
-    open("/", [
+    await open("/", [
       {
         path: "/",
         Component: RootLayout,
