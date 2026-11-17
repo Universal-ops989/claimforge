@@ -24,10 +24,12 @@ if (import.meta.env.VITE_API_MOCK === "true") {
   await startMockApi(config.apiUrl);
 }
 
-const session = createSessionStore(storageOrNull());
+// The mock backend lives in this page and starts over with it: a session kept across a
+// reload would hold tokens the new one never issued, so it stays in memory instead.
+const session = createSessionStore(config.mockApi ? null : storageOrNull());
 const api = createAppApiClient(config, session);
 const queryClient = createQueryClient();
-const router = createBrowserRouter(routes);
+const router = createBrowserRouter(routes, { basename: config.basename });
 
 createRoot(root).render(
   <StrictMode>

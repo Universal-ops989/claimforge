@@ -32,6 +32,7 @@ describe("config", () => {
     expect(readConfig({})).toEqual({
       apiUrl: "http://localhost:8000",
       mockApi: false,
+      basename: "/",
       production: false,
     });
   });
@@ -41,9 +42,15 @@ describe("config", () => {
       readConfig({
         VITE_API_URL: " https://api.claimforge.dev ",
         VITE_API_MOCK: "true",
+        BASE_URL: "/claimforge/demo/",
         PROD: true,
       }),
-    ).toEqual({ apiUrl: "https://api.claimforge.dev", mockApi: true, production: true });
+    ).toEqual({
+      apiUrl: "https://api.claimforge.dev",
+      mockApi: true,
+      basename: "/claimforge/demo",
+      production: true,
+    });
     expect(readConfig({ VITE_API_MOCK: "1" }).mockApi).toBe(false); // only "true" turns it on
   });
 });

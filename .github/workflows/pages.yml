@@ -1,0 +1,71 @@
+name: Pages
+
+# One GitHub Pages site, built in one piece (a deployment replaces the whole site):
+#   /claimforge/       Storybook, the component library
+#   /claimforge/demo/  the web app on its mock backend, in the browser; no API involved
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/**"
+      - "apps/web/**"
+      - "apps/api/openapi.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One deployment at a time; never cancel a deployment that is already running.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build Storybook and the demo
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Build Storybook, and the packages the demo uses
+        run: pnpm turbo run build build-storybook --filter=@claimforge/web^...
+      - name: Build the demo
+        working-directory: apps/web
+        env:
+          VITE_API_MOCK: "true"
+        run: pnpm exec vite build --base=/claimforge/demo/
+      - name: Put the site together
+        run: |
+          mkdir site
+          cp -r packages/ui/storybook-static/. site/
+          cp -r apps/web/dist site/demo
+          # Pages answers any missing path with the site's one 404.html: the demo's page
+          # (its asset URLs are absolute) lets a link deep into the demo open where it points.
+          cp apps/web/dist/index.html site/404.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

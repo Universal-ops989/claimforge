@@ -4,7 +4,9 @@ import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, test } from "vitest";
 
+import { DEMO_ACCOUNT } from "../mocks/demo-account";
 import { API_URL, renderApp, server } from "../test/render";
+import { LoginPage } from "./login";
 
 const PASSWORD = "correct horse battery staple";
 const mock = mockApi(API_URL);
@@ -112,5 +114,37 @@ describe("when it doesn't work", () => {
 
     expect(await screen.findByText("Not a valid email address.")).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+});
+
+describe("the demo", () => {
+  const demoRoutes = [
+    { path: "/login", element: <LoginPage demoAccount={DEMO_ACCOUNT} /> },
+    { path: "/", element: <p>Signed in</p> },
+  ];
+
+  test("offers its account, and signs in with it", async () => {
+    const user = userEvent.setup();
+    const { session } = await renderApp("/login", { routes: demoRoutes });
+
+    await user.click(await screen.findByRole("button", { name: "Use the demo account" }));
+    expect(screen.getByLabelText(/^Email/)).toHaveValue(DEMO_ACCOUNT.email);
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+
+    expect(await screen.findByText("Signed in")).toBeInTheDocument();
+    expect(session.get()).not.toBeNull();
+  });
+
+  test("says what a demo keeps", async () => {
+    await renderApp("/login", { routes: demoRoutes });
+
+    expect(await screen.findByText(/a reload starts over/)).toBeInTheDocument();
+  });
+
+  test("isn't offered outside mock mode", async () => {
+    await renderApp("/login");
+
+    await screen.findByLabelText(/^Email/);
+    expect(screen.queryByRole("button", { name: "Use the demo account" })).not.toBeInTheDocument();
   });
 });

@@ -3,6 +3,7 @@
 [![Web](https://github.com/Universal-ops989/claimforge/actions/workflows/web.yml/badge.svg)](https://github.com/Universal-ops989/claimforge/actions/workflows/web.yml)
 [![API](https://github.com/Universal-ops989/claimforge/actions/workflows/api.yml/badge.svg)](https://github.com/Universal-ops989/claimforge/actions/workflows/api.yml)
 [![Storybook](https://img.shields.io/badge/Storybook-live-ff4785?logo=storybook&logoColor=white)](https://universal-ops989.github.io/claimforge/)
+[![Demo](https://img.shields.io/badge/Web%20app-live%20demo-2563eb)](https://universal-ops989.github.io/claimforge/demo/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **ClaimForge** is a platform for property-damage claims and restoration. Adjusters,
@@ -11,6 +12,11 @@ work in the field, and produce estimates and reports. Everyone works from the sa
 record.
 
 > Status: early development. See [docs/ROADMAP.md](docs/ROADMAP.md) for the plan.
+
+**[Try the web app →](https://universal-ops989.github.io/claimforge/demo/)** It runs in
+your browser against the mock backend, so there's nothing to install and nothing leaves
+the page: sign in with the demo account, browse and filter claims, and start a new one.
+Everything resets when you reload.
 
 **[Explore the live component library →](https://universal-ops989.github.io/claimforge/)**
 Every component in `@claimforge/ui`, with light and dark themes, accessibility checks

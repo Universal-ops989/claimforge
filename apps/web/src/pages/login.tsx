@@ -9,14 +9,23 @@ import { PageTitle } from "../app/page-title";
 import { safeNextPath } from "../auth/next-path";
 import { RequireNoSession, type SignInState } from "../auth/session";
 import { signInErrorMessage } from "../auth/sign-in-error";
+import { DEMO_ACCOUNT } from "../mocks/demo-account";
 
 interface Credentials {
   email: string;
   password: string;
 }
 
+export interface LoginPageProps {
+  /** An account to offer, for the demo: the mock backend's, in mock mode. */
+  demoAccount?: { email: string; password: string } | null;
+}
+
 /** Outside the signed-in layout: no navigation until someone signs in. */
-export function LoginPage() {
+export function LoginPage({
+  // Spelled out (not `config.mockApi`) so other builds drop the demo account.
+  demoAccount = import.meta.env.VITE_API_MOCK === "true" ? DEMO_ACCOUNT : null,
+}: LoginPageProps) {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const sessionEnded = (useLocation().state as SignInState | null)?.sessionEnded === true;
@@ -74,6 +83,23 @@ export function LoginPage() {
                   <Text as="p" role="status">
                     Your session ended. Sign in again to pick up where you left off.
                   </Text>
+                )}
+                {demoAccount && (
+                  <Stack gap={2} align="start">
+                    <Text as="p" tone="muted">
+                      This is a demo: everything stays in this tab, and a reload starts over.
+                    </Text>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        form.setValue("email", demoAccount.email, { shouldValidate: true });
+                        form.setValue("password", demoAccount.password, { shouldValidate: true });
+                      }}
+                    >
+                      Use the demo account
+                    </Button>
+                  </Stack>
                 )}
                 {failure && (
                   <Text as="p" role="alert" tone="danger">
