@@ -12,6 +12,7 @@
  * `id` (`fixtureId("claim", 2)`).
  */
 import type { CursorPage, Schema, SchemaName } from "../index";
+import { workflows } from "../zod.gen";
 
 /** Top-level fields to replace. */
 type Overrides<Name extends SchemaName> = Partial<Schema<Name>>;
@@ -142,13 +143,14 @@ export function invitation(changes: Overrides<"InvitationRead"> = {}): Schema<"I
 
 // ─── Claims ──────────────────────────────────────────────────────────────────
 
-/** A new water claim on a house in Austin. */
+/** A new water claim on a house in Austin; `next_statuses` follow `status`. */
 export function claim(changes: Overrides<"ClaimRead"> = {}): Schema<"ClaimRead"> {
+  const status = changes.status ?? "new";
   return {
     id: ids.claim,
     number: CLAIM_NUMBER,
-    status: "new",
-    next_statuses: ["inspected", "on_hold", "cancelled"],
+    status,
+    next_statuses: [...workflows.ClaimStatus.transitions[status]],
     loss_type: "water",
     loss_date: "2026-11-10",
     description: "Supply line burst under the kitchen sink",
@@ -474,8 +476,7 @@ export function estimate(changes: Overrides<"EstimateRead"> = {}): Schema<"Estim
     number: 1,
     title: "Mitigation",
     status,
-    next_statuses:
-      status === "draft" ? ["submitted"] : status === "submitted" ? ["approved", "rejected"] : [],
+    next_statuses: [...workflows.EstimateStatus.transitions[status]],
     notes: null,
     price_list: null,
     tax_percent,

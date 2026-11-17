@@ -944,7 +944,65 @@
           "cancelled"
         ],
         "title": "ClaimStatus",
-        "type": "string"
+        "type": "string",
+        "x-reason-required": {
+          "cancelled": [
+            "new"
+          ],
+          "closed": [
+            "in_progress"
+          ],
+          "completed": [],
+          "in_progress": [
+            "on_hold",
+            "cancelled"
+          ],
+          "inspected": [
+            "on_hold",
+            "cancelled"
+          ],
+          "new": [
+            "on_hold",
+            "cancelled"
+          ],
+          "on_hold": [
+            "cancelled"
+          ]
+        },
+        "x-transitions": {
+          "cancelled": [
+            "new"
+          ],
+          "closed": [
+            "in_progress"
+          ],
+          "completed": [
+            "in_progress",
+            "closed"
+          ],
+          "in_progress": [
+            "on_hold",
+            "completed",
+            "cancelled"
+          ],
+          "inspected": [
+            "in_progress",
+            "on_hold",
+            "cancelled"
+          ],
+          "new": [
+            "inspected",
+            "in_progress",
+            "on_hold",
+            "cancelled"
+          ],
+          "on_hold": [
+            "new",
+            "inspected",
+            "in_progress",
+            "cancelled"
+          ]
+        }
       },
       "ClaimStatusChangeCreate": {
         "additionalProperties": false,
@@ -3564,7 +3622,23 @@
           "rejected"
         ],
         "title": "EstimateStatus",
-        "type": "string"
+        "type": "string",
+        "x-transitions": {
+          "approved": [
+            "draft"
+          ],
+          "draft": [
+            "submitted"
+          ],
+          "rejected": [
+            "draft"
+          ],
+          "submitted": [
+            "draft",
+            "approved",
+            "rejected"
+          ]
+        }
       },
       "EstimateStatusChange": {
         "additionalProperties": false,
