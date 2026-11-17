@@ -357,3 +357,100 @@ test("reset() puts the seed back", async () => {
 
   expect(backend.db.claims).toHaveLength(2);
 });
+
+describe("assignments", () => {
+  const ASSIGN = "/v1/organizations/{organization_id}/claims/{claim_id}/assignments" as const;
+  const assign = (
+    api: ApiClient,
+    user_id: string,
+    role: "adjuster" | "field_technician" | "contractor",
+  ) => api.post(ASSIGN, { path: CLAIM, body: { user_id, role } });
+  const claimNow = (api: ApiClient) =>
+    api.get("/v1/organizations/{organization_id}/claims/{claim_id}", { path: CLAIM });
+
+  test("assigning puts the member on the claim, and the list shows the adjuster", async () => {
+    const api = await signedIn();
+
+    const tech = await assign(api, people.riley.id, "field_technician");
+    await assign(api, people.morgan.id, "adjuster");
+    const claim = await claimNow(api);
+    const list = await api.get("/v1/organizations/{organization_id}/claims", { path: ORG });
+    const timeline = await api.get(
+      "/v1/organizations/{organization_id}/claims/{claim_id}/timeline",
+      {
+        path: CLAIM,
+      },
+    );
+
+    expect(tech).toMatchObject({
+      user: people.riley,
+      role: "field_technician",
+      assigned_by_id: people.morgan.id,
+    });
+    expect(claim.assignments.map((a) => [a.user.full_name, a.role])).toEqual([
+      ["Riley Tech", "field_technician"],
+      ["Morgan Member", "adjuster"],
+    ]);
+    expect(list.items.find((c) => c.id === ids.claim)?.adjuster).toEqual(people.morgan);
+    expect(timeline.items.filter((e) => e.kind === "team")).toHaveLength(2);
+  });
+
+  test("a new adjuster replaces the last: one per claim", async () => {
+    const membership = backend.db.accounts.find((a) => a.user.id === people.riley.id)?.user
+      .memberships[0];
+    Object.assign(membership ?? {}, { role: "adjuster", permissions: rolePermissions.adjuster });
+    const api = await signedIn();
+    await assign(api, people.morgan.id, "adjuster");
+
+    await assign(api, people.riley.id, "adjuster");
+
+    expect((await claimNow(api)).assignments.map((a) => a.user.id)).toEqual([people.riley.id]);
+  });
+
+  test("the assignee must be a member, allowed what the role needs", async () => {
+    const api = await signedIn();
+
+    const stranger = await refusal(assign(api, fixtureId("person", 9), "contractor"));
+    const techAsAdjuster = await refusal(assign(api, people.riley.id, "adjuster"));
+
+    expect(stranger).toMatchObject({ status: 422, code: "unknown_assignee" });
+    expect(techAsAdjuster).toMatchObject({ status: 422, code: "assignee_lacks_permission" });
+    expect(techAsAdjuster.problem).toMatchObject({ assignee_needs: "claims:write" });
+  });
+
+  test("someone already on the claim must come off before changing role", async () => {
+    const api = await signedIn();
+    await assign(api, people.riley.id, "field_technician");
+
+    const again = await refusal(assign(api, people.riley.id, "contractor"));
+
+    expect(again).toMatchObject({ status: 409, code: "already_assigned" });
+  });
+
+  test("only someone who can change claims assigns, and not on a locked claim", async () => {
+    const riley = await signedIn("riley@example.com");
+    const byTech = await refusal(assign(riley, people.riley.id, "field_technician"));
+    const morgan = await signedIn();
+    await morgan.post("/v1/organizations/{organization_id}/claims/{claim_id}/status", {
+      path: CLAIM,
+      body: { status: "cancelled", reason: "Duplicate" },
+    });
+
+    const onLocked = await refusal(assign(morgan, people.riley.id, "field_technician"));
+
+    expect(byTech).toMatchObject({ status: 403, code: "permission_denied" });
+    expect(onLocked).toMatchObject({ status: 409, code: "claim_locked" });
+  });
+
+  test("unassigning takes the member off; someone not on the claim is not found", async () => {
+    const api = await signedIn();
+    await assign(api, people.riley.id, "field_technician");
+    const path = { ...CLAIM, user_id: people.riley.id };
+
+    await api.delete(`${ASSIGN}/{user_id}`, { path });
+    const twice = await refusal(api.delete(`${ASSIGN}/{user_id}`, { path }));
+
+    expect((await claimNow(api)).assignments).toEqual([]);
+    expect(twice).toMatchObject({ status: 404 });
+  });
+});

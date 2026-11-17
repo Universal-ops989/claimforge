@@ -5,7 +5,8 @@
  *     const server = setupServer(...backend.handlers);   // or setupWorker in a browser
  *
  * It covers what the web app's first screens need: sessions, `/v1/me`, organizations,
- * claims (lists, filters, pages, create, edit, the status workflow, history, timeline),
+ * claims (lists, filters, pages, create, edit, the status workflow, assignments, history,
+ * timeline),
  * tasks, notes, and the layout to read. It behaves like the API where tests can tell:
  * the same status codes and error codes, refresh tokens that rotate with reuse detection,
  * the workflow the contract publishes (`workflows`), permissions by role, locked claims.
@@ -124,6 +125,12 @@ const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
 const FINAL: Schema<"ClaimStatus">[] = ["closed", "cancelled"];
 const MENTION = /<@([0-9a-f-]{36})>/g;
+/** What each assignment role needs the member to be allowed, as the API checks it. */
+const ASSIGNMENT_NEEDS: Record<Schema<"AssignmentRole">, Permission> = {
+  adjuster: "claims:write",
+  contractor: "field_data:write",
+  field_technician: "field_data:write",
+};
 
 export function createMockBackend(options: MockBackendOptions = {}): MockBackend {
   const seed = options.seed ?? seedDb;
@@ -602,6 +609,83 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
         next_statuses: [...workflows.ClaimStatus.transitions[body.status]],
         updated_at: iso(),
       });
+    }),
+    api.post(`${CLAIM}/assignments`, ({ request, params, body }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
+      const refused = allowed(seen.membership, "claims:write") ?? locked(claim);
+      if (refused) return refused;
+      const assignee = db().accounts.find((a) => a.user.id === body.user_id);
+      const membership = assignee?.user.memberships.find(
+        (m) => m.organization.id === params.organization_id,
+      );
+      if (!assignee || !membership) {
+        return problem(422, "unknown_assignee", {
+          detail: "Only members of this organization can be assigned",
+        });
+      }
+      const needed = ASSIGNMENT_NEEDS[body.role];
+      if (!membership.permissions.includes(needed)) {
+        return problem(422, "assignee_lacks_permission", {
+          detail: `A ${membership.role} can't be assigned as ${body.role}`,
+          member_role: membership.role,
+          assignee_needs: needed,
+        });
+      }
+      const existing = claim.assignments.find((a) => a.user.id === body.user_id);
+      if (existing) {
+        return problem(409, "already_assigned", {
+          detail: `Already assigned to this claim as ${existing.role}; unassign first to change roles`,
+          current_role: existing.role,
+        });
+      }
+      const assignment: Schema<"ClaimAssignmentRead"> = {
+        user: { id: assignee.user.id, full_name: assignee.user.full_name },
+        role: body.role,
+        assigned_at: iso(),
+        assigned_by_id: seen.person.id,
+      };
+      // One adjuster per claim: a new one replaces the last.
+      const kept =
+        body.role === "adjuster"
+          ? claim.assignments.filter((a) => a.role !== "adjuster")
+          : claim.assignments;
+      replaceClaim({ ...claim, assignments: [...kept, assignment], updated_at: iso() });
+      record(
+        claim.id,
+        seen.person,
+        "team",
+        "member_assigned",
+        `Assigned ${assignment.user.full_name} as ${body.role.replace("_", " ")}`,
+      );
+      return assignment;
+    }),
+    api.delete(`${CLAIM}/assignments/{user_id}`, ({ request, params }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
+      const refused = allowed(seen.membership, "claims:write") ?? locked(claim);
+      if (refused) return refused;
+      const assignment = claim.assignments.find((a) => a.user.id === params.user_id);
+      if (!assignment) {
+        return problem(404, "not_found", { detail: "That member is not assigned to this claim" });
+      }
+      replaceClaim({
+        ...claim,
+        assignments: claim.assignments.filter((a) => a !== assignment),
+        updated_at: iso(),
+      });
+      record(
+        claim.id,
+        seen.person,
+        "team",
+        "member_unassigned",
+        `Took ${assignment.user.full_name} off the claim`,
+      );
+      return undefined;
     }),
     api.get(`${CLAIM}/status-history`, ({ request, params }) => {
       const seen = member(request, params.organization_id);
