@@ -2,11 +2,16 @@ import { claim, fixtureId, ids } from "@claimforge/api-client/fixtures";
 import { mockApi, problem } from "@claimforge/api-client/msw";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test } from "vitest";
 
+import { createViewStore } from "../claims/saved-views";
 import { API_URL, backend, renderApp, server } from "../test/render";
 
 const mock = mockApi(API_URL);
+
+afterEach(() => {
+  localStorage.clear();
+});
 const open = () => renderApp("/lone-star/claims", { signedInAs: "morgan@example.com" });
 
 /** The table's body rows, as the text of each cell. */
@@ -234,5 +239,84 @@ describe("sorting and paging", () => {
     expect(await screen.findByText("Showing all 32 claims")).toBeInTheDocument();
     expect(numbers()).toHaveLength(32);
     expect(screen.queryByRole("button", { name: "Load more claims" })).not.toBeInTheDocument();
+  });
+});
+
+describe("saved views", () => {
+  const numbers = () =>
+    within(screen.getByRole("table", { name: "Claims" }))
+      .queryAllByRole("link")
+      .map((link) => link.textContent);
+  const at = (path: string) => renderApp(path, { signedInAs: "morgan@example.com" });
+
+  test("saving the list as a view names it on the button", async () => {
+    await at("/lone-star/claims?loss_type=fire&sort=created_at");
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("button", { name: "Views" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Save this view…" }));
+    const dialog = within(await screen.findByRole("dialog", { name: "Save this view" }));
+    await user.type(dialog.getByRole("textbox", { name: /^Name/ }), "Fires, oldest first");
+    await user.click(dialog.getByRole("button", { name: "Save view" }));
+
+    expect(
+      await screen.findByRole("button", { name: "View: Fires, oldest first" }),
+    ).toBeInTheDocument();
+  });
+
+  test("a name already used is refused in the dialog", async () => {
+    createViewStore(localStorage, ids.organization).save("Fires", "loss_type=fire");
+    await at("/lone-star/claims?loss_type=water");
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("button", { name: "Views" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Save this view…" }));
+    const dialog = within(await screen.findByRole("dialog"));
+    await user.type(dialog.getByRole("textbox", { name: /^Name/ }), "fires");
+    await user.click(dialog.getByRole("button", { name: "Save view" }));
+
+    expect(await dialog.findByText('There\'s already a view called "fires".')).toBeInTheDocument();
+  });
+
+  test("choosing a view opens the list as it was saved", async () => {
+    createViewStore(localStorage, ids.organization).save("Water", "loss_type=water");
+    const { router } = await at("/lone-star/claims");
+    await waitFor(() => {
+      expect(numbers()).toHaveLength(2);
+    });
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("button", { name: "Views" }));
+    await user.click(await screen.findByRole("menuitemcheckbox", { name: "Water" }));
+
+    await waitFor(() => {
+      expect(numbers()).toEqual(["2026-00042"]);
+    });
+    expect(router.state.location.search).toBe("?loss_type=water");
+    expect(screen.getByRole("button", { name: "View: Water" })).toBeInTheDocument();
+  });
+
+  test("the view shown can be deleted", async () => {
+    createViewStore(localStorage, ids.organization).save("Water", "loss_type=water");
+    await at("/lone-star/claims?loss_type=water");
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("button", { name: "View: Water" }));
+    await user.click(await screen.findByRole("menuitem", { name: 'Delete "Water"' }));
+
+    expect(await screen.findByRole("button", { name: "Views" })).toBeInTheDocument();
+    expect(createViewStore(localStorage, ids.organization).list()).toEqual([]);
+  });
+
+  test("an unfiltered list can't be saved: there's nothing to keep", async () => {
+    await at("/lone-star/claims");
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("button", { name: "Views" }));
+
+    expect(await screen.findByRole("menuitem", { name: "Save this view…" })).toHaveAttribute(
+      "data-disabled",
+    );
+    expect(screen.getByText("No saved views yet")).toBeInTheDocument();
   });
 });

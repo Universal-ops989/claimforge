@@ -17,7 +17,9 @@ import {
   writeFilters,
   type ClaimFilters,
 } from "../claims/filters";
+import { createViewStore, viewQuery } from "../claims/saved-views";
 import { readSort, SORTS, writeSort, type ClaimSort } from "../claims/sort";
+import { ViewsMenu } from "../claims/views-menu";
 
 /** The organization's claims, filtered and sorted as the address says, a page at a time. */
 export function ClaimsPage() {
@@ -37,6 +39,10 @@ export function ClaimsPage() {
     [filters.q, setParams],
   );
   const filtered = hasFilters(filters);
+  const views = useMemo(
+    () => createViewStore(browserStorage(), organization.id),
+    [organization.id],
+  );
   const claimPath = (number: string) => inOrganization(organization.slug, `claims/${number}`);
   const newClaimPath = inOrganization(organization.slug, "claims/new");
   const { slug } = organization;
@@ -60,15 +66,25 @@ export function ClaimsPage() {
     <Page title="Claims" actions={newClaim}>
       <Inline justify="between" align="center" gap={3}>
         <FilterBar filters={filters} onChange={changeFilters} />
-        <Select
-          aria-label="Sort claims"
-          size="sm"
-          options={SORTS}
-          value={sort}
-          onValueChange={(value) => {
-            setParams((current) => writeSort(current, value as ClaimSort));
-          }}
-        />
+        <Inline gap={3} align="center">
+          <ViewsMenu
+            key={organization.id}
+            store={views}
+            current={viewQuery(params)}
+            onOpen={(query) => {
+              setParams(new URLSearchParams(query));
+            }}
+          />
+          <Select
+            aria-label="Sort claims"
+            size="sm"
+            options={SORTS}
+            value={sort}
+            onValueChange={(value) => {
+              setParams((current) => writeSort(current, value as ClaimSort));
+            }}
+          />
+        </Inline>
       </Inline>
       {claims.isError ? (
         <ErrorPanel
@@ -138,4 +154,13 @@ export function ClaimsPage() {
       )}
     </Page>
   );
+}
+
+/** `localStorage`, unless the browser refuses it. */
+function browserStorage(): Storage | null {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
 }
