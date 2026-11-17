@@ -1,11 +1,14 @@
 import "@claimforge/ui/styles.css";
 
-import { ThemeProvider } from "@claimforge/ui";
+import { createQueryClient } from "@claimforge/api-client/react";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 
+import { createAppApiClient } from "./api/client";
+import { Providers } from "./app/providers";
+import { config } from "./config";
 import { routes } from "./routes";
 
 const root = document.getElementById("root");
@@ -13,12 +16,21 @@ if (!root) {
   throw new Error("index.html has no #root element");
 }
 
+// Spelled out (not `config.mockApi`) so Vite replaces it at build time and production
+// bundles drop the mock entirely.
+if (import.meta.env.VITE_API_MOCK === "true") {
+  const { startMockApi } = await import("./mocks/browser");
+  await startMockApi(config.apiUrl);
+}
+
+const api = createAppApiClient(config);
+const queryClient = createQueryClient();
 const router = createBrowserRouter(routes);
 
 createRoot(root).render(
   <StrictMode>
-    <ThemeProvider>
+    <Providers api={api} queryClient={queryClient}>
       <RouterProvider router={router} />
-    </ThemeProvider>
+    </Providers>
   </StrictMode>,
 );

@@ -27,7 +27,13 @@ pnpm --filter @claimforge/web dev    # http://localhost:5173
 - `src/app/`: what pages share: `RootLayout`, `Page` (the `<h1>` and the tab title,
   "Claims · ClaimForge"), `RouteError` (not found, or something went wrong).
 - `src/pages/`: one file per page.
-- `src/test/setup.ts`: jest-dom matchers and the browser APIs jsdom lacks.
+- `src/api/client.ts`: the app's API client (validation `throw` in development, `report`
+  in production; tabs take turns refreshing the session).
+- `src/app/providers.tsx`: theme, query cache and API client for every page.
+- `src/mocks/browser.ts`: the mock API in the browser, for `VITE_API_MOCK=true` only.
+- `src/test/render.tsx`: `renderApp(path, { signedInAs })` renders routes with the real
+  providers against the mock backend (`msw/node`), reset after every test.
+- `src/test/setup.ts`: jest-dom matchers, the mock server, and the browser APIs jsdom lacks.
 
 An address nothing matches, and a loader that throws a 404, both show the not-found page;
 any other error shows "Something went wrong" with a retry (and the error itself in dev).
