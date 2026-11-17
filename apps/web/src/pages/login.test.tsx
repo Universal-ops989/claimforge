@@ -25,7 +25,7 @@ describe("signing in", () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/claims/2026-00042");
     });
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Claim 2026-00042");
+    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent("Claim 2026-00042");
   });
 
   test("goes to the dashboard when next would leave the app", async () => {

@@ -1,44 +1,45 @@
-import { useMe } from "@claimforge/api-client/react";
-import { Button, Inline, Text } from "@claimforge/ui";
+import { AppShell, Text } from "@claimforge/ui";
 import { Outlet } from "react-router";
 
-import { RequireSession, useSignOut } from "../auth/session";
+import { RequireSession } from "../auth/session";
+import { Navigation } from "./shell/navigation";
+import { UserMenu } from "./shell/user-menu";
+
+const COLLAPSED_KEY = "claimforge.sidebar-collapsed";
 
 /**
- * What every signed-in page sits in; signed-out visitors are sent to sign in first. The
- * app shell (navigation, org switcher) replaces the top bar in item 101.
+ * What every signed-in page sits in: the app shell (sidebar navigation, top bar with the
+ * user menu, the `<main>` landmark). Signed-out visitors are sent to sign in first.
  */
 export function RootLayout() {
   return (
     <RequireSession>
-      <TopBar />
-      <main style={{ padding: "var(--cf-space-6)" }}>
+      <AppShell
+        brand={<Text weight="bold">ClaimForge</Text>}
+        navigation={<Navigation />}
+        topbarEnd={<UserMenu />}
+        defaultCollapsed={readCollapsed()}
+        onCollapsedChange={writeCollapsed}
+      >
         <Outlet />
-      </main>
+      </AppShell>
     </RequireSession>
   );
 }
 
-function TopBar() {
-  const me = useMe();
-  const { signOut, isPending } = useSignOut();
-  return (
-    <Inline
-      as="header"
-      justify="between"
-      align="center"
-      style={{
-        padding: "var(--cf-space-3) var(--cf-space-6)",
-        borderBottom: "1px solid var(--cf-color-border)",
-      }}
-    >
-      <Text weight="semibold">ClaimForge</Text>
-      <Inline gap={3} align="center">
-        {me.data && <Text tone="muted">{me.data.full_name}</Text>}
-        <Button variant="ghost" size="sm" loading={isPending} onClick={signOut}>
-          Sign out
-        </Button>
-      </Inline>
-    </Inline>
-  );
+/** Whether the sidebar was left collapsed in this browser; a per-viewer convenience. */
+function readCollapsed(): boolean {
+  try {
+    return localStorage.getItem(COLLAPSED_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function writeCollapsed(collapsed: boolean): void {
+  try {
+    localStorage.setItem(COLLAPSED_KEY, String(collapsed));
+  } catch {
+    // Not remembered; nothing else depends on it.
+  }
 }

@@ -84,9 +84,9 @@ describe("signing out", () => {
       signedInAs: "morgan@example.com",
     });
     const held = session.get();
-    expect(await screen.findByText("Morgan Member")).toBeInTheDocument();
-
-    await userEvent.setup().click(screen.getByRole("button", { name: "Sign out" }));
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Account: Morgan Member" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Sign out" }));
 
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/login");
