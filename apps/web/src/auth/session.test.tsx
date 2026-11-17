@@ -23,7 +23,7 @@ describe("signed-in pages", () => {
     );
 
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText(/^Email/), "morgan@example.com");
+    await user.type(await screen.findByLabelText(/^Email/), "morgan@example.com");
     await user.type(screen.getByLabelText(/^Password/), "correct horse battery staple");
     await user.click(screen.getByRole("button", { name: "Sign in" }));
 
