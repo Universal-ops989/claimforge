@@ -1,8 +1,11 @@
+import { mockApi, problem } from "@claimforge/api-client/msw";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test } from "vitest";
 
-import { renderApp } from "../test/render";
+import { API_URL, backend, renderApp, server } from "../test/render";
+
+const mock = mockApi(API_URL);
 
 const open = (path = "/lone-star/claims/new") =>
   renderApp(path, { signedInAs: "morgan@example.com" });
@@ -131,6 +134,96 @@ describe("moving between steps", () => {
 
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/lone-star/claims");
+    });
+  });
+});
+
+describe("creating the claim", () => {
+  /** Fill both steps and arrive at Review. */
+  async function toReview(user: ReturnType<typeof userEvent.setup>) {
+    await fillProperty(user);
+    await onStep("Loss");
+    await chooseCause(user, "Mold");
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    await onStep("Review");
+  }
+
+  test("creates it, and opens the new claim", async () => {
+    const { router } = await open();
+    const user = userEvent.setup();
+    await toReview(user);
+
+    await user.click(screen.getByRole("button", { name: "Create claim" }));
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toMatch(/^\/lone-star\/claims\/\d{4}-\d{5}$/);
+    });
+    const created = backend.db.claims.at(-1)?.claim;
+    expect(router.state.location.pathname).toBe(`/lone-star/claims/${created?.number ?? ""}`);
+    expect(created).toMatchObject({
+      loss_type: "mold",
+      property: { address: { line1: "5 Elm St", city: "Round Rock", region: "TX" } },
+    });
+  });
+
+  test("a field the API refuses sends the user back to it", async () => {
+    server.use(
+      mock.post("/v1/organizations/{organization_id}/claims", () =>
+        problem(422, "validation_failed", {
+          errors: [
+            {
+              loc: ["body", "property", "address", "region"],
+              message: "Use the two-letter state code.",
+              type: "value_error",
+            },
+          ],
+        }),
+      ),
+    );
+    await open();
+    const user = userEvent.setup();
+    await toReview(user);
+
+    await user.click(screen.getByRole("button", { name: "Create claim" }));
+
+    await onStep("Property");
+    expect(await screen.findByText("Use the two-letter state code.")).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: /^Street address/ })).toHaveValue("5 Elm St");
+  });
+
+  test("a date of loss the API calls future goes back to the loss step", async () => {
+    server.use(
+      mock.post("/v1/organizations/{organization_id}/claims", () =>
+        problem(422, "loss_date_in_future"),
+      ),
+    );
+    await open();
+    const user = userEvent.setup();
+    await toReview(user);
+
+    await user.click(screen.getByRole("button", { name: "Create claim" }));
+
+    await onStep("Loss");
+    expect(await screen.findByText("The date of loss can't be in the future.")).toBeInTheDocument();
+  });
+
+  test("any other refusal is said on the review step, and Try again can still create", async () => {
+    server.use(
+      mock.post("/v1/organizations/{organization_id}/claims", () =>
+        problem(403, "permission_denied"),
+      ),
+    );
+    const { router } = await open();
+    const user = userEvent.setup();
+    await toReview(user);
+
+    await user.click(screen.getByRole("button", { name: "Create claim" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("You don't have access");
+    server.resetHandlers();
+    await user.click(screen.getByRole("button", { name: "Try again" }));
+    await waitFor(() => {
+      expect(router.state.location.pathname).toMatch(/^\/lone-star\/claims\/\d{4}-\d{5}$/);
     });
   });
 });

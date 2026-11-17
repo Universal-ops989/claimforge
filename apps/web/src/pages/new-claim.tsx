@@ -1,15 +1,21 @@
+import { isApiError } from "@claimforge/api-client";
+import { useCreateClaim } from "@claimforge/api-client/react";
 import { Button, Card, CardBody, Heading, Inline, Stack, Stepper, Text } from "@claimforge/ui";
 import { FormProvider, useForm, type UseFormReturn } from "react-hook-form";
-import { Link, Navigate, useSearchParams } from "react-router";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router";
 
 import { inOrganization, useOrganization } from "../app/organization";
 import { Page } from "../app/page";
+import { errorCopy } from "../app/states";
 import {
   draftProblems,
   draftResolver,
   EMPTY_DRAFT,
+  fieldFor,
   localToday,
+  toClaimCreate,
   type ClaimDraft,
+  type DraftField,
 } from "../claims/new/draft";
 import { LossStep, PropertyStep, STEP_FIELDS } from "../claims/new/steps";
 import { LOSS_TYPE_LABEL } from "../claims/status";
@@ -44,6 +50,8 @@ export function NewClaimPage() {
     resolver: draftResolver,
     mode: "onTouched",
   });
+  const navigate = useNavigate();
+  const createClaim = useCreateClaim(organization.id);
 
   const asked = STEPS.find((step) => step.id === params.get("step"))?.id ?? "property";
   // A later step can't be reached by address before the earlier ones are done.
@@ -59,6 +67,25 @@ export function NewClaimPage() {
       next.set("step", step);
       return next;
     });
+  };
+
+  /** Create the claim and open it; refusals go back to the field they're about. */
+  const create = async () => {
+    let created;
+    try {
+      created = await createClaim.mutateAsync(toClaimCreate(form.getValues()));
+    } catch (error) {
+      const refused = refusedFields(error);
+      const [first] = refused;
+      for (const { field, message } of refused) {
+        form.setError(field, { message });
+      }
+      if (first) {
+        go(first.field.startsWith("property.") ? "property" : "loss");
+      }
+      return;
+    }
+    await navigate(inOrganization(organization.slug, `claims/${created.number}`));
   };
 
   const next = async () => {
@@ -105,6 +132,13 @@ export function NewClaimPage() {
                 {asked === "property" && <PropertyStep />}
                 {asked === "loss" && <LossStep />}
                 {asked === "review" && <Review form={form} onEdit={go} />}
+                {asked === "review" &&
+                  createClaim.error &&
+                  refusedFields(createClaim.error).length === 0 && (
+                    <Text as="p" role="alert" tone="danger">
+                      {`${errorCopy(createClaim.error).title}. ${errorCopy(createClaim.error).description}`}
+                    </Text>
+                  )}
                 <Inline justify="between">
                   {current > 0 ? (
                     <Button
@@ -118,9 +152,19 @@ export function NewClaimPage() {
                   ) : (
                     <span />
                   )}
-                  {asked !== "review" && (
+                  {asked !== "review" ? (
                     <Button type="submit" variant="primary">
                       Next
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="primary"
+                      loading={createClaim.isPending}
+                      onClick={() => {
+                        void create();
+                      }}
+                    >
+                      {createClaim.error ? "Try again" : "Create claim"}
                     </Button>
                   )}
                 </Inline>
@@ -201,4 +245,19 @@ function Review({
       </Inline>
     </Stack>
   );
+}
+
+/**
+ * The fields an API refusal is about: a 422's `errors[]`, read back into the form, and
+ * the business rules about one field. Empty when the refusal isn't about a field.
+ */
+function refusedFields(error: unknown): { field: DraftField; message: string }[] {
+  if (!isApiError(error)) return [];
+  if (error.code === "loss_date_in_future") {
+    return [{ field: "loss.loss_date", message: "The date of loss can't be in the future." }];
+  }
+  return error.fieldErrors.flatMap(({ loc, message }) => {
+    const field = fieldFor(loc);
+    return field ? [{ field, message }] : [];
+  });
 }
