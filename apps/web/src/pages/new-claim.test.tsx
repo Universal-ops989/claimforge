@@ -227,3 +227,84 @@ describe("creating the claim", () => {
     });
   });
 });
+
+describe("the draft", () => {
+  test("survives a reload, on the step it was on", async () => {
+    const first = await open();
+    const user = userEvent.setup();
+    await fillProperty(user);
+    await onStep("Loss");
+    first.unmount();
+
+    await open(); // the form opened again, no step in the address
+
+    await onStep("Loss");
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    expect(await screen.findByRole("textbox", { name: /^Street address/ })).toHaveValue("5 Elm St");
+  });
+
+  test("is kept as it's typed, without moving on", async () => {
+    const first = await open();
+    await userEvent
+      .setup()
+      .type(await screen.findByRole("textbox", { name: /^Street address/ }), "5 Elm");
+    first.unmount();
+
+    await open();
+
+    expect(await screen.findByRole("textbox", { name: /^Street address/ })).toHaveValue("5 Elm");
+  });
+
+  test("leaving with something typed asks first; Keep editing stays", async () => {
+    const { router } = await open();
+    const user = userEvent.setup();
+    await user.type(await screen.findByRole("textbox", { name: /^Street address/ }), "5 Elm St");
+
+    await user.click(screen.getByRole("link", { name: "Cancel" }));
+    const dialog = within(await screen.findByRole("alertdialog", { name: "Discard this claim?" }));
+    await user.click(dialog.getByRole("button", { name: "Keep editing" }));
+
+    expect(router.state.location.pathname).toBe("/lone-star/claims/new");
+    expect(screen.getByRole("textbox", { name: /^Street address/ })).toHaveValue("5 Elm St");
+  });
+
+  test("Discard leaves, and the draft is gone", async () => {
+    const { router, unmount } = await open();
+    const user = userEvent.setup();
+    await user.type(await screen.findByRole("textbox", { name: /^Street address/ }), "5 Elm St");
+
+    await user.click(
+      within(screen.getByRole("navigation", { name: "Main" })).getByRole("link", {
+        name: "Claims",
+      }),
+    );
+    await user.click(await screen.findByRole("button", { name: "Discard" }));
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/lone-star/claims");
+    });
+    unmount();
+    await open();
+    expect(await screen.findByRole("textbox", { name: /^Street address/ })).toHaveValue("");
+  });
+
+  test("creating the claim clears the draft without asking", async () => {
+    const { router, unmount } = await open();
+    const user = userEvent.setup();
+    await fillProperty(user);
+    await onStep("Loss");
+    await chooseCause(user, "Wind");
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    await onStep("Review");
+
+    await user.click(screen.getByRole("button", { name: "Create claim" }));
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toMatch(/^\/lone-star\/claims\/\d{4}-\d{5}$/);
+    });
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    unmount();
+    await open();
+    expect(await screen.findByRole("textbox", { name: /^Street address/ })).toHaveValue("");
+  });
+});

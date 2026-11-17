@@ -39,6 +39,9 @@ afterEach(() => {
   cleanup();
   server.resetHandlers();
   backend.reset();
+  // Nothing a test keeps in the browser leaks into the next one.
+  localStorage.clear();
+  sessionStorage.clear();
 });
 afterAll(() => {
   server.close();

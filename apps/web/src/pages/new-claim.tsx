@@ -1,8 +1,19 @@
 import { isApiError } from "@claimforge/api-client";
 import { useCreateClaim } from "@claimforge/api-client/react";
-import { Button, Card, CardBody, Heading, Inline, Stack, Stepper, Text } from "@claimforge/ui";
+import {
+  Button,
+  Card,
+  CardBody,
+  ConfirmDialog,
+  Heading,
+  Inline,
+  Stack,
+  Stepper,
+  Text,
+} from "@claimforge/ui";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FormProvider, useForm, type UseFormReturn } from "react-hook-form";
-import { Link, Navigate, useNavigate, useSearchParams } from "react-router";
+import { Link, Navigate, useBlocker, useNavigate, useSearchParams } from "react-router";
 
 import { inOrganization, useOrganization } from "../app/organization";
 import { Page } from "../app/page";
@@ -17,6 +28,7 @@ import {
   type ClaimDraft,
   type DraftField,
 } from "../claims/new/draft";
+import { createDraftStore, hasContent } from "../claims/new/draft-store";
 import { LossStep, PropertyStep, STEP_FIELDS } from "../claims/new/steps";
 import { LOSS_TYPE_LABEL } from "../claims/status";
 
@@ -45,15 +57,44 @@ function firstUnfinished(draft: ClaimDraft, upto: StepId): StepId | null {
 export function NewClaimPage() {
   const organization = useOrganization();
   const [params, setParams] = useSearchParams();
+  const store = useMemo(
+    () => createDraftStore(sessionStorageOrNull(), organization.id),
+    [organization.id],
+  );
+  // What was typed before a reload, or before a trip elsewhere in the app.
+  const [saved] = useState(() => store.read());
   const form = useForm<ClaimDraft>({
-    defaultValues: EMPTY_DRAFT,
+    defaultValues: saved?.draft ?? EMPTY_DRAFT,
     resolver: draftResolver,
     mode: "onTouched",
   });
   const navigate = useNavigate();
   const createClaim = useCreateClaim(organization.id);
+  /** Set once the draft has been created or discarded: leaving no longer asks. */
+  const doneRef = useRef(false);
 
-  const asked = STEPS.find((step) => step.id === params.get("step"))?.id ?? "property";
+  const asked =
+    STEPS.find((step) => step.id === params.get("step"))?.id ?? saved?.step ?? "property";
+
+  // Keep the draft as it's typed, and the step it's on.
+  useEffect(() => {
+    store.save(form.getValues(), asked);
+    return form.subscribe({
+      formState: { values: true },
+      callback: ({ values }) => {
+        if (!doneRef.current) store.save(values, asked);
+      },
+    });
+  }, [form, store, asked]);
+
+  // Leaving the form (not moving between its steps) with something typed asks first.
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      !doneRef.current &&
+      currentLocation.pathname !== nextLocation.pathname &&
+      hasContent(form.getValues()),
+  );
+
   // A later step can't be reached by address before the earlier ones are done.
   const unfinished = firstUnfinished(form.getValues(), asked);
   if (unfinished) {
@@ -85,6 +126,8 @@ export function NewClaimPage() {
       }
       return;
     }
+    doneRef.current = true;
+    store.clear();
     await navigate(inOrganization(organization.slug, `claims/${created.number}`));
   };
 
@@ -104,6 +147,22 @@ export function NewClaimPage() {
         </Button>
       }
     >
+      <ConfirmDialog
+        open={blocker.state === "blocked"}
+        onOpenChange={(open) => {
+          if (!open && blocker.state === "blocked") blocker.reset();
+        }}
+        title="Discard this claim?"
+        description="What you've typed for this claim will be lost."
+        confirmLabel="Discard"
+        cancelLabel="Keep editing"
+        tone="danger"
+        onConfirm={() => {
+          doneRef.current = true;
+          store.clear();
+          if (blocker.state === "blocked") blocker.proceed();
+        }}
+      />
       <Stepper
         label="New claim steps"
         steps={STEPS.map(({ id, label, description }) => ({ id, label, description }))}
@@ -260,4 +319,13 @@ function refusedFields(error: unknown): { field: DraftField; message: string }[]
     const field = fieldFor(loc);
     return field ? [{ field, message }] : [];
   });
+}
+
+/** `sessionStorage`, unless the browser refuses it. */
+function sessionStorageOrNull(): Storage | null {
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
 }
