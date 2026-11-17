@@ -8,12 +8,19 @@ import type { ReactNode } from "react";
 
 import { memoryTokenStore, type Tokens, type TokenStore } from "../auth";
 import { createApiClient } from "../client";
-import type { Schema } from "../index";
+import { CLAIM_NUMBER, ids, people } from "../fixtures";
 import { ApiProvider } from "./context";
 import { createQueryClient } from "./query-client";
 
-export const ORG_ID = "0198a2c4-7b1e-7cc0-8000-0000000000a1";
 export const NOW = Date.parse("2026-11-16T12:00:00Z");
+
+// The fixtures, under the names these tests use.
+export { claim, me, tokenPair } from "../fixtures";
+export { CLAIM_NUMBER };
+export const ORG_ID = ids.organization;
+export const CLAIM_ID = ids.claim;
+export const MORGAN = people.morgan;
+export const RILEY = people.riley;
 
 export function json(body: unknown, status = 200): Response {
   const type = status >= 400 ? "application/problem+json" : "application/json";
@@ -29,77 +36,6 @@ export function problem(status: number, code: string): Response {
 
 export function noContent(): Response {
   return new Response(null, { status: 204 });
-}
-
-export function me(fullName = "Morgan Member"): Schema<"MeResponse"> {
-  return {
-    id: "0198a2c4-7b1e-7cc0-8000-0000000000b1",
-    email: "morgan@example.com",
-    full_name: fullName,
-    memberships: [
-      {
-        organization: { id: ORG_ID, name: "Lone Star Restoration", slug: "lone-star" },
-        role: "owner",
-        permissions: ["org:read", "org:update", "members:manage"],
-      },
-    ],
-  };
-}
-
-export const CLAIM_ID = "0198a2c4-7b1e-7cc0-8000-0000000000d1";
-export const CLAIM_NUMBER = "CF-2026-0042";
-export const MORGAN = { id: "0198a2c4-7b1e-7cc0-8000-0000000000b1", full_name: "Morgan Member" };
-export const RILEY = { id: "0198a2c4-7b1e-7cc0-8000-0000000000b2", full_name: "Riley Tech" };
-
-/** A water claim on a house in Austin; `changes` override any field. */
-export function claim(changes: Partial<Schema<"ClaimRead">> = {}): Schema<"ClaimRead"> {
-  return {
-    id: CLAIM_ID,
-    number: CLAIM_NUMBER,
-    status: "new",
-    next_statuses: ["inspected", "on_hold", "cancelled"],
-    loss_type: "water",
-    loss_date: "2026-11-10",
-    description: "Supply line burst under the kitchen sink",
-    policy_number: null,
-    carrier_name: null,
-    carrier_claim_number: null,
-    property: {
-      id: "0198a2c4-7b1e-7cc0-8000-0000000000e1",
-      address: {
-        line1: "100 Congress Ave",
-        line2: null,
-        city: "Austin",
-        region: "TX",
-        postal_code: "78701",
-        country: "US",
-        formatted: "100 Congress Ave, Austin, TX 78701",
-      },
-      property_type: "residential",
-      year_built: 1998,
-      latitude: null,
-      longitude: null,
-      access_notes: null,
-      created_at: "2026-11-10T15:00:00Z",
-      updated_at: "2026-11-10T15:00:00Z",
-    },
-    contacts: [],
-    assignments: [],
-    created_by_id: MORGAN.id,
-    created_at: "2026-11-10T15:00:00Z",
-    updated_at: "2026-11-10T15:00:00Z",
-    ...changes,
-  };
-}
-
-export function tokenPair(n: number): Schema<"TokenResponse"> {
-  return {
-    access_token: `access-${String(n)}`,
-    token_type: "bearer",
-    expires_in: 900,
-    refresh_token: `refresh-${String(n)}`,
-    refresh_expires_at: "2026-12-16T12:00:00Z",
-  };
 }
 
 export function signedIn(n = 1): Tokens {

@@ -277,6 +277,27 @@ const server = setupServer(
   `errors[]` as the API shapes them; the resolver isn't called.
 - A hand-built `Response` (`problem()`, `HttpResponse.json()`) is sent as it is.
 
+## Fixtures
+
+`@claimforge/api-client/fixtures` has factories for what the API sends, for component tests,
+Storybook and mock handlers alike (it needs neither MSW nor React).
+
+```ts
+import { claim, claimSummary, page, task } from "@claimforge/api-client/fixtures";
+
+claim({ status: "inspected" });
+task({ done: true }); // completed_at and completed_by_id follow
+page([claimSummary()], "next-cursor");
+```
+
+- One per main schema (`me`, `organization`, `claim`, `claimSummary`, `room`, `structure`,
+  `task`, `note`, `photo`, `document`, `moisturePoint`, `moistureLog`, `estimate`, `report`,
+  `share`, …); overrides replace top-level fields.
+- Fixed ids (`ids.claim`, `fixtureId("claim", 2)`) and people (`people.morgan`), and data
+  that hangs together: a task's `claim` is the claim fixture, an estimate's totals add up.
+- A test parses every fixture with its Zod schema and rejects keys the contract doesn't
+  have, so fixtures can't drift from the API.
+
 ## Regenerating
 
 ```bash

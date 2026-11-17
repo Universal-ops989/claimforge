@@ -2,6 +2,7 @@ import { HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, describe, expect, expectTypeOf, test } from "vitest";
 
+import { document as documentFixture, ids, organization } from "../fixtures";
 import {
   ApiError,
   createApiClient,
@@ -11,23 +12,8 @@ import {
 } from "../index";
 import { mockApi, problem } from "./index";
 
-const ORG = "0198a2c4-7b1e-7cc0-8000-0000000000a1";
-const CLAIM = "0198a2c4-7b1e-7cc0-8000-0000000000d1";
-
-function organization(changes: Partial<Schema<"OrganizationRead">> = {}) {
-  return {
-    id: ORG,
-    name: "Lone Star Restoration",
-    slug: "lone-star",
-    timezone: "America/Chicago",
-    default_tax_percent: "8.25",
-    default_overhead_percent: "10",
-    default_profit_percent: "10",
-    created_at: "2026-11-01T12:00:00Z",
-    updated_at: "2026-11-01T12:00:00Z",
-    ...changes,
-  } satisfies Schema<"OrganizationRead">;
-}
+const ORG = ids.organization;
+const CLAIM = ids.claim;
 
 const server = setupServer();
 beforeAll(() => {
@@ -79,20 +65,7 @@ describe("answers", () => {
   test("respond() picks another documented status", async () => {
     const path =
       "/v1/organizations/{organization_id}/claims/{claim_id}/document-uploads/{upload_id}/complete" as const;
-    const document: Schema<"DocumentRead"> = {
-      id: "0198a2c4-7b1e-7cc0-8000-000000000601",
-      claim_id: CLAIM,
-      title: "Signed authorization",
-      filename: "signed.pdf",
-      category: "authorization",
-      content_type: "application/pdf",
-      size_bytes: 4,
-      view_url: null,
-      download_url: "https://storage.test/doc?download",
-      uploaded_by: null,
-      created_at: "2026-11-16T12:00:00Z",
-      updated_at: "2026-11-16T12:00:00Z",
-    };
+    const document = documentFixture();
     server.use(mock.post(path, ({ respond }) => respond(200, document))); // completed before
 
     const repeat = await client.request("post", path, {
