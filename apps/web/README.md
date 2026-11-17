@@ -35,5 +35,14 @@ pnpm --filter @claimforge/web dev    # http://localhost:5173
   providers against the mock backend (`msw/node`), reset after every test.
 - `src/test/setup.ts`: jest-dom matchers, the mock server, and the browser APIs jsdom lacks.
 
+## Sessions
+
+The session's tokens live in `localStorage` (`claimforge.session`), so reloads and new tabs
+stay signed in; `src/auth/session-store.ts` reads corrupt data as signed out and falls back
+to memory when the browser refuses storage. Tabs follow each other through `storage`
+events: the API revokes a refresh token presented twice, so a tab must refresh with the
+token another tab rotated, never the old one. Every page in the signed-in layout sends a
+signed-out visitor to `/login?next=…`; `/login` sends someone signed in on.
+
 An address nothing matches, and a loader that throws a 404, both show the not-found page;
 any other error shows "Something went wrong" with a retry (and the error itself in dev).

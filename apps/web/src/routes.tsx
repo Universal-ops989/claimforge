@@ -2,6 +2,7 @@ import type { RouteObject } from "react-router";
 
 import { RootLayout } from "./app/root-layout";
 import { RouteError } from "./app/route-error";
+import { RequireNoSession } from "./auth/session";
 import { ClaimPage } from "./pages/claim";
 import { ClaimsPage } from "./pages/claims";
 import { DashboardPage } from "./pages/dashboard";
@@ -17,7 +18,7 @@ import { SettingsPage } from "./pages/settings";
  * the same way a loader's 404 does, so both show the not-found page.
  */
 export const routes: RouteObject[] = [
-  { path: "/login", Component: LoginPage, ErrorBoundary: RouteError },
+  { path: "/login", Component: SignIn, ErrorBoundary: RouteError },
   {
     path: "/",
     Component: RootLayout,
@@ -36,3 +37,12 @@ export const routes: RouteObject[] = [
     ],
   },
 ];
+
+/** The sign-in page, for someone signed out; anyone else goes on. */
+function SignIn() {
+  return (
+    <RequireNoSession>
+      <LoginPage />
+    </RequireNoSession>
+  );
+}

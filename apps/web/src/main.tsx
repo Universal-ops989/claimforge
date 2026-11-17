@@ -8,6 +8,7 @@ import { RouterProvider } from "react-router/dom";
 
 import { createAppApiClient } from "./api/client";
 import { Providers } from "./app/providers";
+import { createSessionStore } from "./auth/session-store";
 import { config } from "./config";
 import { routes } from "./routes";
 
@@ -23,14 +24,24 @@ if (import.meta.env.VITE_API_MOCK === "true") {
   await startMockApi(config.apiUrl);
 }
 
-const api = createAppApiClient(config);
+const session = createSessionStore(storageOrNull());
+const api = createAppApiClient(config, session);
 const queryClient = createQueryClient();
 const router = createBrowserRouter(routes);
 
 createRoot(root).render(
   <StrictMode>
-    <Providers api={api} queryClient={queryClient}>
+    <Providers api={api} queryClient={queryClient} session={session}>
       <RouterProvider router={router} />
     </Providers>
   </StrictMode>,
 );
+
+/** `localStorage`, unless the browser refuses it (some private modes throw on access). */
+function storageOrNull(): Storage | null {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
