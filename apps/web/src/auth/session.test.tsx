@@ -9,31 +9,35 @@ afterEach(() => {
   localStorage.clear();
 });
 
-const heading = () => screen.getByRole("heading", { level: 1 });
+const heading = () => screen.findByRole("heading", { level: 1 });
 
 describe("signed-in pages", () => {
   test("send a signed-out visitor to sign in, then back where they were going", async () => {
-    const { router } = await renderApp("/claims/2026-00042?tab=photos");
+    const { router } = await renderApp("/lone-star/claims/2026-00042?tab=photos");
 
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/login");
     });
-    expect(router.state.location.search).toBe("?next=%2Fclaims%2F2026-00042%3Ftab%3Dphotos");
+    expect(router.state.location.search).toBe(
+      "?next=%2Flone-star%2Fclaims%2F2026-00042%3Ftab%3Dphotos",
+    );
 
     const user = userEvent.setup();
     await user.type(screen.getByLabelText(/^Email/), "morgan@example.com");
     await user.type(screen.getByLabelText(/^Password/), "correct horse battery staple");
     await user.click(screen.getByRole("button", { name: "Sign in" }));
 
-    await waitFor(() => {
-      expect(heading()).toHaveTextContent("Claim 2026-00042");
+    await waitFor(async () => {
+      expect(await heading()).toHaveTextContent("Claim 2026-00042");
     });
     expect(router.state.location.search).toBe("?tab=photos");
   });
 
   test("send the user to sign in as soon as the session ends", async () => {
-    const { router, session } = await renderApp("/claims", { signedInAs: "morgan@example.com" });
-    expect(heading()).toHaveTextContent("Claims");
+    const { router, session } = await renderApp("/lone-star/claims", {
+      signedInAs: "morgan@example.com",
+    });
+    expect(await heading()).toHaveTextContent("Claims");
 
     act(() => {
       session.set(null); // refused refresh, another tab signing out, …
@@ -42,30 +46,32 @@ describe("signed-in pages", () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/login");
     });
-    expect(router.state.location.search).toBe("?next=%2Fclaims");
+    expect(router.state.location.search).toBe("?next=%2Flone-star%2Fclaims");
   });
 
   test("open straight away after a reload, from the stored session", async () => {
-    const first = await renderApp("/", {
+    const first = await renderApp("/lone-star", {
       signedInAs: "morgan@example.com",
       session: createSessionStore(localStorage, SESSION_KEY, null),
     });
     first.unmount();
 
-    await renderApp("/claims", { session: createSessionStore(localStorage, SESSION_KEY, null) });
+    await renderApp("/lone-star/claims", {
+      session: createSessionStore(localStorage, SESSION_KEY, null),
+    });
 
-    expect(heading()).toHaveTextContent("Claims");
+    expect(await heading()).toHaveTextContent("Claims");
   });
 });
 
 describe("the sign-in page", () => {
   test("sends someone already signed in on to where they were going", async () => {
-    const { router } = await renderApp("/login?next=%2Fsettings", {
+    const { router } = await renderApp("/login?next=%2Flone-star%2Fsettings", {
       signedInAs: "morgan@example.com",
     });
 
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/settings");
+      expect(router.state.location.pathname).toBe("/lone-star/settings");
     });
   });
 
@@ -73,14 +79,14 @@ describe("the sign-in page", () => {
     const { router } = await renderApp("/login", { signedInAs: "morgan@example.com" });
 
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/");
+      expect(router.state.location.pathname).toBe("/lone-star");
     });
   });
 });
 
 describe("signing out", () => {
   test("revokes the session, forgets the data and starts over at sign-in", async () => {
-    const { router, session, api, queryClient } = await renderApp("/claims", {
+    const { router, session, api, queryClient } = await renderApp("/lone-star/claims", {
       signedInAs: "morgan@example.com",
     });
     const held = session.get();
@@ -113,18 +119,18 @@ describe("a session that ends on its own", () => {
       refreshExpiresAt: Date.now() + 86_400_000,
     });
 
-    const { router } = await renderApp("/claims", { session });
+    const { router } = await renderApp("/lone-star/claims", { session });
 
-    expect(await screen.findByRole("status")).toHaveTextContent(ENDED);
-    expect(router.state.location.search).toBe("?next=%2Fclaims");
+    expect(await screen.findByText(ENDED)).toHaveAttribute("role", "status");
+    expect(router.state.location.search).toBe("?next=%2Flone-star%2Fclaims");
   });
 
   test("so does signing out in another tab", async () => {
-    const { session } = await renderApp("/settings", {
+    const { session } = await renderApp("/lone-star/settings", {
       signedInAs: "morgan@example.com",
       session: createSessionStore(localStorage, SESSION_KEY, window),
     });
-    expect(heading()).toHaveTextContent("Settings");
+    expect(await heading()).toHaveTextContent("Settings");
 
     act(() => {
       window.dispatchEvent(
@@ -136,7 +142,7 @@ describe("a session that ends on its own", () => {
       );
     });
 
-    expect(await screen.findByRole("status")).toHaveTextContent(ENDED);
+    expect(await screen.findByText(ENDED)).toHaveAttribute("role", "status");
     expect(session.endedBy()).toBe("ended");
   });
 });

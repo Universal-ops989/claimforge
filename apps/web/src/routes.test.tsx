@@ -13,7 +13,7 @@ const open = (path: string, routes?: RouteObject[]) =>
     ...(path.startsWith("/login") ? {} : { signedInAs: "morgan@example.com" as const }),
   });
 
-const heading = () => screen.getByRole("heading", { level: 1 });
+const heading = () => screen.findByRole("heading", { level: 1 });
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -21,48 +21,52 @@ afterEach(() => {
 
 describe("pages", () => {
   test.each([
-    ["/", "Dashboard"],
+    ["/lone-star", "Dashboard"],
     ["/login", "Sign in"],
-    ["/claims", "Claims"],
-    ["/claims/new", "New claim"],
-    ["/claims/2026-00042", "Claim 2026-00042"],
-    ["/settings", "Settings"],
+    ["/lone-star/claims", "Claims"],
+    ["/lone-star/claims/new", "New claim"],
+    ["/lone-star/claims/2026-00042", "Claim 2026-00042"],
+    ["/lone-star/settings", "Settings"],
   ])("%s shows %s, in the tab too", async (path, title) => {
     await open(path);
 
-    expect(heading()).toHaveTextContent(title);
+    expect(await heading()).toHaveTextContent(title);
     await waitFor(() => {
       expect(document.title).toBe(`${title} · ClaimForge`);
     });
   });
 
   test("signed-in pages sit in the layout; sign-in doesn't", async () => {
-    await open("/claims");
-    expect(screen.getByRole("main")).toContainElement(heading());
+    await open("/lone-star/claims");
+    const title = await heading();
+    expect(screen.getByRole("main")).toContainElement(title);
   });
 });
 
 describe("addresses that lead nowhere", () => {
-  test.each(["/nope", "/claims/2026-00042/nope", "/settings/nope"])(
-    "%s shows the not-found page",
-    async (path) => {
-      await open(path);
+  test.each([
+    "/nope",
+    "/lone-star/claims/2026-00042/nope",
+    "/lone-star/settings/nope",
+    "/elsewhere/claims",
+  ])("%s shows the not-found page", async (path) => {
+    await open(path);
 
-      expect(heading()).toHaveTextContent("Page not found");
-    },
-  );
+    expect(await heading()).toHaveTextContent("Page not found");
+  });
 
   test("the not-found page leads back to the dashboard", async () => {
     const { router } = await open("/nope");
 
+    const link = await screen.findByRole("link", { name: "Go to the dashboard" });
     act(() => {
-      fireEvent.click(screen.getByRole("link", { name: "Go to the dashboard" }));
+      fireEvent.click(link);
     });
 
-    await waitFor(() => {
-      expect(heading()).toHaveTextContent("Dashboard");
+    await waitFor(async () => {
+      expect(await heading()).toHaveTextContent("Dashboard");
     });
-    expect(router.state.location.pathname).toBe("/");
+    expect(router.state.location.pathname).toBe("/lone-star");
   });
 });
 
@@ -88,7 +92,7 @@ describe("errors", () => {
 
     await open("/", throwing(new Error("The claims list broke")));
 
-    expect(heading()).toHaveTextContent("Something went wrong");
+    expect(await heading()).toHaveTextContent("Something went wrong");
     expect(screen.getByText("The claims list broke")).toBeInTheDocument(); // dev shows why
     expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
   });
@@ -107,8 +111,8 @@ describe("errors", () => {
       },
     ]);
 
-    await waitFor(() => {
-      expect(heading()).toHaveTextContent("Page not found");
+    await waitFor(async () => {
+      expect(await heading()).toHaveTextContent("Page not found");
     });
   });
 });

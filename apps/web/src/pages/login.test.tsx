@@ -18,12 +18,12 @@ async function signIn(email: string, password: string) {
 
 describe("signing in", () => {
   test("goes where the user was headed", async () => {
-    const { router } = await renderApp("/login?next=%2Fclaims%2F2026-00042");
+    const { router } = await renderApp("/login?next=%2Flone-star%2Fclaims%2F2026-00042");
 
     await signIn("morgan@example.com", PASSWORD);
 
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/claims/2026-00042");
+      expect(router.state.location.pathname).toBe("/lone-star/claims/2026-00042");
     });
     expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent("Claim 2026-00042");
   });
@@ -34,7 +34,7 @@ describe("signing in", () => {
     await signIn("morgan@example.com", PASSWORD);
 
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/");
+      expect(router.state.location.pathname).toBe("/lone-star");
     });
   });
 
