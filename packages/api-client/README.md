@@ -289,6 +289,26 @@ const server = setupServer(
   `errors[]` as the API shapes them; the resolver isn't called.
 - A hand-built `Response` (`problem()`, `HttpResponse.json()`) is sent as it is.
 
+### Mock backend
+
+`createMockBackend()` is an in-memory API made of those handlers, for running the web app
+without the real API and for end-to-end tests:
+
+```ts
+const backend = createMockBackend({ baseUrl: "https://api.test" });
+const server = setupServer(...backend.handlers); // setupWorker(...) in a browser
+// sign in as morgan@example.com (owner) or riley@example.com (technician), MOCK_PASSWORD
+```
+
+- Sessions as the API has them: `invalid_credentials`, access tokens that expire, refresh
+  tokens that rotate with reuse detection, logout; `authentication_required` without one.
+- `/v1/me`, organizations, claims (filters, `q`, the five sorts, cursor pages, create,
+  edit, by number), the status workflow from the contract (`status_changed`,
+  `invalid_status_transition`, `reason_required`, supervisors to reopen), status history,
+  timeline, locked closed/cancelled claims, tasks, notes with mentions, and the layout.
+- Permissions follow each account's role (`rolePermissions` in the fixtures).
+- `backend.db` is plain data to seed or inspect; `backend.reset()` goes back to the seed.
+
 ## Fixtures
 
 `@claimforge/api-client/fixtures` has factories for what the API sends, for component tests,

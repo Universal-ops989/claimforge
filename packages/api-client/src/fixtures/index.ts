@@ -3,7 +3,7 @@
  *
  *     claim({ status: "inspected" })
  *     task({ title: "Set dryers", done: true })
- *     page([claimSummary(), claimSummary({ number: "CF-2026-0043" })])
+ *     page([claimSummary(), claimSummary({ number: "2026-00043" })])
  *
  * Each factory returns a contract-valid object (a test parses every one with its Zod
  * schema), and overrides replace top-level fields. Ids are fixed and the data hangs
@@ -66,7 +66,7 @@ export const ids = {
   invitation: fixtureId("invitation"),
 } as const;
 
-export const CLAIM_NUMBER = "CF-2026-0042";
+export const CLAIM_NUMBER = "2026-00042";
 
 /** The signed-in user (an owner) and a technician. */
 export const people = {
@@ -86,6 +86,35 @@ export function page<Item>(items: Item[], next: string | null = null): CursorPag
 
 // ─── Session and organizations ───────────────────────────────────────────────
 
+type Permission = Schema<"Permission">;
+const VIEWER: Permission[] = ["org:read", "members:read", "claims:read", "contacts:read"];
+const TECHNICIAN: Permission[] = [...VIEWER, "field_data:write"];
+const ADJUSTER: Permission[] = [
+  ...TECHNICIAN,
+  "claims:write",
+  "contacts:write",
+  "estimates:write",
+  "estimates:approve",
+  "reports:generate",
+];
+const ADMIN: Permission[] = [
+  ...ADJUSTER,
+  "org:update",
+  "members:manage",
+  "claims:delete",
+  "claims:reopen",
+  "audit:read",
+];
+
+/** What each role may do, as the API grants it (`auth/permissions.py`). */
+export const rolePermissions: Record<Schema<"Role">, Permission[]> = {
+  viewer: VIEWER,
+  technician: TECHNICIAN,
+  adjuster: ADJUSTER,
+  admin: ADMIN,
+  owner: [...ADMIN, "org:delete"],
+};
+
 export function me(changes: Overrides<"MeResponse"> = {}): Schema<"MeResponse"> {
   return {
     id: people.morgan.id,
@@ -95,7 +124,7 @@ export function me(changes: Overrides<"MeResponse"> = {}): Schema<"MeResponse"> 
       {
         organization: { id: ids.organization, name: "Lone Star Restoration", slug: "lone-star" },
         role: "owner",
-        permissions: ["org:read", "org:update", "members:manage"],
+        permissions: rolePermissions.owner,
       },
     ],
     ...changes,

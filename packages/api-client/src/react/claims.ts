@@ -2,7 +2,7 @@
  * Claims: lists, one claim (by id or by number), its status workflow, history, timeline
  * and assignments.
  *
- * A claim is cached twice, under its id and under its number (`CF-2026-0042`, what URLs
+ * A claim is cached twice, under its id and under its number (`2026-00042`, what URLs
  * and people use), and every change writes both. Fetching by number also fills the id
  * entry, so the mutations below, which all take the id, find the claim either way.
  */
