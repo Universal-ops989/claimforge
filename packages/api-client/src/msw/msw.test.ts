@@ -10,7 +10,7 @@ import {
   ResponseValidationError,
   type Schema,
 } from "../index";
-import { mockApi, problem } from "./index";
+import { mockApi, problem } from "./handlers";
 
 const ORG = ids.organization;
 const CLAIM = ids.claim;

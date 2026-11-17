@@ -86,7 +86,7 @@ describe("reading claims", () => {
     const server = new FakeServer().on("GET", CLAIMS, (request) =>
       json(
         new URL(request.url).searchParams.has("cursor")
-          ? { items: [summary("CF-2026-0041")], next_cursor: null, has_more: false }
+          ? { items: [summary("2026-00041")], next_cursor: null, has_more: false }
           : { items: [summary(CLAIM_NUMBER)], next_cursor: "c1", has_more: true },
       ),
     );
@@ -103,7 +103,7 @@ describe("reading claims", () => {
     await waitFor(() => {
       expect(allItems(result.current.data).map((c) => c.number)).toEqual([
         CLAIM_NUMBER,
-        "CF-2026-0041",
+        "2026-00041",
       ]);
     });
     expect(server.calls).toEqual([
