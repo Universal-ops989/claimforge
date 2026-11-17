@@ -19,6 +19,7 @@
     "@claimforge/api-client": "workspace:^",
     "@claimforge/ui": "workspace:^",
     "@tanstack/react-query": "^5",
+    "lucide-react": "^1",
     "react": "^19",
     "react-dom": "^19",
     "react-hook-form": "^7",

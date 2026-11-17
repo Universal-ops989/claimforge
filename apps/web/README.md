@@ -24,7 +24,9 @@ pnpm --filter @claimforge/web dev    # http://localhost:5173
 - `src/main.tsx`: mounts the router inside the design system's `ThemeProvider`.
 - `src/routes.tsx`: every page by address. Claims are addressed by number
   (`/claims/2026-00042`). `/login` sits outside the signed-in layout.
-- `src/app/`: what pages share: `RootLayout`, `Page` (the `<h1>` and the tab title,
+- `src/app/shell/`: the signed-in frame's parts: `Navigation` (sections, the current one
+  marked) and `UserMenu` (email, Settings, Sign out), inside the design system's `AppShell`.
+- `src/app/`: what pages share: `RootLayout` (the shell, behind `RequireSession`), `Page` (the `<h1>` and the tab title,
   "Claims · ClaimForge"), `RouteError` (not found, or something went wrong).
 - `src/pages/`: one file per page.
 - `src/api/client.ts`: the app's API client (validation `throw` in development, `report`
