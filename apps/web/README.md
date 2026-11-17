@@ -22,8 +22,12 @@ pnpm --filter @claimforge/web dev    # http://localhost:5173
 ## Layout
 
 - `src/main.tsx`: mounts the router inside the design system's `ThemeProvider`.
-- `src/routes.tsx`: every page by address. Claims are addressed by number
-  (`/claims/2026-00042`). `/login` sits outside the signed-in layout.
+- `src/routes.tsx`: every page by address. Pages sit under their organization's slug,
+  and claims go by number: `/lone-star/claims/2026-00042` (claim numbers are only unique
+  within an organization). `/` goes on to the organization used last, or the first.
+  `/login` sits outside the signed-in layout.
+- `src/app/organization.tsx`: `useOrganization()` (the organization in the address, with
+  the user's role and permissions), the chooser behind `/`, and the no-organization page.
 - `src/app/shell/`: the signed-in frame's parts: `Navigation` (sections, the current one
   marked) and `UserMenu` (email, Settings, Sign out), inside the design system's `AppShell`.
 - `src/app/`: what pages share: `RootLayout` (the shell, behind `RequireSession`), `Page` (the `<h1>` and the tab title,

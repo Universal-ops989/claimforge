@@ -14,11 +14,13 @@ import { LogOut, Settings } from "lucide-react";
 import { useNavigate } from "react-router";
 
 import { useSignOut } from "../../auth/session";
+import { inOrganization, useOrganization } from "../organization";
 
 /** Who is signed in, and the way to their settings or out. */
 export function UserMenu() {
   const me = useMe();
   const navigate = useNavigate();
+  const { slug } = useOrganization();
   const { signOut } = useSignOut();
   const name = me.data?.full_name ?? "Your account";
   return (
@@ -36,7 +38,7 @@ export function UserMenu() {
         <MenuItem
           icon={<Settings aria-hidden="true" />}
           onSelect={() => {
-            void navigate("/settings");
+            void navigate(inOrganization(slug, "settings"));
           }}
         >
           Settings
