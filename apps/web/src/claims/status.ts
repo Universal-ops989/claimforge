@@ -27,3 +27,21 @@ export const STATUS_TONE: Record<ClaimStatus, BadgeTone> = {
 
 /** The statuses of claims still being worked, in lifecycle order. */
 export const ACTIVE_STATUSES: ClaimStatus[] = ["new", "inspected", "in_progress", "on_hold"];
+
+export type LossType = Schema<"LossType">;
+
+/** Each loss type as people say it. */
+export const LOSS_TYPE_LABEL: Record<LossType, string> = {
+  water: "Water",
+  fire: "Fire",
+  smoke: "Smoke",
+  mold: "Mold",
+  wind: "Wind",
+  hail: "Hail",
+  storm: "Storm",
+  flood: "Flood",
+  sewage: "Sewage",
+  impact: "Impact",
+  vandalism: "Vandalism",
+  other: "Other",
+};

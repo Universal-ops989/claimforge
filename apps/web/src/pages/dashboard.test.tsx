@@ -121,3 +121,54 @@ describe("mentions", () => {
     ).toBeInTheDocument();
   });
 });
+
+describe("recently updated claims", () => {
+  test("newest change first, with status, place and how long ago", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-17T12:00:00Z"));
+    // The older claim changed yesterday: newest change, not newest claim, comes first.
+    const older = backend.db.claims.find((c) => c.claim.number === "2026-00041");
+    if (older) older.claim.updated_at = "2026-11-16T09:00:00Z";
+
+    await renderApp("/lone-star", { signedInAs: "morgan@example.com" });
+    const recent = await card("Recently updated claims");
+
+    const rows = await recent.findAllByRole("listitem");
+    expect(rows.map((row) => within(row).getAllByRole("link")[0]?.textContent)).toEqual([
+      "2026-00041", // changed yesterday, opened Nov 2
+      "2026-00042", // changed Nov 10, opened Nov 10
+    ]);
+    const [newest, first] = rows;
+    if (!newest || !first) throw new Error("expected two rows");
+    expect(within(newest).getByText("yesterday")).toBeInTheDocument();
+    expect(within(first).getByText("New")).toBeInTheDocument();
+    expect(
+      within(first).getByText("Water · 100 Congress Ave, Austin, TX 78701"),
+    ).toBeInTheDocument();
+    const when = within(first).getByText("7 days ago");
+    expect(when).toHaveAttribute("datetime", "2026-11-10T15:00:00Z");
+    expect(when.getAttribute("title")).toMatch(/2026/);
+    expect(within(first).getByRole("link", { name: "2026-00042" })).toHaveAttribute(
+      "href",
+      "/lone-star/claims/2026-00042",
+    );
+  });
+
+  test("leads to all claims, sorted the same way", async () => {
+    await renderApp("/lone-star", { signedInAs: "morgan@example.com" });
+
+    expect(
+      (await card("Recently updated claims")).getByRole("link", { name: "All claims" }),
+    ).toHaveAttribute("href", "/lone-star/claims?sort=-updated_at");
+  });
+
+  test("says when there are no claims yet", async () => {
+    backend.db.claims = [];
+
+    await renderApp("/lone-star", { signedInAs: "morgan@example.com" });
+
+    expect(
+      await (await card("Recently updated claims")).findByText("No claims yet"),
+    ).toBeInTheDocument();
+  });
+});

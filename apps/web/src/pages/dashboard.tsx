@@ -1,4 +1,9 @@
-import { allItems, useMyTasks, useNotesMentioningMe } from "@claimforge/api-client/react";
+import {
+  allItems,
+  useClaims,
+  useMyTasks,
+  useNotesMentioningMe,
+} from "@claimforge/api-client/react";
 import {
   Badge,
   Card,
@@ -16,10 +21,11 @@ import { Link } from "react-router";
 import { inOrganization, useOrganization } from "../app/organization";
 import { Page } from "../app/page";
 import { ErrorPanel, QueryView } from "../app/states";
-import { ACTIVE_STATUSES, STATUS_LABEL } from "../claims/status";
+import { ACTIVE_STATUSES, LOSS_TYPE_LABEL, STATUS_LABEL, STATUS_TONE } from "../claims/status";
 import { COUNT_LIMIT, useClaimCounts } from "../dashboard/claim-counts";
+import { fullTime, relativeTime } from "../format/relative-time";
 
-/** What needs me today: claims by status, my open tasks, where I'm mentioned. */
+/** What needs me today: claims by status, my open tasks, mentions, what changed lately. */
 export function DashboardPage() {
   return (
     <Page title="Dashboard">
@@ -28,6 +34,7 @@ export function DashboardPage() {
         <MyTasksCard />
         <MentionsCard />
       </Grid>
+      <RecentClaimsCard />
     </Page>
   );
 }
@@ -175,6 +182,62 @@ function MentionsCard() {
                         </Link>
                       </Inline>
                     </Stack>
+                  </li>
+                ))}
+              </Stack>
+            );
+          }}
+        </QueryView>
+      </CardBody>
+    </Card>
+  );
+}
+
+/**
+ * The claims changed most recently. The API has no organization-wide activity feed
+ * (timelines are per claim), so this is the next best thing: what moved, and when.
+ */
+function RecentClaimsCard() {
+  const organization = useOrganization();
+  const recent = useClaims(organization.id, { sort: "-updated_at", limit: 5 });
+  const claimsPath = inOrganization(organization.slug, "claims");
+  return (
+    <Card role="region" aria-label="Recently updated claims">
+      <CardHeader
+        headingLevel={2}
+        title="Recently updated claims"
+        actions={<Link to={`${claimsPath}?sort=-updated_at`}>All claims</Link>}
+      />
+      <CardBody>
+        <QueryView query={recent} loading={<SkeletonText lines={5} />}>
+          {(data) => {
+            const claims = data.pages[0]?.items ?? [];
+            if (claims.length === 0) {
+              return <EmptyState size="compact" headingLevel={3} title="No claims yet" />;
+            }
+            const now = new Date();
+            return (
+              <Stack as="ul" gap={3} style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                {claims.map((claim) => (
+                  <li key={claim.id}>
+                    <Inline justify="between" align="center" gap={3}>
+                      <Stack gap={1}>
+                        <Inline gap={2} align="center">
+                          <Link to={`${claimsPath}/${claim.number}`}>{claim.number}</Link>
+                          <Badge tone={STATUS_TONE[claim.status]} size="sm">
+                            {STATUS_LABEL[claim.status]}
+                          </Badge>
+                        </Inline>
+                        <Text size="sm" tone="muted">
+                          {LOSS_TYPE_LABEL[claim.loss_type]} · {claim.property.address.formatted}
+                        </Text>
+                      </Stack>
+                      <Text size="sm" tone="subtle">
+                        <time dateTime={claim.updated_at} title={fullTime(claim.updated_at)}>
+                          {relativeTime(claim.updated_at, now)}
+                        </time>
+                      </Text>
+                    </Inline>
                   </li>
                 ))}
               </Stack>
