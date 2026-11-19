@@ -10,6 +10,7 @@ import {
   type QueryParams,
   type RequestBody,
 } from "../index";
+import { dewPointF, grainsPerPound } from "./backend";
 import { createMockBackend, MOCK_PASSWORD } from "./index";
 
 let clock = Date.parse("2026-11-16T12:00:00Z");
@@ -695,6 +696,7 @@ describe("the layout", () => {
   });
 
   test("deleting a room or structure takes its damage with it", async () => {
+    backend.db.moisturePoints = []; // drying records would keep the room
     const api = await signedIn();
 
     await api.delete(ROOM, { path: { ...CLAIM, room_id: ids.room } });
@@ -899,6 +901,7 @@ describe("photos", () => {
   });
 
   test("a photo follows its room: renamed with it, unassigned when it goes", async () => {
+    backend.db.moisturePoints = []; // drying records would keep the room
     const api = await signedIn();
     const ROOM = "/v1/organizations/{organization_id}/claims/{claim_id}/rooms/{room_id}" as const;
     const photoNow = () => api.get(PHOTO, { path: { ...CLAIM, photo_id: ids.photo } });
@@ -941,5 +944,183 @@ describe("photos", () => {
     await api.delete(PHOTO, { path: { ...CLAIM, photo_id: ids.photo } });
 
     expect((await api.get(PHOTOS, { path: CLAIM })).items).toEqual([]);
+  });
+});
+
+describe("the air", () => {
+  // The API's own worked figures (apps/api/tests/moisture/test_atmosphere.py).
+  test.each([
+    [68, 50, 50.8, 48.7],
+    [86, 50, 93.2, 65.2],
+    [70, 100, 110.3, 70],
+  ])("%d °F at %d%% holds %d grains per pound, dew point %d °F", (t, rh, grains, dew) => {
+    expect(grainsPerPound(t, rh)).toBe(grains);
+    expect(dewPointF(t, rh)).toBe(dew);
+  });
+
+  test("bone-dry air has no dew point", () => {
+    expect(grainsPerPound(75, 0)).toBe(0);
+    expect(dewPointF(75, 0)).toBeNull();
+  });
+});
+
+describe("moisture", () => {
+  const POINTS = "/v1/organizations/{organization_id}/claims/{claim_id}/moisture-points" as const;
+  const POINT = `${POINTS}/{point_id}` as const;
+  const LOGS = "/v1/organizations/{organization_id}/claims/{claim_id}/moisture-logs" as const;
+  const LOG = `${LOGS}/{log_id}` as const;
+  const STATUS = "/v1/organizations/{organization_id}/claims/{claim_id}/drying-status" as const;
+  const DRYING_LOG = "/v1/organizations/{organization_id}/claims/{claim_id}/drying-log" as const;
+  const at = (iso: string) => {
+    clock = Date.parse(iso);
+    return iso;
+  };
+  const map = (api: ApiClient, body: Partial<RequestBody<typeof POINTS, "post">> = {}) =>
+    api.post(POINTS, {
+      path: CLAIM,
+      body: { room_id: ids.room, material: "drywall", surface: "wall", scale: "percent", ...body },
+    });
+  const read = (api: ApiClient, values: [string, number][], taken_at?: string) =>
+    api.post(LOGS, {
+      path: CLAIM,
+      body: { readings: values.map(([point_id, value]) => ({ point_id, value })), taken_at },
+    });
+  const status = (api: ApiClient) => api.get(STATUS, { path: CLAIM });
+
+  test("points are numbered on, labels unique, listed as people number them", async () => {
+    const api = await signedIn("riley@example.com");
+
+    const two = await map(api);
+    await map(api, { label: "10" });
+    const eleven = await map(api);
+    const taken = await refusal(map(api, { label: "2" }));
+    const elsewhere = await refusal(map(api, { room_id: fixtureId("room", 9) }));
+    const listed = await api.get(POINTS, { path: CLAIM });
+
+    expect([two.label, eleven.label]).toEqual(["2", "11"]);
+    expect([taken.code, elsewhere.code]).toEqual(["label_taken", "unknown_room"]);
+    expect(listed.map((p) => p.label)).toEqual(["1", "2", "10", "11"]);
+    expect(listed[0]?.room).toEqual({ id: ids.room, name: "Kitchen" });
+  });
+
+  test("a visit's readings carry labels, and its air is worked out", async () => {
+    const api = await signedIn();
+    at("2026-11-17T12:00:00Z");
+
+    const visit = await api.post(LOGS, {
+      path: CLAIM,
+      body: {
+        readings: [{ point_id: ids.point, value: 15.04 }],
+        atmosphere: [{ location: "outdoors", temperature_f: 68, relative_humidity: 50 }],
+      },
+    });
+
+    expect(visit.readings).toEqual([{ point_id: ids.point, label: "1", value: 15 }]);
+    expect(visit.atmosphere[0]).toMatchObject({ grains_per_pound: 50.8, dew_point_f: 48.7 });
+    expect(visit.taken_at).toBe("2026-11-17T12:00:00.000Z");
+    const newest = await api.get(LOGS, { path: CLAIM });
+    expect(newest.items[0]?.id).toBe(visit.id);
+  });
+
+  test("a visit needs readings or air, of points on the claim, not from the future", async () => {
+    const api = await signedIn();
+
+    const empty = await refusal(api.post(LOGS, { path: CLAIM, body: {} }));
+    const stranger = await refusal(read(api, [[fixtureId("point", 9), 10]]));
+    const ahead = await refusal(read(api, [[ids.point, 10]], "2026-11-16T13:00:00Z"));
+
+    expect([empty.code, stranger.code, ahead.code]).toEqual([
+      "no_readings",
+      "unknown_moisture_point",
+      "taken_in_future",
+    ]);
+  });
+
+  test("a correction sets or removes a point's value, keeping something read", async () => {
+    const api = await signedIn();
+    const visit = await read(api, [[ids.point, 16]], at("2026-11-17T12:00:00Z"));
+    const path = { ...CLAIM, log_id: visit.id };
+
+    const corrected = await api.patch(LOG, {
+      path,
+      body: { readings: [{ point_id: ids.point, value: 14 }] },
+    });
+    const emptied = await refusal(
+      api.patch(LOG, { path, body: { readings: [{ point_id: ids.point, value: null }] } }),
+    );
+
+    expect(corrected.readings[0]?.value).toBe(14);
+    expect(corrected.readings_edited_at).not.toBeNull();
+    expect(emptied.code).toBe("no_readings");
+  });
+
+  test("the drying log has points by room down the side and visits across, oldest first", async () => {
+    const api = await signedIn();
+
+    const log = await api.get(DRYING_LOG, { path: CLAIM });
+
+    expect(log.visits.map((v) => v.taken_at)).toEqual([
+      "2026-11-14T15:00:00Z",
+      "2026-11-15T15:00:00Z",
+      "2026-11-16T15:00:00Z",
+    ]);
+    expect(log.rooms).toEqual([
+      expect.objectContaining({
+        name: "Kitchen",
+        points: [expect.objectContaining({ label: "1", status: "drying", values: [28, 22, 18] })],
+      }),
+    ]);
+    expect(log.atmosphere[0]).toMatchObject({ location: "room", room: { name: "Kitchen" } });
+    expect(log.atmosphere[0]?.values).toHaveLength(3);
+  });
+
+  test("status counts points as dry, drying, without a goal or not read", async () => {
+    const api = await signedIn();
+    const goalless = await map(api, { dry_standard: null });
+    await map(api);
+    at("2026-11-17T12:00:00Z");
+
+    await read(api, [
+      [ids.point, 12],
+      [goalless.id, 30],
+    ]);
+    const now = await status(api);
+
+    expect(now.summary).toMatchObject({ points: 3, dry: 1, drying: 0, no_goal: 1, not_read: 1 });
+    expect(now.alerts.map((a) => a.kind)).toEqual(["no_goal"]);
+  });
+
+  test("a point that stops improving, and a day without a visit, are flagged", async () => {
+    const api = await signedIn();
+    at("2026-11-17T12:00:00Z");
+    await read(api, [[ids.point, 18]]);
+    at("2026-11-18T12:00:00Z");
+    await read(api, [[ids.point, 19]]);
+    at("2026-11-19T18:00:00Z");
+
+    const now = await status(api);
+
+    expect(now.alerts.map((a) => [a.kind, a.point?.label ?? null])).toEqual([
+      ["monitoring_gap", null],
+      ["stalled", "1"],
+    ]);
+    expect(now.alerts[0]?.details).toEqual({ hours: 30, drying_points: 1 });
+  });
+
+  test("a deleted point takes its readings, not the visits' air; a room with points can't go", async () => {
+    const api = await signedIn();
+
+    const kept = await refusal(
+      api.delete("/v1/organizations/{organization_id}/claims/{claim_id}/rooms/{room_id}", {
+        path: { ...CLAIM, room_id: ids.room },
+      }),
+    );
+    await api.delete(POINT, { path: { ...CLAIM, point_id: ids.point } });
+
+    expect(kept.code).toBe("has_moisture_points");
+    // The visits stay for their air readings.
+    const visits = (await api.get(LOGS, { path: CLAIM })).items;
+    expect(visits).toHaveLength(3);
+    expect(visits.flatMap((v) => v.readings)).toEqual([]);
   });
 });

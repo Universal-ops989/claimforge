@@ -77,6 +77,7 @@ describe("structures", () => {
   });
 
   test("deleting one says its rooms and damage go with it", async () => {
+    backend.db.moisturePoints = []; // drying records would keep the room
     const user = userEvent.setup();
     await open();
     await house();
@@ -164,6 +165,7 @@ describe("rooms", () => {
   });
 
   test("a deleted room goes, with its damage", async () => {
+    backend.db.moisturePoints = []; // drying records would keep the room
     const user = userEvent.setup();
     await open();
     await house();

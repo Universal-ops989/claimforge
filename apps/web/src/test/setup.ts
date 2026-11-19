@@ -1,8 +1,12 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll } from "vitest";
 
 import { backend, server } from "./render";
+
+// Pages load their code on first visit (lazy routes), then their data: with every package's
+// tests running at once, that can take more than the default second to appear.
+configure({ asyncUtilTimeout: 3000 });
 
 // jsdom lacks these; the design system's Radix primitives call them.
 if (!("hasPointerCapture" in Element.prototype)) {
