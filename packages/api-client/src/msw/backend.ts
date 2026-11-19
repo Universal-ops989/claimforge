@@ -7,7 +7,7 @@
  * It covers what the web app's first screens need: sessions, `/v1/me`, organizations,
  * claims (lists, filters, pages, create, edit, the status workflow, assignments, contacts,
  * history, timeline), the address book, the layout and damage, photos (with a pretend file
- * store behind their upload links),
+ * store behind their upload links), moisture mapping and drying,
  * tasks, notes, and the layout to read. It behaves like the API where tests can tell:
  * the same status codes and error codes, refresh tokens that rotate with reuse detection,
  * the workflow the contract publishes (`workflows`), permissions by role, locked claims.
@@ -58,6 +58,21 @@ export interface MockDb {
   }[];
   /** The pretend file store behind upload links: what was sent, by key. */
   files: Record<string, Blob>;
+  /** Moisture points; a point's `room` is read from the layout. */
+  moisturePoints: { claimId: string; point: Schema<"MoisturePointRead">; roomId: string }[];
+  /** Monitoring visits: the readings and air as entered; labels and air figures are worked out. */
+  moistureLogs: {
+    claimId: string;
+    id: string;
+    taken_at: string;
+    taken_by: Person | null;
+    notes: string | null;
+    readings: { point_id: string; value: number }[];
+    atmosphere: Schema<"AtmosphereIn">[];
+    readings_edited_at: string | null;
+    created_at: string;
+    updated_at: string;
+  }[];
   /** Damage recorded in the claims' rooms; it goes with its room. */
   damage: { claimId: string; item: Schema<"DamageItemRead"> }[];
   tasks: Schema<"TaskRead">[];
@@ -118,6 +133,30 @@ export function seedDb(): MockDb {
     structures: [{ claimId: fx.ids.claim, structure: fx.structure() }],
     damage: [{ claimId: fx.ids.claim, item: fx.damageItem() }],
     photos: [{ claimId: fx.ids.claim, photo: fx.photo(), roomId: fx.ids.room }],
+    moisturePoints: [{ claimId: fx.ids.claim, point: fx.moisturePoint(), roomId: fx.ids.room }],
+    moistureLogs: [
+      ["2026-11-14T15:00:00Z", 28, 2],
+      ["2026-11-15T15:00:00Z", 22, 3],
+      ["2026-11-16T15:00:00Z", 18, 1],
+    ].map(([taken_at, value, n]) => ({
+      claimId: fx.ids.claim,
+      id: fx.fixtureId("log", n as number),
+      taken_at: taken_at as string,
+      taken_by: fx.people.riley,
+      notes: null,
+      readings: [{ point_id: fx.ids.point, value: value as number }],
+      atmosphere: [
+        {
+          location: "room" as const,
+          room_id: fx.ids.room,
+          temperature_f: 72,
+          relative_humidity: 55,
+        },
+      ],
+      readings_edited_at: null,
+      created_at: taken_at as string,
+      updated_at: taken_at as string,
+    })),
     photoUploads: [],
     files: {},
     tasks: [fx.task()],
@@ -199,6 +238,64 @@ function waterCategory(
 
 /** A search needs this many digits before it looks at phone numbers, as the API's does. */
 const MIN_PHONE_DIGITS = 3;
+/** Readings in a row without improving before a point counts as stalled. */
+const STALL_READINGS = 3;
+/** Longer than this between visits, with points still drying, is a gap in monitoring. */
+const MONITORING_INTERVAL_MS = 24 * 3_600_000;
+/** How far ahead of the server's clock a visit may say it was taken. */
+const CLOCK_SKEW_MS = 10 * 60_000;
+
+const tenth = (n: number) => Math.round(n * 10) / 10;
+
+/** Grains of water per pound of dry air, at sea level: the API's psychrometrics. */
+export function grainsPerPound(temperatureF: number, relativeHumidity: number): number {
+  const t = ((temperatureF - 32) * 5) / 9 + 273.15;
+  const saturationPa = Math.exp(
+    -5.8002206e3 / t +
+      1.3914993 -
+      4.8640239e-2 * t +
+      4.1764768e-5 * t ** 2 -
+      1.4452093e-8 * t ** 3 +
+      6.5459673 * Math.log(t),
+  );
+  const vapourHpa = (relativeHumidity / 100) * (saturationPa / 100);
+  return tenth(((0.621945 * vapourHpa) / (1013.25 - vapourHpa)) * 7000);
+}
+
+/** The dew point in °F (Magnus), or `null` for bone-dry air. */
+export function dewPointF(temperatureF: number, relativeHumidity: number): number | null {
+  if (relativeHumidity <= 0) return null;
+  const celsius = ((temperatureF - 32) * 5) / 9;
+  const gamma = Math.log(relativeHumidity / 100) + (17.625 * celsius) / (243.04 + celsius);
+  return tenth((((243.04 * gamma) / (17.625 - gamma)) * 9) / 5 + 32);
+}
+
+/** Labels as people number them: "2" before "10", then the rest alphabetically. */
+function byLabel(a: string, b: string): number {
+  const [x, y] = [Number(a), Number(b)];
+  const numeric = /^\d+$/.test(a) && /^\d+$/.test(b);
+  return numeric ? x - y : a.localeCompare(b, undefined, { numeric: true });
+}
+
+type DryingState = Schema<"DryingStatus">;
+
+/** A point's progress from its readings, oldest first: the API's rule. */
+function progress(
+  readings: { at: string; value: number }[],
+  goal: number | null,
+): { status: DryingState; driedAt: string | null } {
+  const latest = readings.at(-1);
+  if (!latest) return { status: "not_read", driedAt: null };
+  if (goal === null) return { status: "no_goal", driedAt: null };
+  if (latest.value > goal) return { status: "drying", driedAt: null };
+  let driedAt = latest.at;
+  for (const reading of [...readings].reverse()) {
+    if (reading.value > goal) break;
+    driedAt = reading.at;
+  }
+  return { status: "dry", driedAt };
+}
+
 /** The largest photo the API takes (its `photo_max_bytes`). */
 const PHOTO_MAX_BYTES = 25 * 1024 * 1024;
 /** How long an upload link works. */
@@ -390,6 +487,17 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
   function locked(claim: Claim): Response | null {
     return FINAL.includes(claim.status)
       ? problem(409, "claim_locked", { detail: `The claim is ${claim.status}` })
+      : null;
+  }
+
+  /** `has_moisture_points` if any of `roomIds` has points mapped: drying records stay. */
+  function hasPoints(roomIds: string[]): Response | null {
+    const count = db().moisturePoints.filter((p) => roomIds.includes(p.roomId)).length;
+    return count > 0
+      ? problem(409, "has_moisture_points", {
+          detail: `${String(count)} moisture point(s) are mapped here; drying records stay with their room`,
+          points: count,
+        })
       : null;
   }
 
@@ -592,6 +700,97 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
   const ORG = "/v1/organizations/{organization_id}" as const;
   const CLAIMS = `${ORG}/claims` as const;
   const CLAIM = `${CLAIMS}/{claim_id}` as const;
+
+  /** A stored point as the API answers it: its room as the layout has it now. */
+  function pointNow(entry: { point: Schema<"MoisturePointRead">; roomId: string }) {
+    const room = db()
+      .structures.flatMap((s) => s.structure.rooms)
+      .find((r) => r.id === entry.roomId);
+    return { ...entry.point, room: { id: entry.roomId, name: room?.name ?? "" } };
+  }
+
+  /** A claim's points: room by room, in the order rooms were added, then by label. */
+  function pointsOf(claimId: string) {
+    const rooms = layoutOf(claimId).flatMap((s) => s.rooms.map((r) => r.id));
+    return db()
+      .moisturePoints.filter((p) => p.claimId === claimId)
+      .sort(
+        (a, b) =>
+          rooms.indexOf(a.roomId) - rooms.indexOf(b.roomId) ||
+          byLabel(a.point.label, b.point.label),
+      );
+  }
+
+  /** A claim's visits, oldest first. */
+  function visitsOf(claimId: string) {
+    return db()
+      .moistureLogs.filter((l) => l.claimId === claimId)
+      .sort((a, b) => a.taken_at.localeCompare(b.taken_at) || a.id.localeCompare(b.id));
+  }
+
+  function roomRef(roomId: string | null | undefined) {
+    if (!roomId) return null;
+    const room = db()
+      .structures.flatMap((s) => s.structure.rooms)
+      .find((r) => r.id === roomId);
+    return room ? { id: room.id, name: room.name } : null;
+  }
+
+  /** A stored visit as the API answers it: labels on readings, air worked out. */
+  function logNow(log: MockDb["moistureLogs"][number]): Schema<"MoistureLogRead"> {
+    const labels = new Map(db().moisturePoints.map((p) => [p.point.id, p.point.label]));
+    return {
+      id: log.id,
+      taken_at: log.taken_at,
+      taken_by: log.taken_by,
+      notes: log.notes,
+      readings: log.readings.map((r) => ({ ...r, label: labels.get(r.point_id) ?? "" })),
+      atmosphere: log.atmosphere.map((air) => ({
+        location: air.location,
+        room: roomRef(air.room_id),
+        dehumidifier: null,
+        temperature_f: air.temperature_f,
+        relative_humidity: air.relative_humidity,
+        grains_per_pound: grainsPerPound(air.temperature_f, air.relative_humidity),
+        dew_point_f: dewPointF(air.temperature_f, air.relative_humidity),
+      })),
+      readings_edited_at: log.readings_edited_at,
+      created_at: log.created_at,
+      updated_at: log.updated_at,
+    };
+  }
+
+  /**
+   * Readings and air for a visit, checked as the API checks them: points of this claim
+   * (`unknown_moisture_point`), rooms of this claim, and no dehumidifiers (the mock has no
+   * equipment). `null` when they're fine.
+   */
+  function visitProblem(
+    claimId: string,
+    readings: { point_id: string }[],
+    atmosphere: Schema<"AtmosphereIn">[],
+  ): Response | null {
+    const known = new Set(
+      db()
+        .moisturePoints.filter((p) => p.claimId === claimId)
+        .map((p) => p.point.id),
+    );
+    const unknown = readings.filter((r) => !known.has(r.point_id)).map((r) => r.point_id);
+    if (unknown.length > 0) {
+      return problem(422, "unknown_moisture_point", {
+        detail: "Readings are for moisture points mapped on this claim",
+        point_ids: unknown,
+      });
+    }
+    const badRoom = atmosphere.find((air) => air.room_id && !claimRoom(claimId, air.room_id));
+    if (badRoom?.room_id) return unknownRoom(badRoom.room_id);
+    if (atmosphere.some((air) => air.placement_id)) {
+      return problem(422, "unknown_dehumidifier", {
+        detail: "No dehumidifier is placed on this claim",
+      });
+    }
+    return null;
+  }
 
   /** A stored photo as the API answers it: its room as the layout has it now. */
   function photoNow(entry: { photo: Schema<"PhotoRead">; roomId: string | null }) {
@@ -1021,6 +1220,8 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
       );
       if (!entry) return problem(404, "not_found");
       const rooms = new Set(entry.structure.rooms.map((r) => r.id));
+      const mapped = hasPoints([...rooms]);
+      if (mapped) return mapped;
       backend.db.structures = db().structures.filter((s) => s !== entry);
       backend.db.damage = db().damage.filter((d) => !rooms.has(d.item.room_id));
       record(
@@ -1124,6 +1325,9 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
       );
       const room = home?.structure.rooms.find((r) => r.id === params.room_id);
       if (!home || !room) return problem(404, "not_found");
+      // Drying records stay with their room.
+      const mapped = hasPoints([room.id]);
+      if (mapped) return mapped;
       home.structure = { ...home.structure, rooms: home.structure.rooms.filter((r) => r !== room) };
       backend.db.damage = db().damage.filter((d) => d.item.room_id !== room.id);
       record(
@@ -1415,6 +1619,382 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
         .sort(([a, x], [b, y]) => y - x || a.localeCompare(b))
         .slice(0, limit)
         .map(([tag, photos]) => ({ tag, photos }));
+    }),
+
+    // ─── Moisture ────────────────────────────────────────────────────────────
+    api.get(`${CLAIM}/moisture-points`, ({ request, params, query }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
+      const roomId = query.get("room_id");
+      return pointsOf(claim.id)
+        .filter((p) => !roomId || p.roomId === roomId)
+        .map(pointNow);
+    }),
+    api.get(`${CLAIM}/moisture-points/{point_id}`, ({ request, params }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const entry = db().moisturePoints.find(
+        (p) => p.claimId === params.claim_id && p.point.id === params.point_id,
+      );
+      return entry ? pointNow(entry) : problem(404, "not_found");
+    }),
+    api.post(`${CLAIM}/moisture-points`, ({ request, params, body }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      if (!claimRoom(ready.claim.id, body.room_id)) return unknownRoom(body.room_id);
+      const labels = db()
+        .moisturePoints.filter((p) => p.claimId === ready.claim.id)
+        .map((p) => p.point.label);
+      const label =
+        body.label?.trim() ??
+        String(Math.max(0, ...labels.filter((l) => /^\d+$/.test(l)).map(Number)) + 1);
+      if (labels.includes(label)) {
+        return problem(409, "label_taken", {
+          detail: `Point ${label} is already mapped on this claim`,
+        });
+      }
+      const entry = {
+        claimId: ready.claim.id,
+        roomId: body.room_id,
+        point: {
+          id: newId(),
+          label,
+          room: { id: body.room_id, name: "" },
+          surface: body.surface,
+          material: body.material.trim(),
+          scale: body.scale,
+          dry_standard: body.dry_standard ?? null,
+          dry_standard_basis:
+            body.dry_standard === null || body.dry_standard === undefined
+              ? null
+              : (body.dry_standard_basis ?? "manual"),
+          notes: textOrNull(body.notes),
+          created_at: iso(),
+          updated_at: iso(),
+        },
+      };
+      db().moisturePoints.push(entry);
+      record(
+        ready.claim.id,
+        ready.seen.person,
+        "moisture",
+        "point_mapped",
+        `Mapped moisture point ${label}`,
+      );
+      return pointNow(entry);
+    }),
+    api.patch(`${CLAIM}/moisture-points/{point_id}`, ({ request, params, body }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const entry = db().moisturePoints.find(
+        (p) => p.claimId === ready.claim.id && p.point.id === params.point_id,
+      );
+      if (!entry) return problem(404, "not_found");
+      if (body.room_id) {
+        if (!claimRoom(ready.claim.id, body.room_id)) return unknownRoom(body.room_id);
+        entry.roomId = body.room_id;
+      }
+      if (body.label != null) {
+        const label = body.label.trim();
+        const taken = db().moisturePoints.some(
+          (p) => p.claimId === ready.claim.id && p !== entry && p.point.label === label,
+        );
+        if (taken)
+          return problem(409, "label_taken", {
+            detail: `Point ${label} is already mapped on this claim`,
+          });
+        entry.point.label = label;
+      }
+      if (body.material != null) entry.point.material = body.material.trim();
+      if (body.surface != null) entry.point.surface = body.surface;
+      if ("notes" in body) entry.point.notes = textOrNull(body.notes);
+      if ("dry_standard" in body) {
+        entry.point.dry_standard = body.dry_standard ?? null;
+        entry.point.dry_standard_basis =
+          entry.point.dry_standard === null ? null : (body.dry_standard_basis ?? "manual");
+      } else if (body.dry_standard_basis != null && entry.point.dry_standard !== null) {
+        entry.point.dry_standard_basis = body.dry_standard_basis;
+      }
+      entry.point.updated_at = iso();
+      return pointNow(entry);
+    }),
+    api.delete(`${CLAIM}/moisture-points/{point_id}`, ({ request, params }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const entry = db().moisturePoints.find(
+        (p) => p.claimId === ready.claim.id && p.point.id === params.point_id,
+      );
+      if (!entry) return problem(404, "not_found");
+      backend.db.moisturePoints = db().moisturePoints.filter((p) => p !== entry);
+      // Its readings go with it; a visit left with nothing goes too.
+      backend.db.moistureLogs = db()
+        .moistureLogs.map((log) => ({
+          ...log,
+          readings: log.readings.filter((r) => r.point_id !== entry.point.id),
+        }))
+        .filter((log) => log.readings.length > 0 || log.atmosphere.length > 0);
+      record(
+        ready.claim.id,
+        ready.seen.person,
+        "moisture",
+        "point_deleted",
+        `Deleted moisture point ${entry.point.label}`,
+      );
+      return undefined;
+    }),
+    api.get(`${CLAIM}/moisture-logs`, ({ request, params, query }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
+      return paginate(visitsOf(claim.id).reverse().map(logNow), query);
+    }),
+    api.get(`${CLAIM}/moisture-logs/{log_id}`, ({ request, params }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const log = db().moistureLogs.find(
+        (l) => l.claimId === params.claim_id && l.id === params.log_id,
+      );
+      return log ? logNow(log) : problem(404, "not_found");
+    }),
+    api.post(`${CLAIM}/moisture-logs`, ({ request, params, body }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const readings = body.readings ?? [];
+      const atmosphere = body.atmosphere ?? [];
+      if (readings.length === 0 && atmosphere.length === 0) {
+        return problem(422, "no_readings", { detail: "A visit needs a reading or the air" });
+      }
+      const takenAt = body.taken_at ?? iso();
+      if (Date.parse(takenAt) > now() + CLOCK_SKEW_MS) {
+        return problem(422, "taken_in_future", { detail: "Readings can't be from the future" });
+      }
+      const refused = visitProblem(ready.claim.id, readings, atmosphere);
+      if (refused) return refused;
+      const log: MockDb["moistureLogs"][number] = {
+        claimId: ready.claim.id,
+        id: newId(),
+        taken_at: new Date(takenAt).toISOString(),
+        taken_by: ready.seen.person,
+        notes: textOrNull(body.notes),
+        readings: readings.map((r) => ({ point_id: r.point_id, value: tenth(r.value) })),
+        atmosphere,
+        readings_edited_at: null,
+        created_at: iso(),
+        updated_at: iso(),
+      };
+      db().moistureLogs.push(log);
+      record(
+        ready.claim.id,
+        ready.seen.person,
+        "moisture",
+        "readings_logged",
+        `Logged ${String(readings.length)} moisture ${readings.length === 1 ? "reading" : "readings"}`,
+      );
+      return logNow(log);
+    }),
+    api.patch(`${CLAIM}/moisture-logs/{log_id}`, ({ request, params, body }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const log = db().moistureLogs.find(
+        (l) => l.claimId === ready.claim.id && l.id === params.log_id,
+      );
+      if (!log) return problem(404, "not_found");
+      const changes = body.readings ?? [];
+      const refused = visitProblem(ready.claim.id, changes, body.atmosphere ?? []);
+      if (refused) return refused;
+      let readings = log.readings;
+      for (const change of changes) {
+        readings = readings.filter((r) => r.point_id !== change.point_id);
+        if (change.value !== null)
+          readings.push({ point_id: change.point_id, value: tenth(change.value) });
+      }
+      const atmosphere = body.atmosphere ?? log.atmosphere;
+      if (readings.length === 0 && atmosphere.length === 0) {
+        return problem(422, "no_readings", {
+          detail: "A visit keeps a reading or the air; delete it instead",
+        });
+      }
+      if (body.taken_at) {
+        if (Date.parse(body.taken_at) > now() + CLOCK_SKEW_MS) {
+          return problem(422, "taken_in_future", { detail: "Readings can't be from the future" });
+        }
+        log.taken_at = new Date(body.taken_at).toISOString();
+      }
+      if ("notes" in body) log.notes = textOrNull(body.notes);
+      if (changes.length > 0) log.readings_edited_at = iso();
+      log.readings = readings;
+      log.atmosphere = atmosphere;
+      log.updated_at = iso();
+      return logNow(log);
+    }),
+    api.delete(`${CLAIM}/moisture-logs/{log_id}`, ({ request, params }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const log = db().moistureLogs.find(
+        (l) => l.claimId === ready.claim.id && l.id === params.log_id,
+      );
+      if (!log) return problem(404, "not_found");
+      backend.db.moistureLogs = db().moistureLogs.filter((l) => l !== log);
+      return undefined;
+    }),
+    api.get(`${CLAIM}/drying-log`, ({ request, params, query }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
+      const roomId = query.get("room_id");
+      const visits = visitsOf(claim.id);
+      const points = pointsOf(claim.id).filter((p) => !roomId || p.roomId === roomId);
+      const rooms: Schema<"DryingLogRoom">[] = [];
+      for (const entry of points) {
+        const series = visits.map(
+          (v) => v.readings.find((r) => r.point_id === entry.point.id)?.value ?? null,
+        );
+        const read = visits.flatMap((v, i) =>
+          series[i] === null || series[i] === undefined
+            ? []
+            : [{ at: v.taken_at, value: series[i] }],
+        );
+        const state = progress(read, entry.point.dry_standard);
+        const point: Schema<"DryingLogPoint"> = {
+          id: entry.point.id,
+          label: entry.point.label,
+          material: entry.point.material,
+          surface: entry.point.surface,
+          scale: entry.point.scale,
+          dry_standard: entry.point.dry_standard,
+          dry_standard_basis: entry.point.dry_standard_basis,
+          status: state.status,
+          dried_at: state.driedAt,
+          values: series,
+        };
+        const room = rooms.find((r) => r.id === entry.roomId);
+        if (room) room.points.push(point);
+        else
+          rooms.push({
+            id: entry.roomId,
+            name: roomRef(entry.roomId)?.name ?? "",
+            points: [point],
+          });
+      }
+      // The air: one row per place it was read, in the order first read.
+      const places: { location: Schema<"AtmosphereLocation">; roomId: string | null }[] = [];
+      for (const visit of visits) {
+        for (const air of visit.atmosphere) {
+          const roomOf = air.room_id ?? null;
+          if (
+            roomId &&
+            air.location !== "outdoors" &&
+            air.location !== "unaffected" &&
+            roomOf !== roomId
+          )
+            continue;
+          if (!places.some((p) => p.location === air.location && p.roomId === roomOf)) {
+            places.push({ location: air.location, roomId: roomOf });
+          }
+        }
+      }
+      const atmosphere = places.map((place) => ({
+        location: place.location,
+        room: roomRef(place.roomId),
+        dehumidifier: null,
+        values: visits.map((visit) => {
+          const air = visit.atmosphere.find(
+            (a) => a.location === place.location && (a.room_id ?? null) === place.roomId,
+          );
+          return air
+            ? {
+                temperature_f: air.temperature_f,
+                relative_humidity: air.relative_humidity,
+                grains_per_pound: grainsPerPound(air.temperature_f, air.relative_humidity),
+                dew_point_f: dewPointF(air.temperature_f, air.relative_humidity),
+                grain_depression: null,
+              }
+            : null;
+        }),
+      }));
+      return {
+        visits: visits.map((v) => ({ id: v.id, taken_at: v.taken_at, taken_by: v.taken_by })),
+        rooms,
+        atmosphere,
+      };
+    }),
+    api.get(`${CLAIM}/drying-status`, ({ request, params }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
+      const visits = visitsOf(claim.id);
+      const states = pointsOf(claim.id).map((entry) => {
+        const read = visits.flatMap((v) => {
+          const value = v.readings.find((r) => r.point_id === entry.point.id)?.value;
+          return value === undefined ? [] : [{ at: v.taken_at, value }];
+        });
+        return { entry, read, ...progress(read, entry.point.dry_standard) };
+      });
+      const count = (status: DryingState) => states.filter((s) => s.status === status).length;
+      const lastVisit = visits.at(-1)?.taken_at ?? null;
+      const alerts: Schema<"DryingAlert">[] = [];
+      const drying = states.filter((s) => s.status === "drying");
+      if (
+        drying.length > 0 &&
+        lastVisit &&
+        now() - Date.parse(lastVisit) > MONITORING_INTERVAL_MS
+      ) {
+        const hours = Math.floor((now() - Date.parse(lastVisit)) / 3_600_000);
+        alerts.push({
+          kind: "monitoring_gap",
+          message: `${String(drying.length)} point(s) still drying, last read ${String(hours)} hours ago`,
+          point: null,
+          room: null,
+          equipment: null,
+          since: lastVisit,
+          details: { hours, drying_points: drying.length },
+        });
+      }
+      for (const state of states) {
+        const { point } = state.entry;
+        const where = {
+          point: { id: point.id, label: point.label },
+          room: roomRef(state.entry.roomId),
+          equipment: null,
+        };
+        if (state.status === "no_goal") {
+          alerts.push({
+            kind: "no_goal",
+            message: `Point ${point.label} is being read but has no dry standard`,
+            ...where,
+            since: null,
+            details: {},
+          });
+        } else if (state.status === "drying" && state.read.length >= STALL_READINGS) {
+          const recent = state.read.slice(-STALL_READINGS);
+          if (recent.every((r, i) => i === 0 || r.value >= (recent[i - 1]?.value ?? r.value))) {
+            alerts.push({
+              kind: "stalled",
+              message: `Point ${point.label} hasn't improved over its last ${String(STALL_READINGS)} readings`,
+              ...where,
+              since: recent[0]?.at ?? null,
+              details: {},
+            });
+          }
+        }
+      }
+      return {
+        summary: {
+          points: states.length,
+          dry: count("dry"),
+          drying: count("drying"),
+          no_goal: count("no_goal"),
+          not_read: count("not_read"),
+          all_dry: states.length > 0 && count("dry") === states.length,
+          last_visit_at: lastVisit,
+        },
+        alerts,
+      };
     }),
 
     // ─── Tasks ───────────────────────────────────────────────────────────────
