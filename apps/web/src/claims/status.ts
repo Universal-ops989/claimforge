@@ -25,6 +25,9 @@ export const STATUS_TONE: Record<ClaimStatus, BadgeTone> = {
   cancelled: "neutral",
 };
 
+/** Statuses whose claims are read-only: the API refuses changes with `claim_locked`. */
+export const READ_ONLY_STATUSES: ClaimStatus[] = ["closed", "cancelled"];
+
 /** The statuses of claims still being worked, in lifecycle order. */
 export const ACTIVE_STATUSES: ClaimStatus[] = ["new", "inspected", "in_progress", "on_hold"];
 

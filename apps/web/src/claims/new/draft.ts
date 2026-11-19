@@ -1,4 +1,4 @@
-import type { RequestBody } from "@claimforge/api-client";
+import { isApiError, type RequestBody, type Schema } from "@claimforge/api-client";
 import type { FieldErrors, Resolver } from "react-hook-form";
 
 import type { LossType } from "../status";
@@ -115,18 +115,29 @@ export function localToday(now: Date = new Date()): string {
 }
 
 /** react-hook-form's resolver for the draft: `draftProblems`, in its error shape. */
-export const draftResolver: Resolver<ClaimDraft> = (values) => {
+export const draftResolver: Resolver<ClaimDraft> = (values) => resolve(values, () => true);
+
+/**
+ * The resolver for editing only the loss (`LossStep` on an existing claim): the draft's
+ * checks of the loss fields. The property isn't on that form, so it isn't checked.
+ */
+export const lossResolver: Resolver<ClaimDraft> = (values) =>
+  resolve(values, (field) => field.startsWith("loss."));
+
+function resolve(values: ClaimDraft, checks: (field: DraftField) => boolean) {
   const now = new Date();
-  const problems = draftProblems(values, localToday(now), now.getFullYear());
+  const problems = Object.entries(draftProblems(values, localToday(now), now.getFullYear())).filter(
+    ([field]) => checks(field as DraftField),
+  );
   const errors: FieldErrors<ClaimDraft> = {};
-  for (const [field, message] of Object.entries(problems)) {
+  for (const [field, message] of problems) {
     const [section, name] = field.split(".") as ["property" | "loss", string];
     const group = (errors[section] ?? {}) as Record<string, { type: string; message: string }>;
     group[name] = { type: "validate", message };
     (errors as Record<string, unknown>)[section] = group;
   }
   return Object.keys(errors).length > 0 ? { values: {}, errors } : { values, errors: {} };
-};
+}
 
 type ClaimCreate = RequestBody<"/v1/organizations/{organization_id}/claims", "post">;
 
@@ -157,6 +168,48 @@ export function toClaimCreate(draft: ClaimDraft): ClaimCreate {
       access_notes: text(property.access_notes),
     },
   };
+}
+
+type ClaimUpdate = RequestBody<"/v1/organizations/{organization_id}/claims/{claim_id}", "patch">;
+
+/** An existing claim's loss and insurance, as the loss step's fields hold them. */
+export function lossOf(claim: Schema<"ClaimRead">): ClaimDraft["loss"] {
+  return {
+    loss_type: claim.loss_type,
+    loss_date: claim.loss_date ?? "",
+    description: claim.description ?? "",
+    carrier_name: claim.carrier_name ?? "",
+    policy_number: claim.policy_number ?? "",
+    carrier_claim_number: claim.carrier_claim_number ?? "",
+  };
+}
+
+/** The API's body for an edited loss: every field, a cleared one as `null` to clear it. */
+export function toClaimUpdate(loss: ClaimDraft["loss"]): ClaimUpdate {
+  const cleared = (value: string) => value.trim() || null;
+  return {
+    loss_type: loss.loss_type || null,
+    loss_date: loss.loss_date || null,
+    description: cleared(loss.description),
+    carrier_name: cleared(loss.carrier_name),
+    policy_number: cleared(loss.policy_number),
+    carrier_claim_number: cleared(loss.carrier_claim_number),
+  };
+}
+
+/**
+ * The fields an API refusal is about: a 422's `errors[]`, read back into the form, and
+ * the business rules about one field. Empty when the refusal isn't about a field.
+ */
+export function refusedFields(error: unknown): { field: DraftField; message: string }[] {
+  if (!isApiError(error)) return [];
+  if (error.code === "loss_date_in_future") {
+    return [{ field: "loss.loss_date", message: "The date of loss can't be in the future." }];
+  }
+  return error.fieldErrors.flatMap(({ loc, message }) => {
+    const field = fieldFor(loc);
+    return field ? [{ field, message }] : [];
+  });
 }
 
 /**
