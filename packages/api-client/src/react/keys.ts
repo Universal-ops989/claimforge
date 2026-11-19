@@ -25,6 +25,14 @@ const ROOT = "claimforge";
 
 type OrganizationsQuery = Omit<QueryParams<"/v1/organizations", "get">, "cursor">;
 type ClaimsQuery = Omit<QueryParams<"/v1/organizations/{organization_id}/claims", "get">, "cursor">;
+type FleetQuery = Omit<
+  QueryParams<"/v1/organizations/{organization_id}/equipment", "get">,
+  "cursor"
+>;
+type PlacementsQuery = QueryParams<
+  "/v1/organizations/{organization_id}/claims/{claim_id}/equipment-placements",
+  "get"
+>;
 type ContactsQuery = Omit<
   QueryParams<"/v1/organizations/{organization_id}/contacts", "get">,
   "cursor"
@@ -84,6 +92,11 @@ export const queryKeys = {
     [...queryKeys.organization(organizationId), "invitations"] as const,
   members: (organizationId: string) =>
     [...queryKeys.organization(organizationId), "members"] as const,
+  /** The fleet: every equipment list in the organization. */
+  equipment: (organizationId: string) =>
+    [...queryKeys.organization(organizationId), "equipment"] as const,
+  equipmentList: (organizationId: string, query: FleetQuery = {}) =>
+    [...queryKeys.equipment(organizationId), "list", query] as const,
   /** The address book: every contact list in the organization. */
   contacts: (organizationId: string) =>
     [...queryKeys.organization(organizationId), "contacts"] as const,
@@ -106,6 +119,13 @@ export const queryKeys = {
     [...queryKeys.claim(organizationId, claimId), "timeline"] as const,
   timeline: (organizationId: string, claimId: string, query: TimelineQuery = {}) =>
     [...queryKeys.timelines(organizationId, claimId), query] as const,
+  /** Every placement list of a claim; the last element is the list's filters. */
+  placements: (organizationId: string, claimId: string) =>
+    [...queryKeys.claim(organizationId, claimId), "placements"] as const,
+  placementList: (organizationId: string, claimId: string, query: PlacementsQuery = {}) =>
+    [...queryKeys.placements(organizationId, claimId), query] as const,
+  equipmentDays: (organizationId: string, claimId: string) =>
+    [...queryKeys.claim(organizationId, claimId), "equipment-days"] as const,
   /** Every damage list of a claim; the last element is the list's filters. */
   damageItems: (organizationId: string, claimId: string) =>
     [...queryKeys.claim(organizationId, claimId), "damage-items"] as const,

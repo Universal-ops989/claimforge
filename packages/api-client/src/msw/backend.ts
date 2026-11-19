@@ -7,7 +7,7 @@
  * It covers what the web app's first screens need: sessions, `/v1/me`, organizations,
  * claims (lists, filters, pages, create, edit, the status workflow, assignments, contacts,
  * history, timeline), the address book, the layout and damage, photos (with a pretend file
- * store behind their upload links), moisture mapping and drying,
+ * store behind their upload links), moisture mapping and drying, equipment and its placements,
  * tasks, notes, and the layout to read. It behaves like the API where tests can tell:
  * the same status codes and error codes, refresh tokens that rotate with reuse detection,
  * the workflow the contract publishes (`workflows`), permissions by role, locked claims.
@@ -73,6 +73,19 @@ export interface MockDb {
     created_at: string;
     updated_at: string;
   }[];
+  /** The organizations' drying equipment; a unit's current placement is worked out. */
+  equipment: { organizationId: string; unit: Omit<Schema<"EquipmentRead">, "current_placement"> }[];
+  /** Where units have been placed; `removed_at` null while running. */
+  placements: {
+    claimId: string;
+    id: string;
+    equipmentId: string;
+    roomId: string;
+    placed_at: string;
+    removed_at: string | null;
+    placed_by: Person | null;
+    removed_by: Person | null;
+  }[];
   /** Damage recorded in the claims' rooms; it goes with its room. */
   damage: { claimId: string; item: Schema<"DamageItemRead"> }[];
   tasks: Schema<"TaskRead">[];
@@ -134,6 +147,35 @@ export function seedDb(): MockDb {
     damage: [{ claimId: fx.ids.claim, item: fx.damageItem() }],
     photos: [{ claimId: fx.ids.claim, photo: fx.photo(), roomId: fx.ids.room }],
     moisturePoints: [{ claimId: fx.ids.claim, point: fx.moisturePoint(), roomId: fx.ids.room }],
+    equipment: [
+      fx.equipment(),
+      fx.equipment({
+        id: fx.fixtureId("equipment", 2),
+        kind: "air_mover",
+        name: "Air mover",
+        asset_tag: "AM-01",
+        capacity: 2400,
+        capacity_unit: "cfm",
+      }),
+      fx.equipment({
+        id: fx.fixtureId("equipment", 3),
+        kind: "air_mover",
+        name: "Air mover",
+        asset_tag: "AM-02",
+        capacity: 2400,
+        capacity_unit: "cfm",
+      }),
+    ].map(({ current_placement: _, ...unit }) => ({ organizationId: fx.ids.organization, unit })),
+    placements: [fx.ids.equipment, fx.fixtureId("equipment", 2)].map((equipmentId, i) => ({
+      claimId: fx.ids.claim,
+      id: fx.fixtureId("placement", i + 1),
+      equipmentId,
+      roomId: fx.ids.room,
+      placed_at: "2026-11-14T16:00:00Z",
+      removed_at: null,
+      placed_by: fx.people.riley,
+      removed_by: null,
+    })),
     moistureLogs: [
       ["2026-11-14T15:00:00Z", 28, 2],
       ["2026-11-15T15:00:00Z", 22, 3],
@@ -242,6 +284,24 @@ const MIN_PHONE_DIGITS = 3;
 const STALL_READINGS = 3;
 /** Longer than this between visits, with points still drying, is a gap in monitoring. */
 const MONITORING_INTERVAL_MS = 24 * 3_600_000;
+/** A billable equipment-day: every started 24 hours counts. */
+const DAY_MS = 24 * 3_600_000;
+/** How each kind's capacity is rated, as the API has it; kinds without one have none. */
+const CAPACITY_UNITS: Partial<Record<Schema<"EquipmentKind">, Schema<"CapacityUnit">>> = {
+  dehumidifier: "pints_per_day",
+  desiccant_dehumidifier: "cfm",
+  air_mover: "cfm",
+  air_scrubber: "cfm",
+  heater: "btu_per_hour",
+};
+const DEHUMIDIFIERS: Schema<"EquipmentKind">[] = ["dehumidifier", "desiccant_dehumidifier"];
+
+/** Billable days from placed to removed (or now): every started 24 hours, at least one. */
+export function equipmentDays(placedAt: string, until: string | number): number {
+  const ms = Math.max(new Date(until).getTime() - Date.parse(placedAt), 0);
+  return Math.max(1, Math.ceil(ms / DAY_MS));
+}
+
 /** How far ahead of the server's clock a visit may say it was taken. */
 const CLOCK_SKEW_MS = 10 * 60_000;
 
@@ -701,6 +761,75 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
   const CLAIMS = `${ORG}/claims` as const;
   const CLAIM = `${CLAIMS}/{claim_id}` as const;
 
+  type Placement = MockDb["placements"][number];
+
+  /** A unit as the API answers it: where it's running now, if anywhere. */
+  function unitNow(entry: MockDb["equipment"][number]): Schema<"EquipmentRead"> {
+    const running = db().placements.find(
+      (p) => p.equipmentId === entry.unit.id && p.removed_at === null,
+    );
+    const claim = running && db().claims.find((c) => c.claim.id === running.claimId)?.claim;
+    return {
+      ...entry.unit,
+      current_placement:
+        running && claim
+          ? {
+              id: running.id,
+              claim: { id: claim.id, number: claim.number },
+              room_id: running.roomId,
+              placed_at: running.placed_at,
+            }
+          : null,
+    };
+  }
+
+  /** A placement as the API answers it: the unit, the room, and its days so far. */
+  function placementNow(p: Placement): Schema<"PlacementRead"> {
+    const unit = db().equipment.find((e) => e.unit.id === p.equipmentId)?.unit;
+    return {
+      id: p.id,
+      equipment: {
+        id: p.equipmentId,
+        kind: unit?.kind ?? "other",
+        name: unit?.name ?? "",
+        asset_tag: unit?.asset_tag ?? "",
+      },
+      room: roomRef(p.roomId) ?? { id: p.roomId, name: "" },
+      placed_at: p.placed_at,
+      removed_at: p.removed_at,
+      running: p.removed_at === null,
+      days: equipmentDays(p.placed_at, p.removed_at ?? now()),
+      placed_by: p.placed_by,
+      removed_by: p.removed_by,
+    };
+  }
+
+  function unitOf(organizationId: string, equipmentId: string) {
+    return db().equipment.find(
+      (e) => e.organizationId === organizationId && e.unit.id === equipmentId,
+    );
+  }
+
+  /** `equipment_running` if the unit is running somewhere (other than `except`). */
+  function runningElsewhere(equipmentId: string, except?: string): Response | null {
+    const running = db().placements.find(
+      (p) => p.equipmentId === equipmentId && p.removed_at === null && p.id !== except,
+    );
+    if (!running) return null;
+    const claim = db().claims.find((c) => c.claim.id === running.claimId)?.claim;
+    return problem(409, "equipment_running", {
+      detail: `That unit is running on claim ${claim?.number ?? ""}; remove it there first`,
+      claim_id: running.claimId,
+      claim_number: claim?.number ?? "",
+    });
+  }
+
+  const inFuture = (iso: string) => Date.parse(iso) > now() + CLOCK_SKEW_MS;
+  const futureTime = () =>
+    problem(422, "time_in_future", {
+      detail: "Equipment can't be placed or removed in the future",
+    });
+
   /** A stored point as the API answers it: its room as the layout has it now. */
   function pointNow(entry: { point: Schema<"MoisturePointRead">; roomId: string }) {
     const room = db()
@@ -736,6 +865,16 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
     return room ? { id: room.id, name: room.name } : null;
   }
 
+  function placementRoom(placementId: string | null | undefined): string | null {
+    return db().placements.find((p) => p.id === placementId)?.roomId ?? null;
+  }
+
+  function dehumidifierRef(placementId: string | null | undefined) {
+    const placed = db().placements.find((p) => p.id === placementId);
+    const unit = placed && db().equipment.find((e) => e.unit.id === placed.equipmentId)?.unit;
+    return placed && unit ? { placement_id: placed.id, asset_tag: unit.asset_tag } : null;
+  }
+
   /** A stored visit as the API answers it: labels on readings, air worked out. */
   function logNow(log: MockDb["moistureLogs"][number]): Schema<"MoistureLogRead"> {
     const labels = new Map(db().moisturePoints.map((p) => [p.point.id, p.point.label]));
@@ -747,8 +886,8 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
       readings: log.readings.map((r) => ({ ...r, label: labels.get(r.point_id) ?? "" })),
       atmosphere: log.atmosphere.map((air) => ({
         location: air.location,
-        room: roomRef(air.room_id),
-        dehumidifier: null,
+        room: roomRef(air.room_id ?? placementRoom(air.placement_id)),
+        dehumidifier: dehumidifierRef(air.placement_id),
         temperature_f: air.temperature_f,
         relative_humidity: air.relative_humidity,
         grains_per_pound: grainsPerPound(air.temperature_f, air.relative_humidity),
@@ -784,9 +923,18 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
     }
     const badRoom = atmosphere.find((air) => air.room_id && !claimRoom(claimId, air.room_id));
     if (badRoom?.room_id) return unknownRoom(badRoom.room_id);
-    if (atmosphere.some((air) => air.placement_id)) {
+    const notDehumidifier = atmosphere.find((air) => {
+      if (!air.placement_id) return false;
+      const placed = db().placements.find(
+        (p) => p.claimId === claimId && p.id === air.placement_id,
+      );
+      const unit = placed && db().equipment.find((e) => e.unit.id === placed.equipmentId)?.unit;
+      return !unit || !DEHUMIDIFIERS.includes(unit.kind);
+    });
+    if (notDehumidifier) {
       return problem(422, "unknown_dehumidifier", {
-        detail: "No dehumidifier is placed on this claim",
+        detail: "Exhaust readings are for dehumidifiers placed on this claim",
+        placement_id: notDehumidifier.placement_id,
       });
     }
     return null;
@@ -1881,39 +2029,66 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
           });
       }
       // The air: one row per place it was read, in the order first read.
-      const places: { location: Schema<"AtmosphereLocation">; roomId: string | null }[] = [];
+      const places: {
+        location: Schema<"AtmosphereLocation">;
+        roomId: string | null;
+        placementId: string | null;
+      }[] = [];
+      const placeOf = (air: Schema<"AtmosphereIn">) => ({
+        location: air.location,
+        roomId: air.room_id ?? placementRoom(air.placement_id),
+        placementId: air.placement_id ?? null,
+      });
       for (const visit of visits) {
         for (const air of visit.atmosphere) {
-          const roomOf = air.room_id ?? null;
+          const place = placeOf(air);
           if (
             roomId &&
             air.location !== "outdoors" &&
             air.location !== "unaffected" &&
-            roomOf !== roomId
+            place.roomId !== roomId
           )
             continue;
-          if (!places.some((p) => p.location === air.location && p.roomId === roomOf)) {
-            places.push({ location: air.location, roomId: roomOf });
+          if (
+            !places.some(
+              (p) =>
+                p.location === place.location &&
+                p.roomId === place.roomId &&
+                p.placementId === place.placementId,
+            )
+          ) {
+            places.push(place);
           }
         }
       }
       const atmosphere = places.map((place) => ({
         location: place.location,
         room: roomRef(place.roomId),
-        dehumidifier: null,
+        dehumidifier: dehumidifierRef(place.placementId),
         values: visits.map((visit) => {
-          const air = visit.atmosphere.find(
-            (a) => a.location === place.location && (a.room_id ?? null) === place.roomId,
-          );
-          return air
-            ? {
-                temperature_f: air.temperature_f,
-                relative_humidity: air.relative_humidity,
-                grains_per_pound: grainsPerPound(air.temperature_f, air.relative_humidity),
-                dew_point_f: dewPointF(air.temperature_f, air.relative_humidity),
-                grain_depression: null,
-              }
-            : null;
+          const air = visit.atmosphere.find((a) => {
+            const at = placeOf(a);
+            return (
+              at.location === place.location &&
+              at.roomId === place.roomId &&
+              at.placementId === place.placementId
+            );
+          });
+          if (!air) return null;
+          const grains = grainsPerPound(air.temperature_f, air.relative_humidity);
+          // A dehumidifier's grain depression: the room's air less its exhaust, on the same visit.
+          const roomAir = place.placementId
+            ? visit.atmosphere.find((a) => a.location === "room" && a.room_id === place.roomId)
+            : undefined;
+          return {
+            temperature_f: air.temperature_f,
+            relative_humidity: air.relative_humidity,
+            grains_per_pound: grains,
+            dew_point_f: dewPointF(air.temperature_f, air.relative_humidity),
+            grain_depression: roomAir
+              ? tenth(grainsPerPound(roomAir.temperature_f, roomAir.relative_humidity) - grains)
+              : null,
+          };
         }),
       }));
       return {
@@ -1983,6 +2158,36 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
           }
         }
       }
+      // Rooms where every point has reached its goal, and since when the last one did.
+      const dryRooms = new Map<string, string>();
+      for (const roomOf of new Set(states.map((s) => s.entry.roomId))) {
+        const inRoom = states.filter((s) => s.entry.roomId === roomOf);
+        if (inRoom.every((s) => s.status === "dry" && s.driedAt)) {
+          dryRooms.set(
+            roomOf,
+            inRoom
+              .map((s) => s.driedAt ?? "")
+              .sort()
+              .at(-1) ?? "",
+          );
+        }
+      }
+      for (const placed of db().placements.filter(
+        (p) => p.claimId === claim.id && p.removed_at === null,
+      )) {
+        const driedAt = dryRooms.get(placed.roomId);
+        if (!driedAt) continue;
+        const unit = db().equipment.find((e) => e.unit.id === placed.equipmentId)?.unit;
+        alerts.push({
+          kind: "equipment_in_dry_room",
+          message: `${unit?.asset_tag ?? "A unit"} is still running in a room that's dry`,
+          point: null,
+          room: roomRef(placed.roomId),
+          equipment: { placement_id: placed.id, asset_tag: unit?.asset_tag ?? "" },
+          since: [driedAt, placed.placed_at].sort().at(-1) ?? null,
+          details: {},
+        });
+      }
       return {
         summary: {
           points: states.length,
@@ -1995,6 +2200,261 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
         },
         alerts,
       };
+    }),
+
+    // ─── Equipment ───────────────────────────────────────────────────────────
+    api.get(`${ORG}/equipment`, ({ request, params, query }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const kind = query.get("kind");
+      const status = query.get("status");
+      const q = (query.get("q") ?? "").trim().toLowerCase();
+      const available = query.get("available");
+      const found = db()
+        .equipment.filter((e) => e.organizationId === params.organization_id)
+        .map(unitNow)
+        .filter(
+          (u) =>
+            (!kind || u.kind === kind) &&
+            (!status || u.status === status) &&
+            (!q ||
+              [u.asset_tag, u.name, u.serial_number].some((t) => t?.toLowerCase().includes(q))) &&
+            (available === null ||
+              (available === "true") ===
+                (u.status === "in_service" && u.current_placement === null)),
+        )
+        .sort((a, b) => a.asset_tag.localeCompare(b.asset_tag, undefined, { numeric: true }));
+      return paginate(found, query);
+    }),
+    api.get(`${ORG}/equipment/{equipment_id}`, ({ request, params }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const entry = unitOf(params.organization_id, params.equipment_id);
+      return entry ? unitNow(entry) : problem(404, "not_found");
+    }),
+    api.post(`${ORG}/equipment`, ({ request, params, body }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const refused = allowed(seen.membership, "field_data:write");
+      if (refused) return refused;
+      const tag = body.asset_tag.trim();
+      const taken = db().equipment.some(
+        (e) =>
+          e.organizationId === params.organization_id &&
+          e.unit.asset_tag.toLowerCase() === tag.toLowerCase(),
+      );
+      if (taken)
+        return problem(409, "asset_tag_taken", { detail: `${tag} is already in the fleet` });
+      const entry = {
+        organizationId: params.organization_id,
+        unit: {
+          id: newId(),
+          kind: body.kind,
+          name: body.name.trim(),
+          asset_tag: tag,
+          serial_number: textOrNull(body.serial_number),
+          capacity: CAPACITY_UNITS[body.kind] ? (body.capacity ?? null) : null,
+          capacity_unit: body.capacity ? (CAPACITY_UNITS[body.kind] ?? null) : null,
+          status: body.status ?? "in_service",
+          notes: textOrNull(body.notes),
+          created_at: iso(),
+          updated_at: iso(),
+        },
+      };
+      db().equipment.push(entry);
+      return unitNow(entry);
+    }),
+    api.patch(`${ORG}/equipment/{equipment_id}`, ({ request, params, body }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const refused = allowed(seen.membership, "field_data:write");
+      if (refused) return refused;
+      const entry = unitOf(params.organization_id, params.equipment_id);
+      if (!entry) return problem(404, "not_found");
+      if (body.asset_tag != null) {
+        const tag = body.asset_tag.trim();
+        const taken = db().equipment.some(
+          (e) =>
+            e !== entry &&
+            e.organizationId === params.organization_id &&
+            e.unit.asset_tag.toLowerCase() === tag.toLowerCase(),
+        );
+        if (taken)
+          return problem(409, "asset_tag_taken", { detail: `${tag} is already in the fleet` });
+        entry.unit.asset_tag = tag;
+      }
+      if (body.name != null) entry.unit.name = body.name.trim();
+      if (body.kind != null) entry.unit.kind = body.kind;
+      if (body.status != null) entry.unit.status = body.status;
+      if ("serial_number" in body) entry.unit.serial_number = textOrNull(body.serial_number);
+      if ("notes" in body) entry.unit.notes = textOrNull(body.notes);
+      if ("capacity" in body) entry.unit.capacity = body.capacity ?? null;
+      entry.unit.capacity_unit =
+        entry.unit.capacity === null ? null : (CAPACITY_UNITS[entry.unit.kind] ?? null);
+      if (entry.unit.capacity_unit === null) entry.unit.capacity = null;
+      entry.unit.updated_at = iso();
+      return unitNow(entry);
+    }),
+    api.delete(`${ORG}/equipment/{equipment_id}`, ({ request, params }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const refused = allowed(seen.membership, "field_data:write");
+      if (refused) return refused;
+      const entry = unitOf(params.organization_id, params.equipment_id);
+      if (!entry) return problem(404, "not_found");
+      if (db().placements.some((p) => p.equipmentId === entry.unit.id)) {
+        return problem(409, "equipment_has_history", {
+          detail: `${entry.unit.asset_tag} has been placed on jobs; set its status to retired instead`,
+        });
+      }
+      backend.db.equipment = db().equipment.filter((e) => e !== entry);
+      return undefined;
+    }),
+    api.get(`${CLAIM}/equipment-placements`, ({ request, params, query }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
+      const running = query.get("running");
+      const roomId = query.get("room_id");
+      return db()
+        .placements.filter(
+          (p) =>
+            p.claimId === claim.id &&
+            (running === null || (running === "true") === (p.removed_at === null)) &&
+            (!roomId || p.roomId === roomId),
+        )
+        .sort((a, b) => a.placed_at.localeCompare(b.placed_at) || a.id.localeCompare(b.id))
+        .map(placementNow);
+    }),
+    api.get(`${CLAIM}/equipment-days`, ({ request, params }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
+      const byKind = new Map<Schema<"EquipmentKind">, Schema<"EquipmentDays">>();
+      for (const p of db()
+        .placements.filter((x) => x.claimId === claim.id)
+        .map(placementNow)) {
+        const row = byKind.get(p.equipment.kind) ?? {
+          kind: p.equipment.kind,
+          placements: 0,
+          running: 0,
+          days: 0,
+        };
+        row.placements += 1;
+        row.running += p.running ? 1 : 0;
+        row.days += p.days;
+        byKind.set(p.equipment.kind, row);
+      }
+      return [...byKind.values()];
+    }),
+    api.post(`${CLAIM}/equipment-placements`, ({ request, params, body }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const entry = unitOf(params.organization_id, body.equipment_id);
+      if (!entry) return problem(404, "not_found", { detail: "No such unit in the fleet" });
+      if (!claimRoom(ready.claim.id, body.room_id)) return unknownRoom(body.room_id);
+      if (entry.unit.status !== "in_service") {
+        return problem(422, "equipment_unavailable", {
+          detail: `${entry.unit.asset_tag} is ${entry.unit.status.replace("_", " ")}`,
+          equipment_status: entry.unit.status,
+        });
+      }
+      const busy = runningElsewhere(entry.unit.id);
+      if (busy) return busy;
+      const placedAt = body.placed_at ?? iso();
+      if (inFuture(placedAt)) return futureTime();
+      const placed: Placement = {
+        claimId: ready.claim.id,
+        id: newId(),
+        equipmentId: entry.unit.id,
+        roomId: body.room_id,
+        placed_at: new Date(placedAt).toISOString(),
+        removed_at: null,
+        placed_by: ready.seen.person,
+        removed_by: null,
+      };
+      db().placements.push(placed);
+      record(
+        ready.claim.id,
+        ready.seen.person,
+        "equipment",
+        "equipment_placed",
+        `Placed ${entry.unit.asset_tag} in the ${roomRef(body.room_id)?.name ?? "room"}`,
+      );
+      return placementNow(placed);
+    }),
+    api.patch(`${CLAIM}/equipment-placements/{placement_id}`, ({ request, params, body }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const placed = db().placements.find(
+        (p) => p.claimId === ready.claim.id && p.id === params.placement_id,
+      );
+      if (!placed) return problem(404, "not_found");
+      if (body.room_id) {
+        if (!claimRoom(ready.claim.id, body.room_id)) return unknownRoom(body.room_id);
+        placed.roomId = body.room_id;
+      }
+      const placedAt = body.placed_at ?? placed.placed_at;
+      const removedAt = "removed_at" in body ? (body.removed_at ?? null) : placed.removed_at;
+      if (inFuture(placedAt) || (removedAt && inFuture(removedAt))) return futureTime();
+      if (removedAt && Date.parse(removedAt) < Date.parse(placedAt)) {
+        return problem(422, "removed_before_placed", {
+          detail: "A unit can't be removed before it was placed",
+        });
+      }
+      if (removedAt === null && placed.removed_at !== null) {
+        // Back to running: only if it isn't running elsewhere.
+        const busy = runningElsewhere(placed.equipmentId, placed.id);
+        if (busy) return busy;
+        placed.removed_by = null;
+      }
+      placed.placed_at = new Date(placedAt).toISOString();
+      placed.removed_at = removedAt && new Date(removedAt).toISOString();
+      return placementNow(placed);
+    }),
+    api.post(`${CLAIM}/equipment-placements/{placement_id}/remove`, ({ request, params, body }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
+      // Works on closed claims too: a unit is never stranded on a finished job.
+      const refused = allowed(seen.membership, "field_data:write");
+      if (refused) return refused;
+      const placed = db().placements.find(
+        (p) => p.claimId === claim.id && p.id === params.placement_id,
+      );
+      if (!placed) return problem(404, "not_found");
+      if (placed.removed_at !== null) {
+        return problem(409, "already_removed", {
+          detail: "That unit was already removed",
+          removed_at: placed.removed_at,
+        });
+      }
+      const removedAt = body.removed_at ?? iso();
+      if (inFuture(removedAt)) return futureTime();
+      if (Date.parse(removedAt) < Date.parse(placed.placed_at)) {
+        return problem(422, "removed_before_placed", {
+          detail: "A unit can't be removed before it was placed",
+        });
+      }
+      placed.removed_at = new Date(removedAt).toISOString();
+      placed.removed_by = seen.person;
+      const tag =
+        db().equipment.find((e) => e.unit.id === placed.equipmentId)?.unit.asset_tag ?? "A unit";
+      record(claim.id, seen.person, "equipment", "equipment_removed", `Removed ${tag}`);
+      return placementNow(placed);
+    }),
+    api.delete(`${CLAIM}/equipment-placements/{placement_id}`, ({ request, params }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const placed = db().placements.find(
+        (p) => p.claimId === ready.claim.id && p.id === params.placement_id,
+      );
+      if (!placed) return problem(404, "not_found");
+      backend.db.placements = db().placements.filter((p) => p !== placed);
+      return undefined;
     }),
 
     // ─── Tasks ───────────────────────────────────────────────────────────────

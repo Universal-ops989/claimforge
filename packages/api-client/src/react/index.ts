@@ -31,6 +31,23 @@ export {
 } from "./claims";
 export { contactsQuery, useContacts, useCreateContact, useUpdateContact } from "./contacts";
 export {
+  equipmentDaysQuery,
+  equipmentQuery,
+  placementsQuery,
+  useCreateEquipment,
+  useDeleteEquipment,
+  useDeletePlacement,
+  useEquipment,
+  useEquipmentDays,
+  usePlaceEquipment,
+  usePlacements,
+  useRemoveEquipment,
+  useUpdateEquipment,
+  useUpdatePlacement,
+  type EquipmentChange,
+  type PlacementChange,
+} from "./equipment";
+export {
   damageItemsQuery,
   useDamageItems,
   useDeleteDamageItem,

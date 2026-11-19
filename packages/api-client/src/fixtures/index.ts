@@ -41,6 +41,8 @@ const KINDS = {
   timeline: "1e",
   statusChange: "1f",
   damage: "20",
+  equipment: "21",
+  placement: "22",
 } as const;
 
 /** A fixed UUIDv7-shaped id per kind and number; ids of one kind sort by `n`. */
@@ -66,6 +68,8 @@ export const ids = {
   share: fixtureId("share"),
   invitation: fixtureId("invitation"),
   damage: fixtureId("damage"),
+  equipment: fixtureId("equipment"),
+  placement: fixtureId("placement"),
 } as const;
 
 export const CLAIM_NUMBER = "2026-00042";
@@ -512,6 +516,48 @@ export function dryingStatus(
       last_visit_at: "2026-11-16T15:00:00Z",
     },
     alerts: [],
+    ...changes,
+  };
+}
+
+// ─── Equipment ───────────────────────────────────────────────────────────────
+
+/** DH-01, a 145-pint dehumidifier, free to place. */
+export function equipment(changes: Overrides<"EquipmentRead"> = {}): Schema<"EquipmentRead"> {
+  return {
+    id: ids.equipment,
+    kind: "dehumidifier",
+    name: "LGR dehumidifier",
+    asset_tag: "DH-01",
+    serial_number: null,
+    capacity: 145,
+    capacity_unit: "pints_per_day",
+    status: "in_service",
+    notes: null,
+    current_placement: null,
+    created_at: CREATED,
+    updated_at: CREATED,
+    ...changes,
+  };
+}
+
+/** DH-01 placed in the kitchen on the 14th, still running. */
+export function placement(changes: Overrides<"PlacementRead"> = {}): Schema<"PlacementRead"> {
+  return {
+    id: ids.placement,
+    equipment: {
+      id: ids.equipment,
+      kind: "dehumidifier",
+      name: "LGR dehumidifier",
+      asset_tag: "DH-01",
+    },
+    room: kitchen,
+    placed_at: "2026-11-14T16:00:00Z",
+    removed_at: null,
+    running: true,
+    days: 3,
+    placed_by: people.riley,
+    removed_by: null,
     ...changes,
   };
 }

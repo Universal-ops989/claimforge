@@ -10,7 +10,7 @@ import {
   type QueryParams,
   type RequestBody,
 } from "../index";
-import { dewPointF, grainsPerPound } from "./backend";
+import { dewPointF, equipmentDays, grainsPerPound } from "./backend";
 import { createMockBackend, MOCK_PASSWORD } from "./index";
 
 let clock = Date.parse("2026-11-16T12:00:00Z");
@@ -1122,5 +1122,186 @@ describe("moisture", () => {
     const visits = (await api.get(LOGS, { path: CLAIM })).items;
     expect(visits).toHaveLength(3);
     expect(visits.flatMap((v) => v.readings)).toEqual([]);
+  });
+});
+
+describe("billable equipment-days", () => {
+  test("every started 24 hours counts, and at least one", () => {
+    expect(equipmentDays("2026-11-14T16:00:00Z", "2026-11-14T19:00:00Z")).toBe(1);
+    expect(equipmentDays("2026-11-14T16:00:00Z", "2026-11-15T17:00:00Z")).toBe(2);
+    expect(equipmentDays("2026-11-14T16:00:00Z", "2026-11-14T16:00:00Z")).toBe(1);
+  });
+});
+
+describe("equipment", () => {
+  const FLEET = "/v1/organizations/{organization_id}/equipment" as const;
+  const UNIT = `${FLEET}/{equipment_id}` as const;
+  const PLACEMENTS =
+    "/v1/organizations/{organization_id}/claims/{claim_id}/equipment-placements" as const;
+  const PLACEMENT = `${PLACEMENTS}/{placement_id}` as const;
+  const DAYS = "/v1/organizations/{organization_id}/claims/{claim_id}/equipment-days" as const;
+  const spare = fixtureId("equipment", 3);
+  const place = (api: ApiClient, equipment_id: string, placed_at?: string) =>
+    api.post(PLACEMENTS, { path: CLAIM, body: { equipment_id, room_id: ids.room, placed_at } });
+  const tags = (page: { items: { asset_tag: string }[] }) => page.items.map((u) => u.asset_tag);
+
+  test("the fleet lists by tag, says where each unit runs, and what's free", async () => {
+    const api = await signedIn();
+
+    const fleet = await api.get(FLEET, { path: ORG });
+    const free = await api.get(FLEET, { path: ORG, query: { available: true } });
+
+    expect(tags(fleet)).toEqual(["AM-01", "AM-02", "DH-01"]);
+    expect(fleet.items[2]?.current_placement).toMatchObject({
+      claim: { id: ids.claim, number: "2026-00042" },
+      room_id: ids.room,
+    });
+    expect(tags(free)).toEqual(["AM-02"]);
+  });
+
+  test("asset tags are unique, capacity goes by kind, worked units can't be deleted", async () => {
+    const api = await signedIn("riley@example.com");
+
+    const heater = await api.post(FLEET, {
+      path: ORG,
+      body: { kind: "heater", name: "Heater", asset_tag: "HT-01", capacity: 40000 },
+    });
+    const twice = await refusal(
+      api.post(FLEET, { path: ORG, body: { kind: "other", name: "X", asset_tag: "dh-01" } }),
+    );
+    const worked = await refusal(
+      api.delete(UNIT, { path: { ...ORG, equipment_id: ids.equipment } }),
+    );
+    await api.delete(UNIT, { path: { ...ORG, equipment_id: heater.id } });
+
+    expect(heater.capacity_unit).toBe("btu_per_hour");
+    expect([twice.code, worked.code]).toEqual(["asset_tag_taken", "equipment_has_history"]);
+  });
+
+  test("placing takes a unit in service that isn't running elsewhere, not in the future", async () => {
+    const api = await signedIn();
+    await api.patch(UNIT, {
+      path: { ...ORG, equipment_id: spare },
+      body: { status: "maintenance" },
+    });
+
+    const busy = await refusal(place(api, ids.equipment));
+    const repairing = await refusal(place(api, spare));
+    await api.patch(UNIT, {
+      path: { ...ORG, equipment_id: spare },
+      body: { status: "in_service" },
+    });
+    const ahead = await refusal(place(api, spare, "2026-11-16T13:00:00Z"));
+    const placed = await place(api, spare);
+
+    expect([busy.code, repairing.code, ahead.code]).toEqual([
+      "equipment_running",
+      "equipment_unavailable",
+      "time_in_future",
+    ]);
+    expect(placed).toMatchObject({ running: true, days: 1, room: { name: "Kitchen" } });
+  });
+
+  test("removing ends a placement's days; once only, and works on a closed claim", async () => {
+    const api = await signedIn();
+    const claim = backend.db.claims.find((c) => c.claim.id === ids.claim);
+    if (claim) claim.claim.status = "closed";
+    const path = { ...CLAIM, placement_id: ids.placement };
+    const REMOVE = `${PLACEMENT}/remove` as const;
+
+    const removed = await api.post(REMOVE, { path, body: { removed_at: "2026-11-16T10:00:00Z" } });
+    const again = await refusal(api.post(REMOVE, { path, body: {} }));
+
+    expect(removed).toMatchObject({ running: false, days: 2, removed_by: people.morgan });
+    expect(again.code).toBe("already_removed");
+  });
+
+  test("corrections keep removal after placement, and put a unit back to running", async () => {
+    const api = await signedIn();
+    const path = { ...CLAIM, placement_id: ids.placement };
+    await api.post(`${PLACEMENT}/remove`, { path, body: {} });
+
+    const backwards = await refusal(
+      api.patch(PLACEMENT, { path, body: { removed_at: "2026-11-13T10:00:00Z" } }),
+    );
+    const back = await api.patch(PLACEMENT, { path, body: { removed_at: null } });
+
+    expect(backwards.code).toBe("removed_before_placed");
+    expect(back.running).toBe(true);
+  });
+
+  test("equipment-days add up by kind", async () => {
+    const api = await signedIn();
+
+    expect(await api.get(DAYS, { path: CLAIM })).toEqual([
+      { kind: "dehumidifier", placements: 1, running: 1, days: 2 },
+      { kind: "air_mover", placements: 1, running: 1, days: 2 },
+    ]);
+  });
+
+  test("a dehumidifier's exhaust is read, and its grain depression worked out", async () => {
+    const api = await signedIn();
+    const LOGS = "/v1/organizations/{organization_id}/claims/{claim_id}/moisture-logs" as const;
+
+    const visit = await api.post(LOGS, {
+      path: CLAIM,
+      body: {
+        atmosphere: [
+          { location: "room", room_id: ids.room, temperature_f: 86, relative_humidity: 50 },
+          {
+            location: "dehumidifier",
+            placement_id: ids.placement,
+            temperature_f: 68,
+            relative_humidity: 50,
+          },
+        ],
+      },
+    });
+    const notOne = await refusal(
+      api.post(LOGS, {
+        path: CLAIM,
+        body: {
+          atmosphere: [
+            {
+              location: "dehumidifier",
+              placement_id: fixtureId("placement", 2),
+              temperature_f: 70,
+              relative_humidity: 40,
+            },
+          ],
+        },
+      }),
+    );
+    const log = await api.get("/v1/organizations/{organization_id}/claims/{claim_id}/drying-log", {
+      path: CLAIM,
+    });
+
+    expect(visit.atmosphere[1]?.dehumidifier).toEqual({
+      placement_id: ids.placement,
+      asset_tag: "DH-01",
+    });
+    expect(notOne.code).toBe("unknown_dehumidifier");
+    const exhaust = log.atmosphere.find((row) => row.dehumidifier !== null);
+    // The visit with the exhaust reading: the room's 93.2 grains less the exhaust's 50.8.
+    expect(exhaust?.values.find((v) => v !== null)?.grain_depression).toBe(42.4);
+  });
+
+  test("a unit still running in a room that's dry is flagged", async () => {
+    const api = await signedIn();
+    clock = Date.parse("2026-11-17T12:00:00Z");
+    await api.post("/v1/organizations/{organization_id}/claims/{claim_id}/moisture-logs", {
+      path: CLAIM,
+      body: { readings: [{ point_id: ids.point, value: 11 }] },
+    });
+
+    const status = await api.get(
+      "/v1/organizations/{organization_id}/claims/{claim_id}/drying-status",
+      { path: CLAIM },
+    );
+
+    expect(status.alerts.map((a) => [a.kind, a.equipment?.asset_tag])).toEqual([
+      ["equipment_in_dry_room", "DH-01"],
+      ["equipment_in_dry_room", "AM-01"],
+    ]);
   });
 });
