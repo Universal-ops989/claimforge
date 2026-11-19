@@ -490,3 +490,139 @@ describe("members", () => {
     expect(refused.status).toBe(404);
   });
 });
+
+describe("contacts", () => {
+  const CONTACTS = "/v1/organizations/{organization_id}/contacts" as const;
+  const CONTACT = "/v1/organizations/{organization_id}/contacts/{contact_id}" as const;
+  const LINKS = "/v1/organizations/{organization_id}/claims/{claim_id}/contacts" as const;
+  const LINK =
+    "/v1/organizations/{organization_id}/claims/{claim_id}/contacts/{contact_id}" as const;
+  const jordan = fixtureId("contact");
+  const casey = fixtureId("contact", 2);
+  const names = (page: { items: { full_name: string }[] }) => page.items.map((c) => c.full_name);
+  const claimNow = (api: ApiClient) =>
+    api.get("/v1/organizations/{organization_id}/claims/{claim_id}", { path: CLAIM });
+  const linked = async (api: ApiClient) =>
+    (await claimNow(api)).contacts.map((c) => [c.contact.full_name, c.role, c.is_primary]);
+
+  test("the address book is alphabetical, and searches names, companies, emails and phones", async () => {
+    const api = await signedIn();
+    const search = (query: QueryParams<typeof CONTACTS, "get">) =>
+      api.get(CONTACTS, { path: ORG, query });
+
+    expect(names(await search({}))).toEqual(["Casey Brooks", "Jordan Rivera"]);
+    expect(names(await search({ q: "brooks agency" }))).toEqual([]);
+    expect(names(await search({ q: "Brooks Insurance" }))).toEqual(["Casey Brooks"]);
+    expect(names(await search({ q: "JORDAN.RIVERA@" }))).toEqual(["Jordan Rivera"]);
+    expect(names(await search({ q: "555-0142" }))).toEqual(["Jordan Rivera"]);
+    expect(names(await search({ kind: "insurance_agent" }))).toEqual(["Casey Brooks"]);
+  });
+
+  test("adding a contact keeps the phone number one way, and needs a way to reach them", async () => {
+    const api = await signedIn();
+
+    const added = await api.post(CONTACTS, {
+      path: ORG,
+      body: { full_name: "Sam Tenant", kind: "tenant", phone: "(512) 555-0100" },
+    });
+    const unreachable = await refusal(
+      api.post(CONTACTS, {
+        path: ORG,
+        body: { full_name: "No Email", preferred_contact_method: "email" },
+      }),
+    );
+
+    expect(added.phone).toBe("+15125550100");
+    expect(unreachable.code).toBe("contact_method_unavailable");
+  });
+
+  test("changing the address book takes contacts:write", async () => {
+    const api = await signedIn("riley@example.com");
+
+    const refused = await refusal(api.post(CONTACTS, { path: ORG, body: { full_name: "X" } }));
+
+    expect(refused.status).toBe(403);
+    expect(names(await api.get(CONTACTS, { path: ORG }))).toHaveLength(2);
+  });
+
+  test("a changed contact shows the change on the claims it's on", async () => {
+    const api = await signedIn();
+
+    await api.patch(CONTACT, {
+      path: { ...ORG, contact_id: jordan },
+      body: { phone: "512 555 0177", company_name: null },
+    });
+
+    expect((await claimNow(api)).contacts[0]?.contact.phone).toBe("+15125550177");
+  });
+
+  test("a deleted contact leaves the address book but stays on its claims", async () => {
+    const api = await signedIn();
+
+    await api.delete(CONTACT, { path: { ...ORG, contact_id: jordan } });
+
+    expect(names(await api.get(CONTACTS, { path: ORG }))).toEqual(["Casey Brooks"]);
+    expect(await linked(api)).toEqual([["Jordan Rivera", "insured", true]]);
+  });
+
+  test("linking a contact as primary makes them the only primary one", async () => {
+    const api = await signedIn();
+
+    await api.post(LINKS, {
+      path: CLAIM,
+      body: { contact_id: casey, role: "insurance_agent", is_primary: true },
+    });
+
+    expect(await linked(api)).toEqual([
+      ["Jordan Rivera", "insured", false],
+      ["Casey Brooks", "insurance_agent", true],
+    ]);
+    const timeline = await api.get(
+      "/v1/organizations/{organization_id}/claims/{claim_id}/timeline",
+      { path: CLAIM },
+    );
+    expect(timeline.items[0]?.summary).toBe("Added Casey Brooks as insurance agent");
+  });
+
+  test("links are refused as the API refuses them", async () => {
+    const api = await signedIn();
+
+    const twice = await refusal(
+      api.post(LINKS, { path: CLAIM, body: { contact_id: jordan, role: "tenant" } }),
+    );
+    const unknown = await refusal(
+      api.post(LINKS, {
+        path: CLAIM,
+        body: { contact_id: fixtureId("contact", 9), role: "other" },
+      }),
+    );
+    const claim = backend.db.claims.find((c) => c.claim.id === ids.claim);
+    if (claim) claim.claim.status = "closed";
+    const locked = await refusal(
+      api.post(LINKS, { path: CLAIM, body: { contact_id: casey, role: "insurance_agent" } }),
+    );
+
+    expect([twice.code, unknown.code, locked.code]).toEqual([
+      "contact_already_linked",
+      "unknown_contact",
+      "claim_locked",
+    ]);
+  });
+
+  test("a link's role and primary can change, and the link can go", async () => {
+    const api = await signedIn();
+    await api.post(LINKS, { path: CLAIM, body: { contact_id: casey, role: "other" } });
+
+    await api.patch(LINK, {
+      path: { ...CLAIM, contact_id: casey },
+      body: { role: "insurance_agent", is_primary: true },
+    });
+    expect(await linked(api)).toEqual([
+      ["Jordan Rivera", "insured", false],
+      ["Casey Brooks", "insurance_agent", true],
+    ]);
+
+    await api.delete(LINK, { path: { ...CLAIM, contact_id: jordan } });
+    expect(await linked(api)).toEqual([["Casey Brooks", "insurance_agent", true]]);
+  });
+});

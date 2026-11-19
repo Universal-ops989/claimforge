@@ -286,6 +286,91 @@ export function useAssignClaim(organizationId: string, claimId: string) {
   });
 }
 
+// ─── Contacts on a claim ─────────────────────────────────────────────────────
+
+type ContactLink = RequestBody<
+  "/v1/organizations/{organization_id}/claims/{claim_id}/contacts",
+  "post"
+>;
+type ContactLinkChange = RequestBody<
+  "/v1/organizations/{organization_id}/claims/{claim_id}/contacts/{contact_id}",
+  "patch"
+>;
+type ClaimContact = Schema<"ClaimContactRead">;
+
+/**
+ * `claim` with `link` in place (or added at the end). A claim has one primary contact:
+ * a primary link demotes the others, as the API does.
+ */
+function withContact(claim: Claim, link: ClaimContact): Claim {
+  const others = claim.contacts.map((c) =>
+    c.contact.id === link.contact.id ? link : link.is_primary ? { ...c, is_primary: false } : c,
+  );
+  const known = claim.contacts.some((c) => c.contact.id === link.contact.id);
+  return { ...claim, contacts: known ? others : [...others, link] };
+}
+
+/** Link an address-book contact to a claim, in a role. */
+export function useLinkContact(organizationId: string, claimId: string) {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: ContactLink) =>
+      api.post("/v1/organizations/{organization_id}/claims/{claim_id}/contacts", {
+        path: { organization_id: organizationId, claim_id: claimId },
+        body,
+      }),
+    onSuccess: async (link) => {
+      editClaim(queryClient, organizationId, claimId, (claim) => withContact(claim, link));
+      await refreshAround(queryClient, organizationId, claimId);
+    },
+  });
+}
+
+/** Change a linked contact's role on the claim, or make them (or stop them being) primary. */
+export function useUpdateContactLink(organizationId: string, claimId: string) {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ contactId, ...body }: ContactLinkChange & { contactId: string }) =>
+      api.patch("/v1/organizations/{organization_id}/claims/{claim_id}/contacts/{contact_id}", {
+        path: { organization_id: organizationId, claim_id: claimId, contact_id: contactId },
+        body,
+      }),
+    onSuccess: async (link) => {
+      editClaim(queryClient, organizationId, claimId, (claim) => withContact(claim, link));
+      await refreshAround(queryClient, organizationId, claimId);
+    },
+  });
+}
+
+/** Take a contact off a claim (they stay in the address book). Undone if refused. */
+export function useUnlinkContact(organizationId: string, claimId: string) {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (contactId: string) =>
+      api.delete("/v1/organizations/{organization_id}/claims/{claim_id}/contacts/{contact_id}", {
+        path: { organization_id: organizationId, claim_id: claimId, contact_id: contactId },
+      }),
+    onMutate: async (contactId) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.claim(organizationId, claimId) });
+      const before = cachedClaim(queryClient, organizationId, claimId);
+      editClaim(queryClient, organizationId, claimId, (claim) => ({
+        ...claim,
+        contacts: claim.contacts.filter((c) => c.contact.id !== contactId),
+      }));
+      return { before };
+    },
+    onError: (_error, _contactId, context) => {
+      if (context?.before) {
+        writeClaim(queryClient, organizationId, context.before);
+      }
+    },
+    onSettled: () => refreshAround(queryClient, organizationId, claimId),
+  });
+}
+
 /** Take someone off a claim. They disappear at once and come back if the API refuses. */
 export function useUnassignClaim(organizationId: string, claimId: string) {
   const api = useApi();
