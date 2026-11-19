@@ -19,6 +19,7 @@ import { inOrganization, useOrganization } from "../app/organization";
 import { Page } from "../app/page";
 import { PageTitle } from "../app/page-title";
 import { QueryView } from "../app/states";
+import { StatusControl } from "../claims/detail/status-control";
 import { CLAIM_TABS, useCurrentClaimTab, type Claim } from "../claims/detail/tabs";
 import { LOSS_TYPE_LABEL, STATUS_LABEL, STATUS_TONE } from "../claims/status";
 
@@ -76,6 +77,7 @@ function ClaimFrame({ claim }: { claim: Claim }) {
             adjuster ? `Adjuster: ${adjuster.user.full_name}` : "No adjuster yet",
           ].join(" · ")}
         </Text>
+        <StatusControl claim={claim} />
       </Inline>
       <Tabs
         value={current}
