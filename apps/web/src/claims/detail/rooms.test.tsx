@@ -31,7 +31,7 @@ describe("the layout", () => {
   test("shows each structure's rooms, sizes, and what they work out to", async () => {
     await open();
 
-    const kitchen = (await house()).getByRole("listitem");
+    const kitchen = (await house()).getByText("Kitchen · Level 1").closest("li");
     expect(kitchen).toHaveTextContent("Kitchen · Level 1");
     expect(kitchen).toHaveTextContent("12 × 10 ft, 8 ft high");
     expect(kitchen).toHaveTextContent("120 sq ft floor · 352 sq ft walls · 960 cu ft");
