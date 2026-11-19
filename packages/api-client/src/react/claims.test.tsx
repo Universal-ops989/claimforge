@@ -70,9 +70,12 @@ function entry(summaryText: string): Schema<"TimelineEntry"> {
   };
 }
 
-const assignment = (user: { id: string; full_name: string }): Schema<"ClaimAssignmentRead"> => ({
+const assignment = (
+  user: { id: string; full_name: string },
+  role: Schema<"AssignmentRole"> = "field_technician",
+): Schema<"ClaimAssignmentRead"> => ({
   user,
-  role: "field_technician",
+  role,
   assigned_at: "2026-11-16T12:00:00Z",
   assigned_by_id: MORGAN.id,
 });
@@ -314,6 +317,33 @@ describe("assignments", () => {
       ]);
     });
     expect(gets(server.calls, CLAIM)).toBe(1);
+  });
+
+  test("a new adjuster replaces the last one in the cached claim, as the API does", async () => {
+    const avery = { id: "0198a2c4-7b1e-7cc0-8000-0000000000c3", full_name: "Avery" };
+    const server = new FakeServer()
+      .on("GET", CLAIM, () =>
+        json(claim({ assignments: [assignment(MORGAN, "adjuster"), assignment(RILEY)] })),
+      )
+      .on("POST", `${CLAIM}/assignments`, () => json(assignment(avery, "adjuster"), 201));
+    const { result } = renderWithApi(
+      () => ({ claim: useClaim(ORG_ID, CLAIM_ID), assign: useAssignClaim(ORG_ID, CLAIM_ID) }),
+      { server },
+    );
+    await waitFor(() => {
+      expect(result.current.claim.isSuccess).toBe(true);
+    });
+
+    await act(() => result.current.assign.mutateAsync({ user_id: avery.id, role: "adjuster" }));
+
+    await waitFor(() => {
+      expect(result.current.claim.data?.assignments.map((a) => [a.user.full_name, a.role])).toEqual(
+        [
+          ["Riley Tech", "field_technician"],
+          ["Avery", "adjuster"],
+        ],
+      );
+    });
   });
 
   test("unassigning shows at once and is undone if refused", async () => {

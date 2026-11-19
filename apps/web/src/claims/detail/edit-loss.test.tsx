@@ -42,12 +42,10 @@ describe("editing the loss and insurance", () => {
     expect(policy).toHaveValue("HO-123");
 
     await user.clear(description);
-    await user.type(description, "Dishwasher hose split");
+    await user.paste("Dishwasher hose split");
     await user.clear(policy);
-    await user.type(
-      dialog.getByRole("textbox", { name: /^Insurance carrier/ }),
-      "Lone Star Mutual",
-    );
+    await user.click(dialog.getByRole("textbox", { name: /^Insurance carrier/ }));
+    await user.paste("Lone Star Mutual");
     await user.click(dialog.getByRole("button", { name: "Save changes" }));
 
     await waitFor(() => {
@@ -95,7 +93,8 @@ describe("editing the loss and insurance", () => {
     const user = userEvent.setup();
     const dialog = await openEditor(user);
 
-    await user.type(dialog.getByRole("textbox", { name: /^Policy number/ }), "x".repeat(65));
+    await user.click(dialog.getByRole("textbox", { name: /^Policy number/ }));
+    await user.paste("x".repeat(65));
     await user.click(dialog.getByRole("button", { name: "Save changes" }));
 
     expect(await dialog.findByText("Keep this to 64 characters or fewer.")).toBeInTheDocument();
