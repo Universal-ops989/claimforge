@@ -56,6 +56,7 @@ import {
   type VisitDraft,
 } from "../moisture";
 import { READ_ONLY_STATUSES } from "../status";
+import { DryingChart } from "./drying-chart";
 import { useClaimOfPage } from "./tabs";
 
 type LogRoom = Schema<"DryingLogRoom">;
@@ -114,7 +115,13 @@ export function MoistureTab() {
           ) : (
             <Stack gap={4}>
               {data.rooms.map((room) => (
-                <RoomPoints key={room.id} room={room} canWork={canWork} onOpen={setOpen} />
+                <RoomPoints
+                  key={room.id}
+                  room={room}
+                  visits={data.visits}
+                  canWork={canWork}
+                  onOpen={setOpen}
+                />
               ))}
             </Stack>
           )
@@ -201,10 +208,13 @@ function DryingStatusCard() {
 
 function RoomPoints({
   room,
+  visits,
   canWork,
   onOpen,
 }: {
   room: LogRoom;
+  /** The claim's visits, oldest first: what each point's values line up with. */
+  visits: Schema<"DryingLogVisit">[];
   canWork: boolean;
   onOpen: (open: Open) => void;
 }) {
@@ -222,52 +232,55 @@ function RoomPoints({
             const value = latest(point);
             return (
               <li key={point.id}>
-                <Inline justify="between" align="start" gap={3}>
-                  <Stack gap={1}>
-                    <Inline gap={2} align="center">
-                      <Text>{`Point ${point.label}`}</Text>
-                      <Badge tone={DRYING_TONE[point.status]} size="sm">
-                        {DRYING_LABEL[point.status]}
-                      </Badge>
-                    </Inline>
-                    <Text size="sm" tone="muted">
-                      {`${point.material} · ${SURFACE_LABEL[point.surface]} · goal ${goal(point)}`}
-                    </Text>
-                    <Text size="sm">
-                      {value === null ? "Not read yet" : `Latest ${reading(value, point.scale)}`}
-                    </Text>
-                  </Stack>
-                  {canWork && (
-                    <Menu>
-                      <MenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          aria-label={`Change point ${point.label}`}
-                        >
-                          <MoreHorizontal size={16} aria-hidden="true" />
-                        </Button>
-                      </MenuTrigger>
-                      <MenuContent>
-                        <MenuItem
-                          onSelect={() => {
-                            onOpen({ kind: "edit", point, roomId: room.id });
-                          }}
-                        >
-                          Edit
-                        </MenuItem>
-                        <MenuItem
-                          tone="danger"
-                          onSelect={() => {
-                            onOpen({ kind: "delete", point });
-                          }}
-                        >
-                          Delete
-                        </MenuItem>
-                      </MenuContent>
-                    </Menu>
-                  )}
-                </Inline>
+                <Stack gap={2}>
+                  <Inline justify="between" align="start" gap={3}>
+                    <Stack gap={1}>
+                      <Inline gap={2} align="center">
+                        <Text>{`Point ${point.label}`}</Text>
+                        <Badge tone={DRYING_TONE[point.status]} size="sm">
+                          {DRYING_LABEL[point.status]}
+                        </Badge>
+                      </Inline>
+                      <Text size="sm" tone="muted">
+                        {`${point.material} · ${SURFACE_LABEL[point.surface]} · goal ${goal(point)}`}
+                      </Text>
+                      <Text size="sm">
+                        {value === null ? "Not read yet" : `Latest ${reading(value, point.scale)}`}
+                      </Text>
+                    </Stack>
+                    {canWork && (
+                      <Menu>
+                        <MenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            aria-label={`Change point ${point.label}`}
+                          >
+                            <MoreHorizontal size={16} aria-hidden="true" />
+                          </Button>
+                        </MenuTrigger>
+                        <MenuContent>
+                          <MenuItem
+                            onSelect={() => {
+                              onOpen({ kind: "edit", point, roomId: room.id });
+                            }}
+                          >
+                            Edit
+                          </MenuItem>
+                          <MenuItem
+                            tone="danger"
+                            onSelect={() => {
+                              onOpen({ kind: "delete", point });
+                            }}
+                          >
+                            Delete
+                          </MenuItem>
+                        </MenuContent>
+                      </Menu>
+                    )}
+                  </Inline>
+                  <DryingChart point={point} visits={visits} />
+                </Stack>
               </li>
             );
           })}
