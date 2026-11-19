@@ -24,6 +24,8 @@ import {
   writePhotoFilters,
   type PhotoFilters,
 } from "../photo-filters";
+import { READ_ONLY_STATUSES } from "../status";
+import { PhotoUploader } from "./photo-uploader";
 import { useClaimOfPage } from "./tabs";
 
 type Photo = Schema<"PhotoRead">;
@@ -41,9 +43,13 @@ export function PhotosTab() {
   const filter = (next: PhotoFilters) => {
     setParams(writePhotoFilters(params, next), { replace: true });
   };
+  const canWork =
+    organization.permissions.includes("field_data:write") &&
+    !READ_ONLY_STATUSES.includes(claim.status);
 
   return (
     <Stack gap={4}>
+      {canWork && <PhotoUploader roomId={filters.room} />}
       <PhotoFilterBar filters={filters} onChange={filter} />
       <QueryView query={photos} loading={<SkeletonText lines={4} />}>
         {(data) => {
