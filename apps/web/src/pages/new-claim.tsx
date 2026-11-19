@@ -15,6 +15,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { FormProvider, useForm, type UseFormReturn } from "react-hook-form";
 import { Link, Navigate, useBlocker, useNavigate, useSearchParams } from "react-router";
 
+import { Facts } from "../app/facts";
 import { inOrganization, useOrganization } from "../app/organization";
 import { Page } from "../app/page";
 import { errorCopy } from "../app/states";
@@ -31,6 +32,8 @@ import {
 import { createDraftStore, hasContent } from "../claims/new/draft-store";
 import { LossStep, PropertyStep, STEP_FIELDS } from "../claims/new/steps";
 import { LOSS_TYPE_LABEL } from "../claims/status";
+import { addressLines } from "../format/address";
+import { calendarDate } from "../format/calendar-date";
 
 const STEPS = [
   { id: "property", label: "Property", description: "Where the damage is" },
@@ -245,43 +248,20 @@ function Review({
   onEdit: (step: StepId) => void;
 }) {
   const { property, loss } = form.getValues();
-  const address = [
-    [property.line1, property.line2].filter(Boolean).join(", "),
-    [property.city, [property.region, property.postal_code].filter(Boolean).join(" ")]
-      .filter(Boolean)
-      .join(", "),
-  ].join("\n");
-  const rows: [string, string][] = [
-    ["Address", address],
-    ["Year built", property.year_built || "Not given"],
-    ["Cause of loss", loss.loss_type ? LOSS_TYPE_LABEL[loss.loss_type] : ""],
-    ["Date of loss", loss.loss_date || "Not given"],
-    ["What happened", loss.description || "Not given"],
-    ["Carrier", loss.carrier_name || "Not given"],
-    ["Policy number", loss.policy_number || "Not given"],
-  ];
   return (
     <Stack gap={4}>
-      <dl
-        aria-label="Claim summary"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "max-content 1fr",
-          gap: "var(--cf-space-2) var(--cf-space-6)",
-          margin: 0,
-        }}
-      >
-        {rows.map(([term, value]) => (
-          <div key={term} style={{ display: "contents" }}>
-            <Text as="dt" tone="muted">
-              {term}
-            </Text>
-            <Text as="dd" style={{ margin: 0, whiteSpace: "pre-line" }}>
-              {value}
-            </Text>
-          </div>
-        ))}
-      </dl>
+      <Facts
+        label="Claim summary"
+        facts={[
+          ["Address", addressLines(property)],
+          ["Year built", property.year_built],
+          ["Cause of loss", loss.loss_type ? LOSS_TYPE_LABEL[loss.loss_type] : null],
+          ["Date of loss", loss.loss_date ? calendarDate(loss.loss_date) : null],
+          ["What happened", loss.description],
+          ["Carrier", loss.carrier_name],
+          ["Policy number", loss.policy_number],
+        ]}
+      />
       <Inline gap={3}>
         <Button
           variant="ghost"

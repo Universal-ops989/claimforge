@@ -2,7 +2,7 @@ import { DatePicker, FormField, Grid, Stack } from "@claimforge/ui";
 import { FormInput, FormSelect, FormTextarea } from "@claimforge/ui/form";
 import { Controller, useFormContext } from "react-hook-form";
 
-import { LOSS_TYPE_LABEL } from "../status";
+import { LOSS_TYPE_LABEL, PROPERTY_TYPE_LABEL, type PropertyType } from "../status";
 import { localToday, type ClaimDraft, type DraftField } from "./draft";
 
 /** The fields each form step owns: what its Next checks. */
@@ -27,13 +27,10 @@ export const STEP_FIELDS: Record<"property" | "loss", DraftField[]> = {
   ],
 };
 
-const PROPERTY_TYPES = [
-  { value: "residential", label: "Residential" },
-  { value: "multi_family", label: "Multi-family" },
-  { value: "commercial", label: "Commercial" },
-  { value: "industrial", label: "Industrial" },
-  { value: "other", label: "Other" },
-];
+const PROPERTY_TYPES = (Object.keys(PROPERTY_TYPE_LABEL) as PropertyType[]).map((value) => ({
+  value,
+  label: PROPERTY_TYPE_LABEL[value],
+}));
 
 const LOSS_TYPES = (Object.keys(LOSS_TYPE_LABEL) as (keyof typeof LOSS_TYPE_LABEL)[]).map(
   (value) => ({ value, label: LOSS_TYPE_LABEL[value] }),
