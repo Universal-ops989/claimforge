@@ -26,6 +26,7 @@ import {
 } from "../photo-filters";
 import { READ_ONLY_STATUSES } from "../status";
 import { PhotoUploader } from "./photo-uploader";
+import { PhotoViewer } from "./photo-viewer";
 import { useClaimOfPage } from "./tabs";
 
 type Photo = Schema<"PhotoRead">;
@@ -42,6 +43,14 @@ export function PhotosTab() {
   const photos = usePhotos(organization.id, claim.id, photoFiltersQuery(filters));
   const filter = (next: PhotoFilters) => {
     setParams(writePhotoFilters(params, next), { replace: true });
+  };
+  // The open photo is in the address: it can be linked, and Back closes it.
+  const openId = params.get("photo");
+  const show = (photoId: string | null, how = { replace: false }) => {
+    const nextParams = new URLSearchParams(params);
+    if (photoId) nextParams.set("photo", photoId);
+    else nextParams.delete("photo");
+    setParams(nextParams, how);
   };
   const canWork =
     organization.permissions.includes("field_data:write") &&
@@ -91,7 +100,12 @@ export function PhotosTab() {
               >
                 {shown.map((photo) => (
                   <li key={photo.id}>
-                    <PhotoTile photo={photo} />
+                    <PhotoTile
+                      photo={photo}
+                      onOpen={() => {
+                        show(photo.id);
+                      }}
+                    />
                   </li>
                 ))}
               </Grid>
@@ -117,6 +131,12 @@ export function PhotosTab() {
           );
         }}
       </QueryView>
+      <PhotoViewer
+        photos={allItems(photos.data)}
+        photoId={openId}
+        onShow={show}
+        canWork={canWork}
+      />
     </Stack>
   );
 }
@@ -197,13 +217,20 @@ function PhotoFilterBar({
   );
 }
 
-/** A photo's thumbnail, caption, room and tags. */
-function PhotoTile({ photo }: { photo: Photo }) {
+/** A photo's thumbnail (which opens it full size), caption, room and tags. */
+function PhotoTile({ photo, onOpen }: { photo: Photo; onOpen: () => void }) {
   const label = photo.caption ?? photo.filename;
   return (
     <figure style={{ margin: 0 }}>
-      <div
+      <button
+        type="button"
+        aria-label={`Open ${label}`}
+        onClick={onOpen}
         style={{
+          width: "100%",
+          padding: 0,
+          border: 0,
+          cursor: "zoom-in",
           aspectRatio: "4 / 3",
           borderRadius: "var(--cf-radius-md)",
           overflow: "hidden",
@@ -224,7 +251,7 @@ function PhotoTile({ photo }: { photo: Photo }) {
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
         )}
-      </div>
+      </button>
       <figcaption>
         <Stack gap={1} style={{ paddingBlockStart: "var(--cf-space-2)" }}>
           <Text size="sm">{label}</Text>
