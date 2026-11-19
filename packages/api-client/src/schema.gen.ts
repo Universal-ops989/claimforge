@@ -1342,6 +1342,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/organizations/{organization_id}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List members
+         * @description Everyone in the organization, by name, with their role and what it allows: enough to pick someone for a claim. Needs `members:read`. No emails or other personal details.
+         */
+        get: operations["list_members"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/organizations/{organization_id}/notes/mentioning-me": {
         parameters: {
             query?: never;
@@ -3290,6 +3310,37 @@ export interface components {
             id: string;
             /** Memberships */
             memberships: components["schemas"]["MembershipRead"][];
+        };
+        /**
+         * MemberPerson
+         * @description Who a member is, as teammates see them: never an email or anything else personal.
+         */
+        MemberPerson: {
+            /** Full Name */
+            full_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+        };
+        /**
+         * MemberRead
+         * @description One member of an organization: who, their role, and what that role allows.
+         */
+        MemberRead: {
+            /**
+             * Joined At
+             * Format: date-time
+             */
+            joined_at: string;
+            /**
+             * Permissions
+             * @description What the role allows, so a client can tell who can be given which work
+             */
+            permissions: components["schemas"]["Permission"][];
+            role: components["schemas"]["Role"];
+            user: components["schemas"]["MemberPerson"];
         };
         /** MembershipOrganization */
         MembershipOrganization: {
@@ -13080,6 +13131,82 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Bad request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed or business rule violated */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_members: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberRead"][];
+                };
             };
             /** @description Bad request */
             400: {

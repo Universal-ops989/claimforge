@@ -7,8 +7,10 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstraints
 
+from claimforge_api.auth.permissions import Permission
 from claimforge_api.organizations.models import SLUG_PATTERN
 from claimforge_api.pricing.schemas import Percent
+from claimforge_api.users.models import Role
 
 
 def _valid_timezone(value: str) -> str:
@@ -60,3 +62,23 @@ class OrganizationRead(BaseModel):
     default_profit_percent: Percent
     created_at: datetime
     updated_at: datetime
+
+
+class MemberPerson(BaseModel):
+    """Who a member is, as teammates see them: never an email or anything else personal."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    full_name: str
+
+
+class MemberRead(BaseModel):
+    """One member of an organization: who, their role, and what that role allows."""
+
+    user: MemberPerson
+    role: Role
+    permissions: list[Permission] = Field(
+        description="What the role allows, so a client can tell who can be given which work"
+    )
+    joined_at: datetime
