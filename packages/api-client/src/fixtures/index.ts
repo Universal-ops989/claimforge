@@ -159,6 +159,44 @@ export function organization(
   };
 }
 
+/** Jordan Rivera, the policyholder, as the address book has them. */
+export function contact(changes: Overrides<"ContactRead"> = {}): Schema<"ContactRead"> {
+  return {
+    id: fixtureId("contact"),
+    kind: "policyholder",
+    full_name: "Jordan Rivera",
+    company_name: null,
+    email: "jordan.rivera@example.com",
+    phone: "+15125550142",
+    preferred_contact_method: "phone",
+    notes: null,
+    created_at: CREATED,
+    updated_at: CREATED,
+    ...changes,
+  };
+}
+
+/** Casey Brooks, an insurance agent: a second contact in the address book. */
+export function agentContact(changes: Overrides<"ContactRead"> = {}): Schema<"ContactRead"> {
+  return contact({
+    id: fixtureId("contact", 2),
+    kind: "insurance_agent",
+    full_name: "Casey Brooks",
+    company_name: "Brooks Insurance Agency",
+    email: "casey@brooks-agency.example",
+    phone: "+15125550199",
+    preferred_contact_method: "email",
+    ...changes,
+  });
+}
+
+/** A contact linked to a claim: Jordan, the insured, primary. */
+export function claimContact(
+  changes: Overrides<"ClaimContactRead"> = {},
+): Schema<"ClaimContactRead"> {
+  return { contact: contact(), role: "insured", is_primary: true, ...changes };
+}
+
 /** A member as `GET /organizations/{id}/members` lists them: Riley, a technician. */
 export function memberRead(changes: Overrides<"MemberRead"> = {}): Schema<"MemberRead"> {
   return {

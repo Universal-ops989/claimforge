@@ -23,9 +23,13 @@ export {
   useClaimStatusHistory,
   useClaimTimeline,
   useCreateClaim,
+  useLinkContact,
   useUnassignClaim,
+  useUnlinkContact,
   useUpdateClaim,
+  useUpdateContactLink,
 } from "./claims";
+export { contactsQuery, useContacts, useCreateContact, useUpdateContact } from "./contacts";
 export { ApiProvider, useApi, type ApiProviderProps } from "./context";
 export {
   documentQuery,

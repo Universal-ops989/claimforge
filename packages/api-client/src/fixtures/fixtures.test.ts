@@ -6,8 +6,11 @@ import { CONTRACT_PATH } from "../../scripts/generate.mjs";
 import type { SchemaName } from "../index";
 import { schemas } from "../zod.gen";
 import {
+  agentContact,
   claim,
+  claimContact,
   claimSummary,
+  contact,
   document,
   dryingStatus,
   estimate,
@@ -80,6 +83,9 @@ const FIXTURES: [string, SchemaName, unknown][] = [
   ["organization()", "OrganizationRead", organization()],
   ["invitation()", "InvitationRead", invitation()],
   ["memberRead()", "MemberRead", memberRead()],
+  ["contact()", "ContactRead", contact()],
+  ["agentContact()", "ContactRead", agentContact()],
+  ["claimContact()", "ClaimContactRead", claimContact()],
   ["claim()", "ClaimRead", claim()],
   ["claimSummary()", "ClaimSummary", claimSummary()],
   ["statusChange()", "ClaimStatusChangeRead", statusChange()],

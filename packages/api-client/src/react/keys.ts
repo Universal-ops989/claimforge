@@ -10,6 +10,7 @@
  *     ["claimforge", "organizations", id]               one organization …
  *     ["claimforge", "organizations", id, "invitations"]  … and everything under it
  *     ["claimforge", "organizations", id, "members"]
+ *     ["claimforge", "organizations", id, "contacts", "list", query]
  *     ["claimforge", "organizations", id, "claims", "list", query]
  *     ["claimforge", "organizations", id, "claims", "by-number", number]
  *     ["claimforge", "organizations", id, "claims", claimId]               one claim …
@@ -24,6 +25,10 @@ const ROOT = "claimforge";
 
 type OrganizationsQuery = Omit<QueryParams<"/v1/organizations", "get">, "cursor">;
 type ClaimsQuery = Omit<QueryParams<"/v1/organizations/{organization_id}/claims", "get">, "cursor">;
+type ContactsQuery = Omit<
+  QueryParams<"/v1/organizations/{organization_id}/contacts", "get">,
+  "cursor"
+>;
 type PhotosQuery = Omit<
   QueryParams<"/v1/organizations/{organization_id}/claims/{claim_id}/photos", "get">,
   "cursor"
@@ -75,6 +80,11 @@ export const queryKeys = {
     [...queryKeys.organization(organizationId), "invitations"] as const,
   members: (organizationId: string) =>
     [...queryKeys.organization(organizationId), "members"] as const,
+  /** The address book: every contact list in the organization. */
+  contacts: (organizationId: string) =>
+    [...queryKeys.organization(organizationId), "contacts"] as const,
+  contactList: (organizationId: string, query: ContactsQuery = {}) =>
+    [...queryKeys.contacts(organizationId), "list", query] as const,
 
   claims: (organizationId: string) =>
     [...queryKeys.organization(organizationId), "claims"] as const,

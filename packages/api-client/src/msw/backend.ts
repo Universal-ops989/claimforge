@@ -5,8 +5,8 @@
  *     const server = setupServer(...backend.handlers);   // or setupWorker in a browser
  *
  * It covers what the web app's first screens need: sessions, `/v1/me`, organizations,
- * claims (lists, filters, pages, create, edit, the status workflow, assignments, history,
- * timeline),
+ * claims (lists, filters, pages, create, edit, the status workflow, assignments, contacts,
+ * history, timeline), the address book,
  * tasks, notes, and the layout to read. It behaves like the API where tests can tell:
  * the same status codes and error codes, refresh tokens that rotate with reuse detection,
  * the workflow the contract publishes (`workflows`), permissions by role, locked claims.
@@ -47,6 +47,8 @@ export interface MockDb {
   structures: { claimId: string; structure: Schema<"StructureRead"> }[];
   tasks: Schema<"TaskRead">[];
   notes: Schema<"NoteRead">[];
+  /** The address book; a deleted contact stays on the claims it's linked to. */
+  contacts: { organizationId: string; contact: Contact; deleted: boolean }[];
 }
 
 function account(person: Person, email: string, role: Role): MockAccount {
@@ -88,7 +90,8 @@ export function seedDb(): MockDb {
     organizations: [fx.organization()],
     claims: [
       { organizationId: fx.ids.organization, claim: older },
-      { organizationId: fx.ids.organization, claim: fx.claim() },
+      // Jordan, the policyholder, is on this one; Casey is in the address book only.
+      { organizationId: fx.ids.organization, claim: fx.claim({ contacts: [fx.claimContact()] }) },
     ],
     statusChanges: [
       {
@@ -100,6 +103,10 @@ export function seedDb(): MockDb {
     structures: [{ claimId: fx.ids.claim, structure: fx.structure() }],
     tasks: [fx.task()],
     notes: [fx.note()],
+    contacts: [
+      { organizationId: fx.ids.organization, contact: fx.contact(), deleted: false },
+      { organizationId: fx.ids.organization, contact: fx.agentContact(), deleted: false },
+    ],
   };
 }
 
@@ -124,6 +131,34 @@ const REFRESH_TTL_MS = 30 * 86_400_000;
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
 const FINAL: Schema<"ClaimStatus">[] = ["closed", "cancelled"];
+/** A search needs this many digits before it looks at phone numbers, as the API's does. */
+const MIN_PHONE_DIGITS = 3;
+
+type Contact = Schema<"ContactRead">;
+
+/**
+ * A phone number in the API's canonical form, for the North American numbers the mock
+ * deals in: "(512) 555-0142" is "+15125550142". Anything else is kept as typed.
+ */
+function canonicalPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+  return raw.trim();
+}
+
+/** The preferred way to reach someone needs the details for it (`contact_method_unavailable`). */
+function methodProblem(contact: Contact): Response | null {
+  const method = contact.preferred_contact_method;
+  const needs = method === "email" ? "email" : method ? "phone" : null;
+  if (needs && !contact[needs]) {
+    return problem(422, "contact_method_unavailable", {
+      detail: `Add ${needs === "email" ? "an email address" : "a phone number"} before preferring contact by ${String(method)}`,
+      preferred_contact_method: method,
+    });
+  }
+  return null;
+}
 /** When the seeded members joined: the mock keeps no join dates of its own. */
 const MEMBER_SINCE = "2026-11-01T12:00:00Z";
 const MENTION = /<@([0-9a-f-]{36})>/g;
@@ -240,6 +275,20 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
     return FINAL.includes(claim.status)
       ? problem(409, "claim_locked", { detail: `The claim is ${claim.status}` })
       : null;
+  }
+
+  function liveContact(organizationId: string, contactId: string) {
+    return db().contacts.find(
+      (c) => c.organizationId === organizationId && c.contact.id === contactId && !c.deleted,
+    );
+  }
+
+  /** `links` ready for `link`: if it's primary, nobody else is (one primary per claim). */
+  function withPrimary(
+    links: Schema<"ClaimContactRead">[],
+    link: Schema<"ClaimContactRead">,
+  ): Schema<"ClaimContactRead">[] {
+    return link.is_primary ? links.map((c) => ({ ...c, is_primary: false })) : links;
   }
 
   function replaceClaim(claim: Claim): Claim {
@@ -818,6 +867,192 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
       backend.db.tasks = db().tasks.filter((t) => t.id !== task.id);
       return undefined;
     }),
+    // ─── Contacts ────────────────────────────────────────────────────────────
+    api.get(`${ORG}/contacts`, ({ request, params, query }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const refused = allowed(seen.membership, "contacts:read");
+      if (refused) return refused;
+      const kind = query.get("kind");
+      const q = (query.get("q") ?? "").trim().toLowerCase();
+      const digits = q.replace(/\D/g, "");
+      const matches = (c: Contact) =>
+        [c.full_name, c.company_name, c.email].some((text) => text?.toLowerCase().includes(q)) ||
+        (digits.length >= MIN_PHONE_DIGITS && (c.phone ?? "").includes(digits));
+      const found = db()
+        .contacts.filter((c) => c.organizationId === params.organization_id && !c.deleted)
+        .map((c) => c.contact)
+        .filter((c) => (!kind || c.kind === kind) && (!q || matches(c)))
+        .sort((a, b) => a.full_name.localeCompare(b.full_name) || a.id.localeCompare(b.id));
+      return paginate(found, query);
+    }),
+    api.post(`${ORG}/contacts`, ({ request, params, body }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const refused = allowed(seen.membership, "contacts:write");
+      if (refused) return refused;
+      const contact: Contact = {
+        id: newId(),
+        kind: body.kind ?? "other",
+        full_name: body.full_name.trim(),
+        company_name: body.company_name ?? null,
+        email: body.email ?? null,
+        phone: body.phone ? canonicalPhone(body.phone) : null,
+        preferred_contact_method: body.preferred_contact_method ?? null,
+        notes: body.notes ?? null,
+        created_at: iso(),
+        updated_at: iso(),
+      };
+      const unavailable = methodProblem(contact);
+      if (unavailable) return unavailable;
+      db().contacts.push({ organizationId: params.organization_id, contact, deleted: false });
+      return contact;
+    }),
+    api.get(`${ORG}/contacts/{contact_id}`, ({ request, params }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const refused = allowed(seen.membership, "contacts:read");
+      if (refused) return refused;
+      return (
+        liveContact(params.organization_id, params.contact_id)?.contact ?? problem(404, "not_found")
+      );
+    }),
+    api.patch(`${ORG}/contacts/{contact_id}`, ({ request, params, body }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const refused = allowed(seen.membership, "contacts:write");
+      if (refused) return refused;
+      const record = liveContact(params.organization_id, params.contact_id);
+      if (!record) return problem(404, "not_found");
+      const changed: Contact = { ...record.contact, updated_at: iso() };
+      // A JSON body has no undefined: what's there is set, `null` clearing it.
+      for (const [field, value] of Object.entries(body)) {
+        if (field === "full_name" || field === "kind") {
+          if (value !== null) Object.assign(changed, { [field]: value });
+        } else {
+          Object.assign(changed, {
+            [field]: field === "phone" && typeof value === "string" ? canonicalPhone(value) : value,
+          });
+        }
+      }
+      const unavailable = methodProblem(changed);
+      if (unavailable) return unavailable;
+      record.contact = changed;
+      // Claims carry their contacts: they show the change too.
+      for (const { claim } of db().claims) {
+        claim.contacts = claim.contacts.map((link) =>
+          link.contact.id === changed.id ? { ...link, contact: changed } : link,
+        );
+      }
+      return changed;
+    }),
+    api.delete(`${ORG}/contacts/{contact_id}`, ({ request, params }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const refused = allowed(seen.membership, "contacts:write");
+      if (refused) return refused;
+      const record = liveContact(params.organization_id, params.contact_id);
+      if (!record) return problem(404, "not_found");
+      record.deleted = true;
+      return undefined;
+    }),
+    api.post(`${CLAIM}/contacts`, ({ request, params, body }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
+      const refused = allowed(seen.membership, "claims:write") ?? locked(claim);
+      if (refused) return refused;
+      if (claim.contacts.some((c) => c.contact.id === body.contact_id)) {
+        return problem(409, "contact_already_linked", {
+          detail: "That contact is already linked to this claim; change its role instead",
+          contact_id: body.contact_id,
+        });
+      }
+      const known = liveContact(params.organization_id, body.contact_id);
+      if (!known) {
+        return problem(422, "unknown_contact", {
+          detail: "Contacts must exist in this organization",
+          contact_ids: [body.contact_id],
+        });
+      }
+      const link: Schema<"ClaimContactRead"> = {
+        contact: known.contact,
+        role: body.role,
+        is_primary: body.is_primary ?? false,
+      };
+      replaceClaim({
+        ...claim,
+        contacts: [...withPrimary(claim.contacts, link), link],
+        updated_at: iso(),
+      });
+      record(
+        claim.id,
+        seen.person,
+        "contacts",
+        "contact_linked",
+        `Added ${link.contact.full_name} as ${link.role.replaceAll("_", " ")}`,
+      );
+      return link;
+    }),
+    api.patch(`${CLAIM}/contacts/{contact_id}`, ({ request, params, body }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
+      const refused = allowed(seen.membership, "claims:write") ?? locked(claim);
+      if (refused) return refused;
+      const current = claim.contacts.find((c) => c.contact.id === params.contact_id);
+      if (!current) {
+        return problem(404, "not_found", { detail: "That contact is not linked to this claim" });
+      }
+      const link = {
+        ...current,
+        role: body.role ?? current.role,
+        is_primary: body.is_primary ?? current.is_primary,
+      };
+      replaceClaim({
+        ...claim,
+        contacts: withPrimary(claim.contacts, link).map((c) =>
+          c.contact.id === link.contact.id ? link : c,
+        ),
+        updated_at: iso(),
+      });
+      record(
+        claim.id,
+        seen.person,
+        "contacts",
+        "contact_link_updated",
+        `Changed ${link.contact.full_name}'s part in the claim`,
+      );
+      return link;
+    }),
+    api.delete(`${CLAIM}/contacts/{contact_id}`, ({ request, params }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
+      const refused = allowed(seen.membership, "claims:write") ?? locked(claim);
+      if (refused) return refused;
+      const link = claim.contacts.find((c) => c.contact.id === params.contact_id);
+      if (!link) {
+        return problem(404, "not_found", { detail: "That contact is not linked to this claim" });
+      }
+      replaceClaim({
+        ...claim,
+        contacts: claim.contacts.filter((c) => c !== link),
+        updated_at: iso(),
+      });
+      record(
+        claim.id,
+        seen.person,
+        "contacts",
+        "contact_unlinked",
+        `Took ${link.contact.full_name} off the claim`,
+      );
+      return undefined;
+    }),
+
     api.get(`${ORG}/members`, ({ request, params }) => {
       const seen = member(request, params.organization_id);
       if (seen instanceof Response) return seen;
