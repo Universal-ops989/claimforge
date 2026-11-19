@@ -2,6 +2,7 @@
 import { act, cleanup, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, test } from "vitest";
 
+import { memberRead } from "../fixtures";
 import type { Schema } from "../index";
 import {
   allItems,
@@ -11,6 +12,7 @@ import {
   useDeleteOrganization,
   useInvitations,
   useMe,
+  useMembers,
   useOrganization,
   useOrganizations,
   useRevokeInvitation,
@@ -244,5 +246,23 @@ describe("invitations", () => {
       invitation(1).id,
       invitation(2).id,
     ]);
+  });
+});
+
+describe("members", () => {
+  test("useMembers lists them, and refreshing the organization refreshes them", async () => {
+    let asked = 0;
+    const server = new FakeServer().on("GET", `/v1/organizations/${ORG_ID}/members`, () => {
+      asked += 1;
+      return json([memberRead()]);
+    });
+    const { result, queryClient } = renderWithApi(() => useMembers(ORG_ID), { server });
+
+    await waitFor(() => {
+      expect(result.current.data?.map((m) => m.user.full_name)).toEqual(["Riley Tech"]);
+    });
+    await act(() => queryClient.invalidateQueries({ queryKey: queryKeys.organization(ORG_ID) }));
+
+    expect(asked).toBe(2);
   });
 });

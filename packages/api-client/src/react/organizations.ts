@@ -115,6 +115,25 @@ export function useDeleteOrganization() {
 // ─── Invitations ─────────────────────────────────────────────────────────────
 
 /** Pending invitations, newest first. */
+/**
+ * Everyone in the organization, by name, with their role and what it allows: who can be
+ * put on a claim, and in which role. Names only, never emails.
+ */
+export function membersQuery(api: ApiClient, organizationId: string) {
+  return queryOptions({
+    queryKey: queryKeys.members(organizationId),
+    queryFn: ({ signal }) =>
+      api.get("/v1/organizations/{organization_id}/members", {
+        path: { organization_id: organizationId },
+        signal,
+      }),
+  });
+}
+
+export function useMembers(organizationId: string) {
+  return useQuery(membersQuery(useApi(), organizationId));
+}
+
 export function invitationsQuery(api: ApiClient, organizationId: string) {
   return queryOptions({
     queryKey: queryKeys.invitations(organizationId),
