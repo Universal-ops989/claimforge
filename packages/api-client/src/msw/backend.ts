@@ -124,6 +124,8 @@ const REFRESH_TTL_MS = 30 * 86_400_000;
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
 const FINAL: Schema<"ClaimStatus">[] = ["closed", "cancelled"];
+/** When the seeded members joined: the mock keeps no join dates of its own. */
+const MEMBER_SINCE = "2026-11-01T12:00:00Z";
 const MENTION = /<@([0-9a-f-]{36})>/g;
 /** What each assignment role needs the member to be allowed, as the API checks it. */
 const ASSIGNMENT_NEEDS: Record<Schema<"AssignmentRole">, Permission> = {
@@ -815,6 +817,28 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
       if (refused) return refused;
       backend.db.tasks = db().tasks.filter((t) => t.id !== task.id);
       return undefined;
+    }),
+    api.get(`${ORG}/members`, ({ request, params }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const refused = allowed(seen.membership, "members:read");
+      if (refused) return refused;
+      return db()
+        .accounts.flatMap(({ user }) =>
+          user.memberships
+            .filter((m) => m.organization.id === params.organization_id)
+            .map((m) => ({
+              user: { id: user.id, full_name: user.full_name },
+              role: m.role,
+              permissions: [...m.permissions].sort(),
+              joined_at: MEMBER_SINCE,
+            })),
+        )
+        .sort(
+          (a, b) =>
+            a.user.full_name.toLowerCase().localeCompare(b.user.full_name.toLowerCase()) ||
+            a.user.id.localeCompare(b.user.id),
+        );
     }),
     api.get(`${ORG}/tasks/assigned-to-me`, ({ request, params, query }) => {
       const seen = member(request, params.organization_id);

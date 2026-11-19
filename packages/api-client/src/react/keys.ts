@@ -9,6 +9,7 @@
  *     ["claimforge", "organizations", "list", query]    pages of organizations
  *     ["claimforge", "organizations", id]               one organization …
  *     ["claimforge", "organizations", id, "invitations"]  … and everything under it
+ *     ["claimforge", "organizations", id, "members"]
  *     ["claimforge", "organizations", id, "claims", "list", query]
  *     ["claimforge", "organizations", id, "claims", "by-number", number]
  *     ["claimforge", "organizations", id, "claims", claimId]               one claim …
@@ -72,6 +73,8 @@ export const queryKeys = {
   organization: (organizationId: string) => [ROOT, "organizations", organizationId] as const,
   invitations: (organizationId: string) =>
     [...queryKeys.organization(organizationId), "invitations"] as const,
+  members: (organizationId: string) =>
+    [...queryKeys.organization(organizationId), "members"] as const,
 
   claims: (organizationId: string) =>
     [...queryKeys.organization(organizationId), "claims"] as const,

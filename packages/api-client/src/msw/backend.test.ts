@@ -454,3 +454,39 @@ describe("assignments", () => {
     expect(twice).toMatchObject({ status: 404 });
   });
 });
+
+describe("members", () => {
+  const MEMBERS = "/v1/organizations/{organization_id}/members" as const;
+
+  test("lists the organization's members by name, with role and permissions", async () => {
+    const api = await signedIn("riley@example.com");
+
+    const members = await api.get(MEMBERS, { path: ORG });
+
+    expect(members.map((m) => [m.user.full_name, m.role])).toEqual([
+      ["Morgan Member", "owner"],
+      ["Riley Tech", "technician"],
+    ]);
+    expect(members[1]?.user).toEqual(people.riley);
+    expect(members[1]?.permissions).toEqual([...rolePermissions.technician].sort());
+    expect(JSON.stringify(members)).not.toContain("@");
+  });
+
+  test("outsiders get a 404", async () => {
+    backend.db.accounts.push({
+      email: "outsider@example.com",
+      password: MOCK_PASSWORD,
+      user: {
+        id: fixtureId("person", 9),
+        email: "outsider@example.com",
+        full_name: "Out Sider",
+        memberships: [],
+      },
+    });
+    const api = await signedIn("outsider@example.com");
+
+    const refused = await refusal(api.get(MEMBERS, { path: ORG }));
+
+    expect(refused.status).toBe(404);
+  });
+});

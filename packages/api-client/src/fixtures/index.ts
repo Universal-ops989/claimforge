@@ -159,6 +159,17 @@ export function organization(
   };
 }
 
+/** A member as `GET /organizations/{id}/members` lists them: Riley, a technician. */
+export function memberRead(changes: Overrides<"MemberRead"> = {}): Schema<"MemberRead"> {
+  return {
+    user: people.riley,
+    role: "technician",
+    permissions: [...rolePermissions.technician].sort(),
+    joined_at: CREATED,
+    ...changes,
+  };
+}
+
 export function invitation(changes: Overrides<"InvitationRead"> = {}): Schema<"InvitationRead"> {
   return {
     id: ids.invitation,

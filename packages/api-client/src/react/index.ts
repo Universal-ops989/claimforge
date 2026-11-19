@@ -66,12 +66,14 @@ export {
 } from "./notes";
 export {
   invitationsQuery,
+  membersQuery,
   organizationQuery,
   organizationsQuery,
   useCreateInvitation,
   useCreateOrganization,
   useDeleteOrganization,
   useInvitations,
+  useMembers,
   useOrganization,
   useOrganizations,
   useRevokeInvitation,
