@@ -5,6 +5,7 @@ import type { RouteObject } from "react-router";
 import { ChooseOrganization } from "./app/organization";
 import { RootLayout, ShellLayout } from "./app/root-layout";
 import { RouteError } from "./app/route-error";
+import type { ClaimTabHandle } from "./claims/detail/tabs";
 
 /**
  * Every page, by address. Pages belong to an organization, named first by its slug, and
@@ -70,6 +71,25 @@ export const routes: RouteObject[] = [
                   () => import("./pages/claim"),
                   (module) => module.ClaimPage,
                 ),
+                // The claim's tabs (`CLAIM_TABS`), each in the address.
+                children: [
+                  {
+                    index: true,
+                    handle: { tab: "overview" } satisfies ClaimTabHandle,
+                    lazy: page(
+                      () => import("./claims/detail/overview-tab"),
+                      (module) => module.OverviewTab,
+                    ),
+                  },
+                  {
+                    path: "timeline",
+                    handle: { tab: "timeline" } satisfies ClaimTabHandle,
+                    lazy: page(
+                      () => import("./claims/detail/timeline-tab"),
+                      (module) => module.TimelineTab,
+                    ),
+                  },
+                ],
               },
             ],
           },
