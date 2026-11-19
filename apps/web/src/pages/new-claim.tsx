@@ -1,4 +1,3 @@
-import { isApiError } from "@claimforge/api-client";
 import { useCreateClaim } from "@claimforge/api-client/react";
 import {
   Button,
@@ -23,11 +22,10 @@ import {
   draftProblems,
   draftResolver,
   EMPTY_DRAFT,
-  fieldFor,
   localToday,
+  refusedFields,
   toClaimCreate,
   type ClaimDraft,
-  type DraftField,
 } from "../claims/new/draft";
 import { createDraftStore, hasContent } from "../claims/new/draft-store";
 import { LossStep, PropertyStep, STEP_FIELDS } from "../claims/new/steps";
@@ -284,21 +282,6 @@ function Review({
       </Inline>
     </Stack>
   );
-}
-
-/**
- * The fields an API refusal is about: a 422's `errors[]`, read back into the form, and
- * the business rules about one field. Empty when the refusal isn't about a field.
- */
-function refusedFields(error: unknown): { field: DraftField; message: string }[] {
-  if (!isApiError(error)) return [];
-  if (error.code === "loss_date_in_future") {
-    return [{ field: "loss.loss_date", message: "The date of loss can't be in the future." }];
-  }
-  return error.fieldErrors.flatMap(({ loc, message }) => {
-    const field = fieldFor(loc);
-    return field ? [{ field, message }] : [];
-  });
 }
 
 /** `sessionStorage`, unless the browser refuses it. */

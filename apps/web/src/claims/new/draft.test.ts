@@ -1,6 +1,15 @@
+import { claim } from "@claimforge/api-client/fixtures";
 import { describe, expect, test } from "vitest";
 
-import { draftProblems, EMPTY_DRAFT, fieldFor, toClaimCreate, type ClaimDraft } from "./draft";
+import {
+  draftProblems,
+  EMPTY_DRAFT,
+  fieldFor,
+  lossOf,
+  toClaimCreate,
+  toClaimUpdate,
+  type ClaimDraft,
+} from "./draft";
 
 const TODAY = "2026-11-17";
 const filled: ClaimDraft = {
@@ -118,4 +127,42 @@ describe("fieldFor", () => {
       expect(fieldFor(loc)).toBeNull();
     },
   );
+});
+
+describe("lossOf and toClaimUpdate", () => {
+  test("a claim's loss round-trips, missing fields as blanks", () => {
+    const loss = lossOf(claim({ loss_date: null, carrier_name: "Lone Star Mutual" }));
+
+    expect(loss).toEqual({
+      loss_type: "water",
+      loss_date: "",
+      description: "Supply line burst under the kitchen sink",
+      carrier_name: "Lone Star Mutual",
+      policy_number: "",
+      carrier_claim_number: "",
+    });
+    expect(toClaimUpdate(loss)).toEqual({
+      loss_type: "water",
+      loss_date: null,
+      description: "Supply line burst under the kitchen sink",
+      carrier_name: "Lone Star Mutual",
+      policy_number: null,
+      carrier_claim_number: null,
+    });
+  });
+
+  test("trims what's typed, and blanks clear", () => {
+    const update = toClaimUpdate({
+      ...lossOf(claim()),
+      loss_date: "2026-11-01",
+      description: "  ",
+      policy_number: " HO-9 ",
+    });
+
+    expect(update).toMatchObject({
+      loss_date: "2026-11-01",
+      description: null,
+      policy_number: "HO-9",
+    });
+  });
 });
