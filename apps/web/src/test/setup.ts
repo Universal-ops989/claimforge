@@ -12,6 +12,20 @@ if (!("hasPointerCapture" in Element.prototype)) {
     releasePointerCapture: () => undefined,
   });
 }
+if (!("ResizeObserver" in globalThis)) {
+  // Radix measures some controls (the checkbox's hidden input) as they resize.
+  globalThis.ResizeObserver = class {
+    observe() {
+      /* nothing resizes in jsdom */
+    }
+    unobserve() {
+      /* nothing to stop */
+    }
+    disconnect() {
+      /* nothing to stop */
+    }
+  };
+}
 if (!("scrollIntoView" in Element.prototype)) {
   Object.assign(Element.prototype, { scrollIntoView: () => undefined });
 }
