@@ -6,7 +6,7 @@
  *
  * It covers what the web app's first screens need: sessions, `/v1/me`, organizations,
  * claims (lists, filters, pages, create, edit, the status workflow, assignments, contacts,
- * history, timeline), the address book,
+ * history, timeline), the address book, the layout and damage,
  * tasks, notes, and the layout to read. It behaves like the API where tests can tell:
  * the same status codes and error codes, refresh tokens that rotate with reuse detection,
  * the workflow the contract publishes (`workflows`), permissions by role, locked claims.
@@ -45,6 +45,8 @@ export interface MockDb {
   statusChanges: { claimId: string; change: Schema<"ClaimStatusChangeRead"> }[];
   timeline: { claimId: string; entry: Schema<"TimelineEntry"> }[];
   structures: { claimId: string; structure: Schema<"StructureRead"> }[];
+  /** Damage recorded in the claims' rooms; it goes with its room. */
+  damage: { claimId: string; item: Schema<"DamageItemRead"> }[];
   tasks: Schema<"TaskRead">[];
   notes: Schema<"NoteRead">[];
   /** The address book; a deleted contact stays on the claims it's linked to. */
@@ -101,6 +103,7 @@ export function seedDb(): MockDb {
     ],
     timeline: [],
     structures: [{ claimId: fx.ids.claim, structure: fx.structure() }],
+    damage: [{ claimId: fx.ids.claim, item: fx.damageItem() }],
     tasks: [fx.task()],
     notes: [fx.note()],
     contacts: [
@@ -131,6 +134,53 @@ const REFRESH_TTL_MS = 30 * 86_400_000;
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
 const FINAL: Schema<"ClaimStatus">[] = ["closed", "cancelled"];
+/** Causes whose damage has a water category and class (IICRC S500), as the API has them. */
+const WATER_CAUSES: Schema<"LossType">[] = ["water", "flood", "sewage", "storm"];
+/** Causes whose water is always Category 3. */
+const BLACK_WATER_CAUSES: Schema<"LossType">[] = ["flood", "sewage"];
+
+/** Two decimals, as the API rounds measures. */
+const cents = (n: number) => Math.round(n * 100) / 100;
+
+/** A room with its floor area, wall area (gross) and volume worked out from its dimensions. */
+function measured(room: Schema<"RoomRead">): Schema<"RoomRead"> {
+  const { length_ft: l, width_ft: w, height_ft: h } = room;
+  return {
+    ...room,
+    floor_area_sqft: l !== null && w !== null ? cents(l * w) : null,
+    wall_area_sqft: l !== null && w !== null && h !== null ? cents(2 * (l + w) * h) : null,
+    volume_cuft: l !== null && w !== null && h !== null ? cents(l * w * h) : null,
+  };
+}
+
+/**
+ * The water category to keep for damage with this cause, or the API's refusal: category
+ * and class only for water causes (`not_water_damage`); flood and sewage always 3.
+ */
+function waterCategory(
+  cause: Schema<"LossType">,
+  category: number | null,
+  waterClass: number | null,
+): number | null | Response {
+  if (!WATER_CAUSES.includes(cause)) {
+    return category === null && waterClass === null
+      ? null
+      : problem(422, "not_water_damage", {
+          detail: `Water category and class don't apply to ${cause} damage; clear them first`,
+          cause,
+        });
+  }
+  if (BLACK_WATER_CAUSES.includes(cause)) {
+    return category === null || category === 3
+      ? 3
+      : problem(422, "black_water_category", {
+          detail: `${cause[0]?.toUpperCase() ?? ""}${cause.slice(1)} water is always Category 3`,
+          cause,
+        });
+  }
+  return category;
+}
+
 /** A search needs this many digits before it looks at phone numbers, as the API's does. */
 const MIN_PHONE_DIGITS = 3;
 
@@ -274,6 +324,41 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
   function locked(claim: Claim): Response | null {
     return FINAL.includes(claim.status)
       ? problem(409, "claim_locked", { detail: `The claim is ${claim.status}` })
+      : null;
+  }
+
+  /** A claim's structures, each with its rooms, in the order they were added. */
+  function layoutOf(claimId: string): Schema<"StructureRead">[] {
+    return db()
+      .structures.filter((s) => s.claimId === claimId)
+      .map((s) => s.structure);
+  }
+
+  /**
+   * Field work on a claim: the member, allowed `field_data:write`, on a claim that isn't
+   * locked; or the API's refusal.
+   */
+  function fieldWork(request: Request, organizationId: string, claimId: string) {
+    const seen = member(request, organizationId);
+    if (seen instanceof Response) return seen;
+    const claim = claimOr404(organizationId, claimId);
+    if (claim instanceof Response) return claim;
+    return allowed(seen.membership, "field_data:write") ?? locked(claim) ?? { seen, claim };
+  }
+
+  /** `name_taken` if one of `named` already has `name`, ignoring case. */
+  function nameTaken(
+    named: { name: string }[],
+    name: string,
+    what: "structure" | "room" = "structure",
+  ): Response | null {
+    return named.some((n) => n.name.toLowerCase() === name.toLowerCase())
+      ? problem(409, "name_taken", {
+          detail:
+            what === "room"
+              ? `This structure already has a room named '${name}'`
+              : `This claim already has a structure named '${name}'`,
+        })
       : null;
   }
 
@@ -778,6 +863,284 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
         .flatMap((s) => s.structure.rooms)
         .find((r) => r.id === params.room_id);
       return room ?? problem(404, "not_found");
+    }),
+    api.post(`${CLAIM}/structures`, ({ request, params, body }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const name = body.name.trim();
+      const taken = nameTaken(layoutOf(ready.claim.id), name);
+      if (taken) return taken;
+      const structure: Schema<"StructureRead"> = {
+        id: newId(),
+        name,
+        rooms: [],
+        created_at: iso(),
+        updated_at: iso(),
+      };
+      db().structures.push({ claimId: ready.claim.id, structure });
+      record(ready.claim.id, ready.seen.person, "layout", "structure_added", `Added ${name}`);
+      return structure;
+    }),
+    api.patch(`${CLAIM}/structures/{structure_id}`, ({ request, params, body }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const entry = db().structures.find(
+        (s) => s.claimId === ready.claim.id && s.structure.id === params.structure_id,
+      );
+      if (!entry) return problem(404, "not_found");
+      if (body.name != null) {
+        const name = body.name.trim();
+        const taken = nameTaken(
+          layoutOf(ready.claim.id).filter((s) => s.id !== entry.structure.id),
+          name,
+        );
+        if (taken) return taken;
+        const before = entry.structure.name;
+        entry.structure = { ...entry.structure, name, updated_at: iso() };
+        record(
+          ready.claim.id,
+          ready.seen.person,
+          "layout",
+          "structure_renamed",
+          `Renamed ${before} to ${name}`,
+        );
+      }
+      return entry.structure;
+    }),
+    api.delete(`${CLAIM}/structures/{structure_id}`, ({ request, params }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const entry = db().structures.find(
+        (s) => s.claimId === ready.claim.id && s.structure.id === params.structure_id,
+      );
+      if (!entry) return problem(404, "not_found");
+      const rooms = new Set(entry.structure.rooms.map((r) => r.id));
+      backend.db.structures = db().structures.filter((s) => s !== entry);
+      backend.db.damage = db().damage.filter((d) => !rooms.has(d.item.room_id));
+      record(
+        ready.claim.id,
+        ready.seen.person,
+        "layout",
+        "structure_deleted",
+        `Deleted ${entry.structure.name}`,
+      );
+      return undefined;
+    }),
+    api.post(`${CLAIM}/structures/{structure_id}/rooms`, ({ request, params, body }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const entry = db().structures.find(
+        (s) => s.claimId === ready.claim.id && s.structure.id === params.structure_id,
+      );
+      if (!entry) return problem(404, "not_found");
+      const name = body.name.trim();
+      const taken = nameTaken(entry.structure.rooms, name, "room");
+      if (taken) return taken;
+      const room = measured({
+        id: newId(),
+        structure_id: entry.structure.id,
+        name,
+        level: body.level ?? null,
+        length_ft: body.length_ft ?? null,
+        width_ft: body.width_ft ?? null,
+        height_ft: body.height_ft ?? null,
+        floor_area_sqft: null,
+        wall_area_sqft: null,
+        volume_cuft: null,
+        created_at: iso(),
+        updated_at: iso(),
+      });
+      entry.structure = { ...entry.structure, rooms: [...entry.structure.rooms, room] };
+      record(
+        ready.claim.id,
+        ready.seen.person,
+        "layout",
+        "room_added",
+        `Added the ${name} to ${entry.structure.name}`,
+      );
+      return room;
+    }),
+    api.patch(`${CLAIM}/rooms/{room_id}`, ({ request, params, body }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const home = db().structures.find(
+        (s) =>
+          s.claimId === ready.claim.id && s.structure.rooms.some((r) => r.id === params.room_id),
+      );
+      const current = home?.structure.rooms.find((r) => r.id === params.room_id);
+      if (!home || !current) return problem(404, "not_found");
+      const target = body.structure_id
+        ? db().structures.find(
+            (s) => s.claimId === ready.claim.id && s.structure.id === body.structure_id,
+          )
+        : home;
+      if (!target) {
+        return problem(422, "unknown_structure", {
+          detail: "Rooms can only move to another structure of the same claim",
+          structure_id: body.structure_id,
+        });
+      }
+      const changed = { ...current, updated_at: iso(), structure_id: target.structure.id };
+      if (body.name != null) changed.name = body.name.trim();
+      for (const field of ["level", "length_ft", "width_ft", "height_ft"] as const) {
+        if (field in body) Object.assign(changed, { [field]: body[field] ?? null });
+      }
+      const taken = nameTaken(
+        target.structure.rooms.filter((r) => r.id !== current.id),
+        changed.name,
+        "room",
+      );
+      if (taken) return taken;
+      const room = measured(changed);
+      home.structure = {
+        ...home.structure,
+        rooms: home.structure.rooms.filter((r) => r.id !== room.id),
+      };
+      target.structure = {
+        ...target.structure,
+        rooms: [...target.structure.rooms, room].sort((a, b) => a.id.localeCompare(b.id)),
+      };
+      record(
+        ready.claim.id,
+        ready.seen.person,
+        "layout",
+        "room_updated",
+        `Changed the ${room.name}`,
+      );
+      return room;
+    }),
+    api.delete(`${CLAIM}/rooms/{room_id}`, ({ request, params }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const home = db().structures.find(
+        (s) =>
+          s.claimId === ready.claim.id && s.structure.rooms.some((r) => r.id === params.room_id),
+      );
+      const room = home?.structure.rooms.find((r) => r.id === params.room_id);
+      if (!home || !room) return problem(404, "not_found");
+      home.structure = { ...home.structure, rooms: home.structure.rooms.filter((r) => r !== room) };
+      backend.db.damage = db().damage.filter((d) => d.item.room_id !== room.id);
+      record(
+        ready.claim.id,
+        ready.seen.person,
+        "layout",
+        "room_deleted",
+        `Deleted the ${room.name}`,
+      );
+      return undefined;
+    }),
+
+    // ─── Damage ──────────────────────────────────────────────────────────────
+    api.get(`${CLAIM}/damage-items`, ({ request, params, query }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
+      const roomId = query.get("room_id");
+      const cause = query.get("cause");
+      // By room, in the order the rooms were added; within a room, as recorded.
+      const order = layoutOf(claim.id).flatMap((s) => s.rooms.map((r) => r.id));
+      return db()
+        .damage.filter((d) => d.claimId === claim.id)
+        .map((d) => d.item)
+        .filter((item) => (!roomId || item.room_id === roomId) && (!cause || item.cause === cause))
+        .sort(
+          (a, b) => order.indexOf(a.room_id) - order.indexOf(b.room_id) || a.id.localeCompare(b.id),
+        );
+    }),
+    api.get(`${CLAIM}/damage-items/{damage_item_id}`, ({ request, params }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const found = db().damage.find(
+        (d) => d.claimId === params.claim_id && d.item.id === params.damage_item_id,
+      );
+      return found?.item ?? problem(404, "not_found");
+    }),
+    api.post(`${CLAIM}/rooms/{room_id}/damage-items`, ({ request, params, body }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const room = layoutOf(ready.claim.id)
+        .flatMap((s) => s.rooms)
+        .find((r) => r.id === params.room_id);
+      if (!room) return problem(404, "not_found");
+      const cause = body.cause ?? ready.claim.loss_type;
+      const category = waterCategory(cause, body.water_category ?? null, body.water_class ?? null);
+      if (category instanceof Response) return category;
+      const item: Schema<"DamageItemRead"> = {
+        id: newId(),
+        room_id: room.id,
+        surface: body.surface,
+        material: body.material.trim(),
+        description: body.description ?? null,
+        cause,
+        water_category: category,
+        water_class: body.water_class ?? null,
+        created_by_id: ready.seen.person.id,
+        created_at: iso(),
+        updated_at: iso(),
+      };
+      db().damage.push({ claimId: ready.claim.id, item });
+      record(
+        ready.claim.id,
+        ready.seen.person,
+        "damage",
+        "damage_recorded",
+        `Recorded ${item.material.toLowerCase()} damage in the ${room.name}`,
+      );
+      return item;
+    }),
+    api.patch(`${CLAIM}/damage-items/{damage_item_id}`, ({ request, params, body }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const entry = db().damage.find(
+        (d) => d.claimId === ready.claim.id && d.item.id === params.damage_item_id,
+      );
+      if (!entry) return problem(404, "not_found");
+      if (
+        body.room_id &&
+        !layoutOf(ready.claim.id).some((s) => s.rooms.some((r) => r.id === body.room_id))
+      ) {
+        return problem(422, "unknown_room", {
+          detail: "Damage can only move to another room of the same claim",
+          room_id: body.room_id,
+        });
+      }
+      const changed = { ...entry.item, updated_at: iso() };
+      if (body.room_id) changed.room_id = body.room_id;
+      if (body.surface) changed.surface = body.surface;
+      if (body.material) changed.material = body.material.trim();
+      if (body.cause) changed.cause = body.cause;
+      for (const field of ["description", "water_category", "water_class"] as const) {
+        if (field in body) Object.assign(changed, { [field]: body[field] ?? null });
+      }
+      const category = waterCategory(changed.cause, changed.water_category, changed.water_class);
+      if (category instanceof Response) return category;
+      entry.item = { ...changed, water_category: category };
+      record(
+        ready.claim.id,
+        ready.seen.person,
+        "damage",
+        "damage_updated",
+        `Changed the ${entry.item.material.toLowerCase()} damage`,
+      );
+      return entry.item;
+    }),
+    api.delete(`${CLAIM}/damage-items/{damage_item_id}`, ({ request, params }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const entry = db().damage.find(
+        (d) => d.claimId === ready.claim.id && d.item.id === params.damage_item_id,
+      );
+      if (!entry) return problem(404, "not_found");
+      backend.db.damage = db().damage.filter((d) => d !== entry);
+      record(
+        ready.claim.id,
+        ready.seen.person,
+        "damage",
+        "damage_deleted",
+        `Deleted the ${entry.item.material.toLowerCase()} damage`,
+      );
+      return undefined;
     }),
 
     // ─── Tasks ───────────────────────────────────────────────────────────────

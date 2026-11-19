@@ -30,6 +30,15 @@ export {
   useUpdateContactLink,
 } from "./claims";
 export { contactsQuery, useContacts, useCreateContact, useUpdateContact } from "./contacts";
+export {
+  damageItemsQuery,
+  useDamageItems,
+  useDeleteDamageItem,
+  useRecordDamage,
+  useUpdateDamageItem,
+  type DamageChange,
+  type NewDamage,
+} from "./damage";
 export { ApiProvider, useApi, type ApiProviderProps } from "./context";
 export {
   documentQuery,

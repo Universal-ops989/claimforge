@@ -40,6 +40,7 @@ const KINDS = {
   invitation: "1d",
   timeline: "1e",
   statusChange: "1f",
+  damage: "20",
 } as const;
 
 /** A fixed UUIDv7-shaped id per kind and number; ids of one kind sort by `n`. */
@@ -64,6 +65,7 @@ export const ids = {
   report: fixtureId("report"),
   share: fixtureId("share"),
   invitation: fixtureId("invitation"),
+  damage: fixtureId("damage"),
 } as const;
 
 export const CLAIM_NUMBER = "2026-00042";
@@ -339,6 +341,24 @@ export function structure(changes: Overrides<"StructureRead"> = {}): Schema<"Str
     id: ids.structure,
     name: "House",
     rooms: [room()],
+    created_at: CREATED,
+    updated_at: CREATED,
+    ...changes,
+  };
+}
+
+/** Wet laminate in the kitchen: clean water, class 2. */
+export function damageItem(changes: Overrides<"DamageItemRead"> = {}): Schema<"DamageItemRead"> {
+  return {
+    id: ids.damage,
+    room_id: ids.room,
+    surface: "floor",
+    material: "Laminate",
+    description: "Swollen at the seams along the sink run",
+    cause: "water",
+    water_category: 1,
+    water_class: 2,
+    created_by_id: people.riley.id,
     created_at: CREATED,
     updated_at: CREATED,
     ...changes,
