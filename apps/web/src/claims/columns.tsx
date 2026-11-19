@@ -2,17 +2,13 @@ import type { Schema } from "@claimforge/api-client";
 import { Badge, createColumnHelper, Text } from "@claimforge/ui";
 import { Link } from "react-router";
 
+import { calendarDate } from "../format/calendar-date";
 import { fullTime, relativeTime } from "../format/relative-time";
 import { LOSS_TYPE_LABEL, STATUS_LABEL, STATUS_TONE } from "./status";
 
 export type ClaimRow = Schema<"ClaimSummary">;
 
 const column = createColumnHelper<ClaimRow>();
-
-/** `2026-11-10` as "Nov 10, 2026", read as a calendar date. */
-function calendarDate(date: string): string {
-  return new Date(`${date}T00:00:00`).toLocaleDateString(undefined, { dateStyle: "medium" });
-}
 
 /**
  * The claims table's columns; `claimPath` gives a claim's address in this organization.

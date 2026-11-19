@@ -28,6 +28,17 @@ export const STATUS_TONE: Record<ClaimStatus, BadgeTone> = {
 /** The statuses of claims still being worked, in lifecycle order. */
 export const ACTIVE_STATUSES: ClaimStatus[] = ["new", "inspected", "in_progress", "on_hold"];
 
+export type PropertyType = Schema<"PropertyType">;
+
+/** Each property type as people say it. */
+export const PROPERTY_TYPE_LABEL: Record<PropertyType, string> = {
+  residential: "Residential",
+  multi_family: "Multi-family",
+  commercial: "Commercial",
+  industrial: "Industrial",
+  other: "Other",
+};
+
 export type LossType = Schema<"LossType">;
 
 /** Each loss type as people say it. */

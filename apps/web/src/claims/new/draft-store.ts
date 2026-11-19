@@ -1,4 +1,4 @@
-import { LOSS_TYPE_LABEL } from "../status";
+import { LOSS_TYPE_LABEL, PROPERTY_TYPE_LABEL } from "../status";
 import { EMPTY_DRAFT, type ClaimDraft } from "./draft";
 
 export type DraftStep = "property" | "loss" | "review";
@@ -8,7 +8,7 @@ export interface SavedDraft {
   step: DraftStep;
 }
 
-const PROPERTY_TYPES = ["residential", "multi_family", "commercial", "industrial", "other"];
+const PROPERTY_TYPES = Object.keys(PROPERTY_TYPE_LABEL);
 const LOSS_TYPES = Object.keys(LOSS_TYPE_LABEL);
 const STEPS: DraftStep[] = ["property", "loss", "review"];
 

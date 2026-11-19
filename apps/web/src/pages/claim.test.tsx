@@ -175,3 +175,60 @@ describe("the timeline", () => {
     expect(await screen.findByText("Nothing has happened yet")).toBeInTheDocument();
   });
 });
+
+describe("the overview", () => {
+  /** A card's facts, term → value, as they read. */
+  async function facts(card: string) {
+    const region = await screen.findByRole("region", { name: card });
+    const terms = within(region).getAllByRole("term");
+    const values = within(region).getAllByRole("definition");
+    return Object.fromEntries(terms.map((term, i) => [term.textContent, values[i]?.textContent]));
+  }
+
+  test("shows the loss, the property and the insurance", async () => {
+    const seeded = backend.db.claims.find((c) => c.claim.id === ids.claim);
+    if (!seeded) throw new Error("no seeded claim");
+    seeded.claim = {
+      ...seeded.claim,
+      carrier_name: "Lone Star Mutual",
+      policy_number: "HO-123",
+      property: { ...seeded.claim.property, access_notes: "Key under the mat" },
+    };
+    await open(CLAIM);
+
+    expect(await facts("What happened")).toEqual({
+      Cause: "Water",
+      "Date of loss": "Nov 10, 2026",
+      Description: "Supply line burst under the kitchen sink",
+    });
+    expect(await facts("Property")).toEqual({
+      Address: "100 Congress Ave\nAustin, TX 78701",
+      Type: "Residential",
+      "Year built": "1998",
+      "Access notes": "Key under the mat",
+    });
+    expect(await facts("Insurance")).toEqual({
+      Carrier: "Lone Star Mutual",
+      "Policy number": "HO-123",
+      "Carrier's claim number": "Not given",
+    });
+    expect(Object.keys(await facts("Record"))).toEqual(["Opened", "Last changed"]);
+  });
+
+  test("says what isn't known yet, rather than leaving gaps", async () => {
+    const seeded = backend.db.claims.find((c) => c.claim.id === ids.claim);
+    if (!seeded) throw new Error("no seeded claim");
+    seeded.claim = {
+      ...seeded.claim,
+      loss_date: null,
+      description: null,
+      property: { ...seeded.claim.property, year_built: null },
+    };
+    await open(CLAIM);
+
+    const loss = await facts("What happened");
+    expect(loss["Date of loss"]).toBe("Not given");
+    expect(loss.Description).toBe("Not given");
+    expect((await facts("Property"))["Year built"]).toBe("Not given");
+  });
+});
