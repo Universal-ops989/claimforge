@@ -8,14 +8,17 @@ export interface PageProps {
   title: string;
   /** Buttons at the end of the header, e.g. "New claim". */
   actions?: ReactNode;
+  /** Where the page sits, above its heading: a `Breadcrumbs` trail. */
+  trail?: ReactNode;
   children?: ReactNode;
 }
 
 /** A page's frame: its title in the tab and as the one `<h1>`, its actions, then content. */
-export function Page({ title, actions, children }: PageProps) {
+export function Page({ title, actions, trail, children }: PageProps) {
   return (
     <Stack as="section" gap={6} aria-labelledby="page-title">
       <PageTitle title={title} />
+      {trail}
       <Inline justify="between" align="center" gap={4}>
         <Heading level={1} id="page-title">
           {title}
