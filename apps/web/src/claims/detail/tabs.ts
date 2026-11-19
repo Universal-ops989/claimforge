@@ -9,6 +9,7 @@ export type Claim = Schema<"ClaimRead">;
  */
 export const CLAIM_TABS = [
   { id: "overview", path: "", label: "Overview" },
+  { id: "rooms", path: "rooms", label: "Rooms" },
   { id: "timeline", path: "timeline", label: "Timeline" },
 ] as const;
 
