@@ -7,6 +7,7 @@ import { addressLines } from "../../format/address";
 import { calendarDate } from "../../format/calendar-date";
 import { fullTime } from "../../format/relative-time";
 import { LOSS_TYPE_LABEL, PROPERTY_TYPE_LABEL, READ_ONLY_STATUSES, STATUS_LABEL } from "../status";
+import { ContactsCard } from "./contacts-card";
 import { EditLossDialog } from "./edit-loss-dialog";
 import { useClaimOfPage } from "./tabs";
 import { TeamCard } from "./team-card";
@@ -53,6 +54,7 @@ export function OverviewTab() {
           ]}
         />
         <TeamCard claim={claim} canChange={canEdit} />
+        <ContactsCard claim={claim} canChange={canEdit} />
         <FactsCard
           title="Property"
           facts={[
