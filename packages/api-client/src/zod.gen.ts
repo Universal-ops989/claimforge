@@ -129,6 +129,8 @@ const MembershipOrganization = z.object({ id: z.uuid(), name: z.string(), slug: 
 const Permission = z.enum(["org:read","org:update","org:delete","members:read","members:manage","claims:read","claims:write","claims:delete","claims:reopen","contacts:read","contacts:write","field_data:write","estimates:write","estimates:approve","reports:generate","audit:read"]);
 const MembershipRead = z.object({ organization: MembershipOrganization, permissions: z.array(Permission), role: Role });
 const MeResponse = z.object({ email: z.string(), full_name: z.string(), id: z.uuid(), memberships: z.array(MembershipRead) });
+const MemberPerson = z.object({ full_name: z.string(), id: z.uuid() });
+const MemberRead = z.object({ joined_at: z.iso.datetime({ offset: true }), permissions: z.array(Permission), role: Role, user: MemberPerson });
 const ReadingIn = z.strictObject({ point_id: z.uuid(), value: z.number().min(0).max(9999.9) });
 const MoistureLogCreate = z.strictObject({ atmosphere: z.array(AtmosphereIn).max(500).optional(), notes: z.string().max(2000).nullable().optional(), readings: z.array(ReadingIn).max(500).optional(), taken_at: z.iso.datetime({ offset: true }).nullable().optional() });
 const ReadingChange = z.strictObject({ point_id: z.uuid(), value: z.number().min(0).max(9999.9).nullable() });
@@ -310,6 +312,8 @@ export const schemas = {
   Permission,
   MembershipRead,
   MeResponse,
+  MemberPerson,
+  MemberRead,
   ReadingIn,
   MoistureLogCreate,
   ReadingChange,
@@ -453,6 +457,7 @@ export const responses = {
   "patch /v1/organizations/{organization_id}/equipment/{equipment_id}": { 200: EquipmentRead },
   "get /v1/organizations/{organization_id}/invitations": { 200: z.array(InvitationRead) },
   "post /v1/organizations/{organization_id}/invitations": { 201: InvitationRead },
+  "get /v1/organizations/{organization_id}/members": { 200: z.array(MemberRead) },
   "get /v1/organizations/{organization_id}/notes/mentioning-me": { 200: CursorPage_NoteRead_ },
   "get /v1/organizations/{organization_id}/photo-tags": { 200: z.array(TagCount) },
   "get /v1/organizations/{organization_id}/price-lists": { 200: z.array(PriceListRead) },
@@ -644,6 +649,7 @@ export const successStatuses: Record<string, readonly number[]> = {
   "get /v1/organizations/{organization_id}/invitations": [200],
   "post /v1/organizations/{organization_id}/invitations": [201],
   "delete /v1/organizations/{organization_id}/invitations/{invitation_id}": [204],
+  "get /v1/organizations/{organization_id}/members": [200],
   "get /v1/organizations/{organization_id}/notes/mentioning-me": [200],
   "get /v1/organizations/{organization_id}/photo-tags": [200],
   "get /v1/organizations/{organization_id}/price-lists": [200],

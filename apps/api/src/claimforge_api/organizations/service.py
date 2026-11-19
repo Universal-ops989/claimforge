@@ -4,9 +4,10 @@ import re
 import unicodedata
 from uuid import UUID
 
-from sqlalchemy import Select, select
+from sqlalchemy import Select, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import contains_eager
 
 from claimforge_api.auth.permissions import Permission, authorize
 from claimforge_api.core.errors import ConflictError, NotFoundError
@@ -120,3 +121,18 @@ async def delete_organization(session: AsyncSession, organization_id: UUID, *, u
     organization = await get_organization(session, organization_id, user=user)
     organization.soft_delete()
     await session.commit()
+
+
+async def list_members(
+    session: AsyncSession, *, user: User, organization_id: UUID
+) -> list[Membership]:
+    """The organization's members (with their users), by name; deleted users left out."""
+    await authorize(session, user, organization_id, Permission.MEMBERS_READ)
+    rows = await session.scalars(
+        select(Membership)
+        .join(User, User.id == Membership.user_id)
+        .where(Membership.organization_id == organization_id, User.not_deleted())
+        .order_by(func.lower(User.full_name), User.id)
+        .options(contains_eager(Membership.user))
+    )
+    return list(rows)

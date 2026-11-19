@@ -4593,6 +4593,58 @@
         "title": "MeResponse",
         "type": "object"
       },
+      "MemberPerson": {
+        "description": "Who a member is, as teammates see them: never an email or anything else personal.",
+        "properties": {
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "full_name"
+        ],
+        "title": "MemberPerson",
+        "type": "object"
+      },
+      "MemberRead": {
+        "description": "One member of an organization: who, their role, and what that role allows.",
+        "properties": {
+          "joined_at": {
+            "format": "date-time",
+            "title": "Joined At",
+            "type": "string"
+          },
+          "permissions": {
+            "description": "What the role allows, so a client can tell who can be given which work",
+            "items": {
+              "$ref": "#/components/schemas/Permission"
+            },
+            "title": "Permissions",
+            "type": "array"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "user": {
+            "$ref": "#/components/schemas/MemberPerson"
+          }
+        },
+        "required": [
+          "user",
+          "role",
+          "permissions",
+          "joined_at"
+        ],
+        "title": "MemberRead",
+        "type": "object"
+      },
       "MembershipOrganization": {
         "properties": {
           "id": {
@@ -21274,6 +21326,109 @@
         "summary": "Revoke an invitation",
         "tags": [
           "invitations"
+        ]
+      }
+    },
+    "/v1/organizations/{organization_id}/members": {
+      "get": {
+        "description": "Everyone in the organization, by name, with their role and what it allows: enough to pick someone for a claim. Needs `members:read`. No emails or other personal details.",
+        "operationId": "list_members",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Organization Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MemberRead"
+                  },
+                  "title": "Response List Members",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Authentication required"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Permission denied"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation failed or business rule violated"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List members",
+        "tags": [
+          "organizations"
         ]
       }
     },

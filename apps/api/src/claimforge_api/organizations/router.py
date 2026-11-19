@@ -7,9 +7,12 @@ from fastapi import APIRouter, status
 from claimforge_api.api.deps import DbSession, PageParamsDep
 from claimforge_api.api.problems import PROBLEM_RESPONSES
 from claimforge_api.auth.deps import CurrentUser
+from claimforge_api.auth.permissions import permissions_for
 from claimforge_api.db.pagination import CursorPage
 from claimforge_api.organizations import service
 from claimforge_api.organizations.schemas import (
+    MemberPerson,
+    MemberRead,
     OrganizationCreate,
     OrganizationRead,
     OrganizationUpdate,
@@ -63,3 +66,26 @@ async def update_organization(
 )
 async def delete_organization(session: DbSession, user: CurrentUser, organization_id: UUID) -> None:
     await service.delete_organization(session, organization_id, user=user)
+
+
+@router.get(
+    "/{organization_id}/members",
+    summary="List members",
+    description=(
+        "Everyone in the organization, by name, with their role and what it allows: enough to "
+        "pick someone for a claim. Needs `members:read`. No emails or other personal details."
+    ),
+)
+async def list_members(
+    session: DbSession, user: CurrentUser, organization_id: UUID
+) -> list[MemberRead]:
+    members = await service.list_members(session, user=user, organization_id=organization_id)
+    return [
+        MemberRead(
+            user=MemberPerson.model_validate(member.user),
+            role=member.role,
+            permissions=sorted(permissions_for(member.role)),
+            joined_at=member.created_at,
+        )
+        for member in members
+    ]
