@@ -129,7 +129,8 @@ function refreshTimeline(queryClient: QueryClient, organizationId: string, claim
 
 /**
  * After a room is renamed or deleted: the timeline, and what shows the room's name: its
- * photos (a deleted room's photos become unassigned), moisture points and drying views.
+ * damage items (which go with a deleted room), photos (a deleted room's photos become
+ * unassigned), moisture points and drying views.
  */
 async function refreshRoomViews(
   queryClient: QueryClient,
@@ -139,6 +140,7 @@ async function refreshRoomViews(
   await Promise.all([
     refreshTimeline(queryClient, organizationId, claimId),
     ...[
+      queryKeys.damageItems(organizationId, claimId),
       queryKeys.photos(organizationId, claimId),
       queryKeys.moisturePoints(organizationId, claimId),
       queryKeys.drying(organizationId, claimId),

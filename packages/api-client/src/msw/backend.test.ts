@@ -626,3 +626,165 @@ describe("contacts", () => {
     expect(await linked(api)).toEqual([["Casey Brooks", "insurance_agent", true]]);
   });
 });
+
+describe("the layout", () => {
+  const STRUCTURES = "/v1/organizations/{organization_id}/claims/{claim_id}/structures" as const;
+  const STRUCTURE = `${STRUCTURES}/{structure_id}` as const;
+  const ROOMS = `${STRUCTURE}/rooms` as const;
+  const ROOM = "/v1/organizations/{organization_id}/claims/{claim_id}/rooms/{room_id}" as const;
+  const DAMAGE = "/v1/organizations/{organization_id}/claims/{claim_id}/damage-items" as const;
+  const layout = (api: ApiClient) => api.get(STRUCTURES, { path: CLAIM });
+
+  test("structures and rooms are added in order, with measures worked out", async () => {
+    const api = await signedIn("riley@example.com");
+
+    const garage = await api.post(STRUCTURES, { path: CLAIM, body: { name: "Garage" } });
+    const room = await api.post(ROOMS, {
+      path: { ...CLAIM, structure_id: garage.id },
+      body: { name: "Workshop", length_ft: 20, width_ft: 12.5, height_ft: 9 },
+    });
+
+    expect(room).toMatchObject({ floor_area_sqft: 250, wall_area_sqft: 585, volume_cuft: 2250 });
+    expect((await layout(api)).map((s) => [s.name, s.rooms.map((r) => r.name)])).toEqual([
+      ["House", ["Kitchen"]],
+      ["Garage", ["Workshop"]],
+    ]);
+  });
+
+  test("names are unique, ignoring case", async () => {
+    const api = await signedIn();
+
+    const structure = await refusal(api.post(STRUCTURES, { path: CLAIM, body: { name: "house" } }));
+    const room = await refusal(
+      api.post(ROOMS, {
+        path: { ...CLAIM, structure_id: ids.structure },
+        body: { name: "KITCHEN" },
+      }),
+    );
+
+    expect([structure.code, room.code]).toEqual(["name_taken", "name_taken"]);
+  });
+
+  test("a room is re-measured, cleared or moved", async () => {
+    const api = await signedIn();
+    const garage = await api.post(STRUCTURES, { path: CLAIM, body: { name: "Garage" } });
+
+    const remeasured = await api.patch(ROOM, {
+      path: { ...CLAIM, room_id: ids.room },
+      body: { length_ft: 15, height_ft: null },
+    });
+    const moved = await api.patch(ROOM, {
+      path: { ...CLAIM, room_id: ids.room },
+      body: { structure_id: garage.id },
+    });
+    const nowhere = await refusal(
+      api.patch(ROOM, {
+        path: { ...CLAIM, room_id: ids.room },
+        body: { structure_id: fixtureId("structure", 9) },
+      }),
+    );
+
+    expect(remeasured).toMatchObject({
+      floor_area_sqft: 150,
+      wall_area_sqft: null,
+      volume_cuft: null,
+    });
+    expect(moved.structure_id).toBe(garage.id);
+    expect((await layout(api)).map((s) => s.rooms.length)).toEqual([0, 1]);
+    expect(nowhere.code).toBe("unknown_structure");
+  });
+
+  test("deleting a room or structure takes its damage with it", async () => {
+    const api = await signedIn();
+
+    await api.delete(ROOM, { path: { ...CLAIM, room_id: ids.room } });
+    expect(await api.get(DAMAGE, { path: CLAIM })).toEqual([]);
+
+    await api.delete(STRUCTURE, { path: { ...CLAIM, structure_id: ids.structure } });
+    expect(await layout(api)).toEqual([]);
+  });
+
+  test("a closed claim's layout can't change", async () => {
+    const api = await signedIn();
+    const claim = backend.db.claims.find((c) => c.claim.id === ids.claim);
+    if (claim) claim.claim.status = "closed";
+
+    const locked = await refusal(api.post(STRUCTURES, { path: CLAIM, body: { name: "Shed" } }));
+
+    expect(locked.code).toBe("claim_locked");
+  });
+});
+
+describe("damage", () => {
+  const DAMAGE = "/v1/organizations/{organization_id}/claims/{claim_id}/damage-items" as const;
+  const ITEM = `${DAMAGE}/{damage_item_id}` as const;
+  const RECORD =
+    "/v1/organizations/{organization_id}/claims/{claim_id}/rooms/{room_id}/damage-items" as const;
+  const inKitchen = { ...CLAIM, room_id: ids.room };
+
+  test("recorded damage takes the claim's cause unless told, and lists by room", async () => {
+    const api = await signedIn("riley@example.com");
+
+    const item = await api.post(RECORD, {
+      path: inKitchen,
+      body: { surface: "wall", material: "Drywall", water_category: 2, water_class: 2 },
+    });
+    const items = await api.get(DAMAGE, { path: CLAIM });
+
+    expect(item).toMatchObject({
+      cause: "water",
+      water_category: 2,
+      created_by_id: people.riley.id,
+    });
+    expect(items.map((i) => i.material)).toEqual(["Laminate", "Drywall"]);
+    expect(await api.get(DAMAGE, { path: CLAIM, query: { cause: "fire" } })).toEqual([]);
+  });
+
+  test("water details follow the cause, as the API has them", async () => {
+    const api = await signedIn();
+
+    const sewage = await api.post(RECORD, {
+      path: inKitchen,
+      body: { surface: "floor", material: "Carpet", cause: "sewage" },
+    });
+    const notWater = await refusal(
+      api.post(RECORD, {
+        path: inKitchen,
+        body: { surface: "wall", material: "Paint", cause: "smoke", water_category: 1 },
+      }),
+    );
+    const notBlack = await refusal(
+      api.post(RECORD, {
+        path: inKitchen,
+        body: { surface: "floor", material: "Tile", cause: "flood", water_category: 1 },
+      }),
+    );
+
+    expect(sewage.water_category).toBe(3);
+    expect([notWater.code, notBlack.code]).toEqual(["not_water_damage", "black_water_category"]);
+  });
+
+  test("damage can change, move rooms, and go", async () => {
+    const api = await signedIn();
+    const pantry = await api.post(
+      "/v1/organizations/{organization_id}/claims/{claim_id}/structures/{structure_id}/rooms",
+      { path: { ...CLAIM, structure_id: ids.structure }, body: { name: "Pantry" } },
+    );
+
+    const changed = await api.patch(ITEM, {
+      path: { ...CLAIM, damage_item_id: ids.damage },
+      body: { room_id: pantry.id, description: null, water_class: 3 },
+    });
+    const lost = await refusal(
+      api.patch(ITEM, {
+        path: { ...CLAIM, damage_item_id: ids.damage },
+        body: { room_id: fixtureId("room", 9) },
+      }),
+    );
+    await api.delete(ITEM, { path: { ...CLAIM, damage_item_id: ids.damage } });
+
+    expect(changed).toMatchObject({ room_id: pantry.id, description: null, water_class: 3 });
+    expect(lost.code).toBe("unknown_room");
+    expect(await api.get(DAMAGE, { path: CLAIM })).toEqual([]);
+  });
+});

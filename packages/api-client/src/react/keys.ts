@@ -50,6 +50,10 @@ type DryingLogQuery = QueryParams<
   "/v1/organizations/{organization_id}/claims/{claim_id}/drying-log",
   "get"
 >;
+type DamageQuery = QueryParams<
+  "/v1/organizations/{organization_id}/claims/{claim_id}/damage-items",
+  "get"
+>;
 type TasksQuery = QueryParams<"/v1/organizations/{organization_id}/claims/{claim_id}/tasks", "get">;
 type MyTasksQuery = Omit<
   QueryParams<"/v1/organizations/{organization_id}/tasks/assigned-to-me", "get">,
@@ -102,6 +106,11 @@ export const queryKeys = {
     [...queryKeys.claim(organizationId, claimId), "timeline"] as const,
   timeline: (organizationId: string, claimId: string, query: TimelineQuery = {}) =>
     [...queryKeys.timelines(organizationId, claimId), query] as const,
+  /** Every damage list of a claim; the last element is the list's filters. */
+  damageItems: (organizationId: string, claimId: string) =>
+    [...queryKeys.claim(organizationId, claimId), "damage-items"] as const,
+  damageItemList: (organizationId: string, claimId: string, query: DamageQuery = {}) =>
+    [...queryKeys.damageItems(organizationId, claimId), query] as const,
   /** A claim's structures, each with its rooms. */
   structures: (organizationId: string, claimId: string) =>
     [...queryKeys.claim(organizationId, claimId), "structures"] as const,
