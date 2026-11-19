@@ -1,6 +1,7 @@
 import { isApiError } from "@claimforge/api-client";
 import {
   useCreateRoom,
+  useDamageItems,
   useCreateStructure,
   useDeleteRoom,
   useDeleteStructure,
@@ -35,6 +36,7 @@ import { useId, useState, type ReactNode } from "react";
 
 import { useOrganization } from "../../app/organization";
 import { errorCopy, QueryView } from "../../app/states";
+import type { DamageItem } from "../damage";
 import {
   emptyRoomDraft,
   roomDraftOf,
@@ -49,6 +51,7 @@ import {
   type Structure,
 } from "../layout";
 import { READ_ONLY_STATUSES } from "../status";
+import { RoomDamage, type RoomChoice } from "./room-damage";
 import { useClaimOfPage } from "./tabs";
 
 /** What's open: a form or a confirmation, and what it's about. */
@@ -64,6 +67,7 @@ export function RoomsTab() {
   const claim = useClaimOfPage();
   const organization = useOrganization();
   const layout = useStructures(organization.id, claim.id);
+  const damage = useDamageItems(organization.id, claim.id);
   const canWork =
     organization.permissions.includes("field_data:write") &&
     !READ_ONLY_STATUSES.includes(claim.status);
@@ -114,6 +118,10 @@ export function RoomsTab() {
                 structure={structure}
                 canWork={canWork}
                 onOpen={setOpen}
+                damage={damage.data ?? []}
+                rooms={structures.flatMap((s) =>
+                  s.rooms.map((r) => ({ id: r.id, label: `${r.name} (${s.name})` })),
+                )}
               />
             ))
           )}
@@ -146,10 +154,16 @@ function StructureCard({
   structure,
   canWork,
   onOpen,
+  damage,
+  rooms,
 }: {
   structure: Structure;
   canWork: boolean;
   onOpen: (open: Open) => void;
+  /** The claim's damage items, for each room to show its own. */
+  damage: DamageItem[];
+  /** Every room of the claim, where damage can move to. */
+  rooms: RoomChoice[];
 }) {
   return (
     <Card role="region" aria-label={structure.name}>
@@ -204,38 +218,46 @@ function StructureCard({
           >
             {structure.rooms.map((room) => (
               <li key={room.id}>
-                <Inline justify="between" align="start" gap={3}>
-                  <Stack gap={1}>
-                    <Text>{roomTitle(room)}</Text>
-                    <Text size="sm" tone="muted">
-                      {roomSize(room)}
-                    </Text>
-                    {roomMeasures(room) && (
-                      <Text size="sm" tone="subtle">
-                        {roomMeasures(room)}
+                <Stack gap={2}>
+                  <Inline justify="between" align="start" gap={3}>
+                    <Stack gap={1}>
+                      <Text>{roomTitle(room)}</Text>
+                      <Text size="sm" tone="muted">
+                        {roomSize(room)}
                       </Text>
+                      {roomMeasures(room) && (
+                        <Text size="sm" tone="subtle">
+                          {roomMeasures(room)}
+                        </Text>
+                      )}
+                    </Stack>
+                    {canWork && (
+                      <RowMenu
+                        label={`Change the ${room.name}`}
+                        items={[
+                          [
+                            "Edit",
+                            () => {
+                              onOpen({ kind: "room", room, structureId: structure.id });
+                            },
+                          ],
+                          [
+                            "Delete",
+                            () => {
+                              onOpen({ kind: "delete-room", room });
+                            },
+                          ],
+                        ]}
+                      />
                     )}
-                  </Stack>
-                  {canWork && (
-                    <RowMenu
-                      label={`Change the ${room.name}`}
-                      items={[
-                        [
-                          "Edit",
-                          () => {
-                            onOpen({ kind: "room", room, structureId: structure.id });
-                          },
-                        ],
-                        [
-                          "Delete",
-                          () => {
-                            onOpen({ kind: "delete-room", room });
-                          },
-                        ],
-                      ]}
-                    />
-                  )}
-                </Inline>
+                  </Inline>
+                  <RoomDamage
+                    room={room}
+                    items={damage.filter((item) => item.room_id === room.id)}
+                    rooms={rooms}
+                    canWork={canWork}
+                  />
+                </Stack>
               </li>
             ))}
           </Stack>
