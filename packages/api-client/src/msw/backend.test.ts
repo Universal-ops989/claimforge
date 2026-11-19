@@ -788,3 +788,158 @@ describe("damage", () => {
     expect(await api.get(DAMAGE, { path: CLAIM })).toEqual([]);
   });
 });
+
+describe("photos", () => {
+  const UPLOADS = "/v1/organizations/{organization_id}/claims/{claim_id}/photo-uploads" as const;
+  const PHOTOS = "/v1/organizations/{organization_id}/claims/{claim_id}/photos" as const;
+  const PHOTO = `${PHOTOS}/{photo_id}` as const;
+  const jpeg = (size = 1200) => new Blob([new Uint8Array(size)], { type: "image/jpeg" });
+
+  async function upload(
+    api: ApiClient,
+    file: Blob,
+    details: Partial<RequestBody<typeof UPLOADS, "post">> = {},
+  ) {
+    const started = await api.post(UPLOADS, {
+      path: CLAIM,
+      body: {
+        filename: "IMG_1.jpg",
+        content_type: "image/jpeg",
+        size_bytes: file.size,
+        ...details,
+      },
+    });
+    await api.sendFile(started.upload, file);
+    return {
+      started,
+      photo: await api.post(`${UPLOADS}/{upload_id}/complete`, {
+        path: { ...CLAIM, upload_id: started.id },
+      }),
+    };
+  }
+
+  test("an upload goes up, becomes a photo, and its file comes back", async () => {
+    const api = await signedIn("riley@example.com");
+
+    const { photo } = await upload(api, jpeg(), {
+      caption: "  Ceiling stain ",
+      tags: ["Before", "ceiling", "before"],
+      room_id: ids.room,
+    });
+    const file = await fetch(photo.url);
+
+    expect(photo).toMatchObject({
+      caption: "Ceiling stain",
+      tags: ["before", "ceiling"],
+      room: { id: ids.room, name: "Kitchen" },
+      uploaded_by: people.riley,
+      processing: "ready",
+    });
+    expect((await file.blob()).size).toBe(1200);
+  });
+
+  test("completing is refused until the file is sent, or when it isn't the one described", async () => {
+    const api = await signedIn();
+    const started = await api.post(UPLOADS, {
+      path: CLAIM,
+      body: { filename: "a.jpg", content_type: "image/jpeg", size_bytes: 10 },
+    });
+    const complete = () =>
+      api.post(`${UPLOADS}/{upload_id}/complete`, { path: { ...CLAIM, upload_id: started.id } });
+
+    const early = await refusal(complete());
+    await api.sendFile(started.upload, jpeg(11));
+    const mismatch = await refusal(complete());
+    await api.sendFile(started.upload, jpeg(10));
+    const photo = await complete();
+    const again = await complete();
+
+    expect([early.code, mismatch.code]).toEqual(["upload_not_received", "upload_mismatch"]);
+    expect(again.id).toBe(photo.id);
+  });
+
+  test("too large, or for a room elsewhere, is refused at the start", async () => {
+    const api = await signedIn();
+    const start = (body: Partial<RequestBody<typeof UPLOADS, "post">>) =>
+      refusal(
+        api.post(UPLOADS, {
+          path: CLAIM,
+          body: { filename: "a.jpg", content_type: "image/jpeg", size_bytes: 10, ...body },
+        }),
+      );
+
+    const big = await start({ size_bytes: 26 * 1024 * 1024 });
+    const elsewhere = await start({ room_id: fixtureId("room", 9) });
+
+    expect([big.code, elsewhere.code]).toEqual(["photo_too_large", "unknown_room"]);
+  });
+
+  test("lists newest first, by room, unassigned, or by every tag given", async () => {
+    const api = await signedIn();
+    await upload(api, jpeg(), { tags: ["after"] });
+    const list = (query: QueryParams<typeof PHOTOS, "get">) =>
+      api.get(PHOTOS, { path: CLAIM, query }).then((page) => page.items.map((p) => p.tags));
+
+    expect(await list({})).toEqual([["after"], ["before", "ceiling"]]);
+    expect(await list({ room_id: ids.room })).toEqual([["before", "ceiling"]]);
+    expect(await list({ unassigned: true })).toEqual([["after"]]);
+    expect(await list({ tag: ["before", "ceiling"] })).toHaveLength(1);
+    expect(await list({ tag: ["before", "after"] })).toEqual([]);
+  });
+
+  test("editing clears a blank caption, tidies tags, and can take it out of its room", async () => {
+    const api = await signedIn();
+
+    const edited = await api.patch(PHOTO, {
+      path: { ...CLAIM, photo_id: ids.photo },
+      body: { caption: "  ", tags: ["Water Line", "after"], room_id: null },
+    });
+
+    expect(edited).toMatchObject({ caption: null, tags: ["after", "water line"], room: null });
+  });
+
+  test("a photo follows its room: renamed with it, unassigned when it goes", async () => {
+    const api = await signedIn();
+    const ROOM = "/v1/organizations/{organization_id}/claims/{claim_id}/rooms/{room_id}" as const;
+    const photoNow = () => api.get(PHOTO, { path: { ...CLAIM, photo_id: ids.photo } });
+
+    await api.patch(ROOM, { path: { ...CLAIM, room_id: ids.room }, body: { name: "Galley" } });
+    expect((await photoNow()).room?.name).toBe("Galley");
+
+    await api.delete(ROOM, { path: { ...CLAIM, room_id: ids.room } });
+    expect((await photoNow()).room).toBeNull();
+  });
+
+  test("tag suggestions count the photos carrying each, most used first", async () => {
+    const api = await signedIn();
+    await upload(api, jpeg(), { tags: ["before", "wall"] });
+    const TAGS = "/v1/organizations/{organization_id}/photo-tags" as const;
+
+    expect(await api.get(TAGS, { path: ORG })).toEqual([
+      { tag: "before", photos: 2 },
+      { tag: "ceiling", photos: 1 },
+      { tag: "wall", photos: 1 },
+    ]);
+    expect(await api.get(TAGS, { path: ORG, query: { prefix: "w" } })).toEqual([
+      { tag: "wall", photos: 1 },
+    ]);
+  });
+
+  test("a seeded photo is served from the pretend store, drawn", async () => {
+    const api = await signedIn();
+
+    const seeded = await api.get(PHOTO, { path: { ...CLAIM, photo_id: ids.photo } });
+    const file = await fetch(seeded.thumbnail_url ?? "");
+
+    expect(seeded.url).toBe(`https://api.test/__mock-storage/files/${ids.photo}`);
+    expect(file.headers.get("Content-Type")).toBe("image/svg+xml");
+  });
+
+  test("deleting a photo takes it off the claim", async () => {
+    const api = await signedIn();
+
+    await api.delete(PHOTO, { path: { ...CLAIM, photo_id: ids.photo } });
+
+    expect((await api.get(PHOTOS, { path: CLAIM })).items).toEqual([]);
+  });
+});

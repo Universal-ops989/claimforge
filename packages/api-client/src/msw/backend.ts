@@ -6,7 +6,8 @@
  *
  * It covers what the web app's first screens need: sessions, `/v1/me`, organizations,
  * claims (lists, filters, pages, create, edit, the status workflow, assignments, contacts,
- * history, timeline), the address book, the layout and damage,
+ * history, timeline), the address book, the layout and damage, photos (with a pretend file
+ * store behind their upload links),
  * tasks, notes, and the layout to read. It behaves like the API where tests can tell:
  * the same status codes and error codes, refresh tokens that rotate with reuse detection,
  * the workflow the contract publishes (`workflows`), permissions by role, locked claims.
@@ -17,7 +18,7 @@
  * `morgan@example.com` (an owner) or `riley@example.com` (a technician), password
  * `MOCK_PASSWORD`.
  */
-import type { HttpHandler } from "msw";
+import { http, HttpResponse, type HttpHandler } from "msw";
 
 import * as fx from "../fixtures";
 import type { Schema } from "../index";
@@ -45,6 +46,18 @@ export interface MockDb {
   statusChanges: { claimId: string; change: Schema<"ClaimStatusChangeRead"> }[];
   timeline: { claimId: string; entry: Schema<"TimelineEntry"> }[];
   structures: { claimId: string; structure: Schema<"StructureRead"> }[];
+  /** Photos; a photo's `room` is read from the layout, so it follows renames and deletes. */
+  photos: { claimId: string; photo: Schema<"PhotoRead">; roomId: string | null }[];
+  /** Photo uploads started and not yet completed (or completed: `photoId`). */
+  photoUploads: {
+    id: string;
+    claimId: string;
+    body: Schema<"PhotoUploadCreate">;
+    by: Person;
+    photoId: string | null;
+  }[];
+  /** The pretend file store behind upload links: what was sent, by key. */
+  files: Record<string, Blob>;
   /** Damage recorded in the claims' rooms; it goes with its room. */
   damage: { claimId: string; item: Schema<"DamageItemRead"> }[];
   tasks: Schema<"TaskRead">[];
@@ -104,6 +117,9 @@ export function seedDb(): MockDb {
     timeline: [],
     structures: [{ claimId: fx.ids.claim, structure: fx.structure() }],
     damage: [{ claimId: fx.ids.claim, item: fx.damageItem() }],
+    photos: [{ claimId: fx.ids.claim, photo: fx.photo(), roomId: fx.ids.room }],
+    photoUploads: [],
+    files: {},
     tasks: [fx.task()],
     notes: [fx.note()],
     contacts: [
@@ -183,6 +199,34 @@ function waterCategory(
 
 /** A search needs this many digits before it looks at phone numbers, as the API's does. */
 const MIN_PHONE_DIGITS = 3;
+/** The largest photo the API takes (its `photo_max_bytes`). */
+const PHOTO_MAX_BYTES = 25 * 1024 * 1024;
+/** How long an upload link works. */
+const UPLOAD_LINK_MS = 30 * 60_000;
+
+/** Tags as the API keeps them: lowercase, single-spaced, without repeats, alphabetical. */
+function normalTags(tags: readonly string[]): string[] {
+  return [...new Set(tags.map((t) => t.trim().split(/\s+/).join(" ").toLowerCase()))]
+    .filter(Boolean)
+    .sort();
+}
+
+/** Text, trimmed; blank (or none) is `null`, as the API stores it. */
+function textOrNull(text: string | null | undefined): string | null {
+  const trimmed = text?.trim();
+  return trimmed === undefined || trimmed === "" ? null : trimmed;
+}
+
+/** What the pretend store serves for a seeded photo, which has no file: a drawn stand-in. */
+const PLACEHOLDER_PHOTO = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900">
+<rect width="1200" height="900" fill="#d9dee5"/>
+<rect x="0" y="560" width="1200" height="340" fill="#c3b49a"/>
+<path d="M0 560 L1200 560" stroke="#a89878" stroke-width="6"/>
+<ellipse cx="760" cy="300" rx="190" ry="120" fill="#b9a27a" opacity=".55"/>
+<ellipse cx="760" cy="300" rx="120" ry="70" fill="#9c8257" opacity=".5"/>
+<rect x="690" y="270" width="140" height="60" rx="6" fill="#eef1f4" stroke="#8a95a3" stroke-width="4"/>
+<text x="60" y="110" font-family="sans-serif" font-size="44" fill="#4a5563">Sample photo</text>
+</svg>`;
 
 type Contact = Schema<"ContactRead">;
 
@@ -224,12 +268,34 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
   const now = options.now ?? (() => Date.now());
   const api = mockApi(options.baseUrl);
 
-  const backend: MockBackend = { handlers: [], db: seed(), reset };
+  /** Where the pretend file store answers: next to the API. */
+  const STORAGE = `${(options.baseUrl ?? "").replace(/\/+$/, "")}/__mock-storage`;
+  const fileUrl = (key: string) => `${STORAGE}/files/${key}`;
+  /** The seed, its photos' links pointing at the pretend store (which draws them). */
+  const seeded = (): MockDb => {
+    const data = seed();
+    data.photos = data.photos.map((entry) => {
+      const url = fileUrl(entry.photo.id);
+      return {
+        ...entry,
+        photo: {
+          ...entry.photo,
+          url,
+          download_url: `${url}?download=1`,
+          thumbnail_url: url,
+          preview_url: url,
+        },
+      };
+    });
+    return data;
+  };
+
+  const backend: MockBackend = { handlers: [], db: seeded(), reset };
   let sessions = newSessions();
   let sequence = 0;
 
   function reset(): void {
-    backend.db = seed();
+    backend.db = seeded();
     sessions = newSessions();
     sequence = 0;
   }
@@ -527,7 +593,47 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
   const CLAIMS = `${ORG}/claims` as const;
   const CLAIM = `${CLAIMS}/{claim_id}` as const;
 
+  /** A stored photo as the API answers it: its room as the layout has it now. */
+  function photoNow(entry: { photo: Schema<"PhotoRead">; roomId: string | null }) {
+    const room = entry.roomId
+      ? db()
+          .structures.flatMap((s) => s.structure.rooms)
+          .find((r) => r.id === entry.roomId)
+      : undefined;
+    return { ...entry.photo, room: room ? { id: room.id, name: room.name } : null };
+  }
+
+  function claimRoom(claimId: string, roomId: string) {
+    return layoutOf(claimId)
+      .flatMap((s) => s.rooms)
+      .find((r) => r.id === roomId);
+  }
+
+  const unknownRoom = (roomId: string) =>
+    problem(422, "unknown_room", {
+      detail: "Photos can only go in a room of the same claim",
+      room_id: roomId,
+    });
+
   backend.handlers = [
+    // ─── The pretend file store ──────────────────────────────────────────────
+    http.put(`${STORAGE || "*"}/uploads/:key`, async ({ request, params }) => {
+      backend.db.files[String(params.key)] = await request.blob();
+      return new HttpResponse(null, { status: 200 });
+    }),
+    http.get(`${STORAGE || "*"}/files/:key`, async ({ params }) => {
+      const file = db().files[String(params.key)];
+      if (!file) {
+        return new HttpResponse(PLACEHOLDER_PHOTO, {
+          headers: { "Content-Type": "image/svg+xml" },
+        });
+      }
+      // The bytes, not the Blob: a Blob from another realm (jsdom's) would be sent as text.
+      return new HttpResponse(await file.arrayBuffer(), {
+        headers: { "Content-Type": file.type || "application/octet-stream" },
+      });
+    }),
+
     // ─── Auth ────────────────────────────────────────────────────────────────
     api.post("/v1/auth/login", ({ body }) => {
       const found = db().accounts.find(
@@ -1141,6 +1247,174 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
         `Deleted the ${entry.item.material.toLowerCase()} damage`,
       );
       return undefined;
+    }),
+
+    // ─── Photos ──────────────────────────────────────────────────────────────
+    api.post(`${CLAIM}/photo-uploads`, ({ request, params, body }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      if (body.room_id && !claimRoom(ready.claim.id, body.room_id))
+        return unknownRoom(body.room_id);
+      if (body.size_bytes > PHOTO_MAX_BYTES) {
+        return problem(422, "photo_too_large", {
+          detail: `Photos can be up to ${String(PHOTO_MAX_BYTES / 1024 / 1024)} MB`,
+          limit: PHOTO_MAX_BYTES,
+        });
+      }
+      const id = newId();
+      db().photoUploads.push({
+        id,
+        claimId: ready.claim.id,
+        body,
+        by: ready.seen.person,
+        photoId: null,
+      });
+      return {
+        id,
+        upload: {
+          url: `${STORAGE}/uploads/${id}`,
+          method: "PUT" as const,
+          headers: { "Content-Type": body.content_type },
+          // Real time, not the mock's clock: the client checks links against its own.
+          expires_at: new Date(Math.max(now(), Date.now()) + UPLOAD_LINK_MS).toISOString(),
+        },
+      };
+    }),
+    api.post(`${CLAIM}/photo-uploads/{upload_id}/complete`, ({ request, params, respond }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const upload = db().photoUploads.find(
+        (u) => u.claimId === params.claim_id && u.id === params.upload_id,
+      );
+      if (!upload) return problem(404, "not_found");
+      const done = upload.photoId && db().photos.find((p) => p.photo.id === upload.photoId);
+      // Completing again is safe: the same photo, with 200.
+      if (done) return respond(200, photoNow(done));
+      const file = db().files[upload.id];
+      if (!file) {
+        return problem(409, "upload_not_received", { detail: "The file hasn't been sent yet" });
+      }
+      if (
+        file.size !== upload.body.size_bytes ||
+        (file.type && file.type !== upload.body.content_type)
+      ) {
+        backend.db.files = Object.fromEntries(
+          Object.entries(db().files).filter(([key]) => key !== upload.id),
+        );
+        return problem(422, "upload_mismatch", {
+          detail: "The file sent isn't the one described; send it again",
+          expected_size: upload.body.size_bytes,
+          received_size: file.size,
+        });
+      }
+      const photo: Schema<"PhotoRead"> = {
+        id: newId(),
+        claim_id: upload.claimId,
+        filename: upload.body.filename,
+        content_type: upload.body.content_type,
+        size_bytes: upload.body.size_bytes,
+        taken_at: upload.body.taken_at ?? null,
+        uploaded_by: upload.by,
+        caption: textOrNull(upload.body.caption),
+        tags: normalTags(upload.body.tags ?? []),
+        room: null,
+        created_at: iso(),
+        url: fileUrl(upload.id),
+        download_url: `${fileUrl(upload.id)}?download=1`,
+        // No thumbnails to make: the mock serves the photo itself at every size.
+        processing: "ready",
+        width: null,
+        height: null,
+        thumbnail_url: fileUrl(upload.id),
+        preview_url: fileUrl(upload.id),
+      };
+      const entry = { claimId: upload.claimId, photo, roomId: upload.body.room_id ?? null };
+      db().photos.push(entry);
+      upload.photoId = photo.id;
+      record(
+        upload.claimId,
+        upload.by,
+        "photos",
+        "photo_uploaded",
+        `Added a photo${entry.roomId ? ` of the ${photoNow(entry).room?.name ?? "room"}` : ""}`,
+      );
+      return photoNow(entry);
+    }),
+    api.get(`${CLAIM}/photos`, ({ request, params, query }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
+      const roomId = query.get("room_id");
+      const unassigned = query.get("unassigned") === "true";
+      const tags = normalTags(query.getAll("tag"));
+      const found = db()
+        .photos.filter((p) => p.claimId === claim.id)
+        .map(photoNow)
+        .filter(
+          (p) =>
+            (!roomId || p.room?.id === roomId) &&
+            (!unassigned || p.room === null) &&
+            tags.every((t) => p.tags.includes(t)),
+        );
+      return paginate(newestFirst(found), query);
+    }),
+    api.get(`${CLAIM}/photos/{photo_id}`, ({ request, params }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const entry = db().photos.find(
+        (p) => p.claimId === params.claim_id && p.photo.id === params.photo_id,
+      );
+      return entry ? photoNow(entry) : problem(404, "not_found");
+    }),
+    api.patch(`${CLAIM}/photos/{photo_id}`, ({ request, params, body }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const entry = db().photos.find(
+        (p) => p.claimId === ready.claim.id && p.photo.id === params.photo_id,
+      );
+      if (!entry) return problem(404, "not_found");
+      if ("room_id" in body) {
+        if (body.room_id && !claimRoom(ready.claim.id, body.room_id))
+          return unknownRoom(body.room_id);
+        entry.roomId = body.room_id ?? null;
+      }
+      if ("caption" in body) entry.photo.caption = textOrNull(body.caption);
+      if (body.tags) entry.photo.tags = normalTags(body.tags);
+      record(ready.claim.id, ready.seen.person, "photos", "photo_updated", "Edited a photo");
+      return photoNow(entry);
+    }),
+    api.delete(`${CLAIM}/photos/{photo_id}`, ({ request, params }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const entry = db().photos.find(
+        (p) => p.claimId === ready.claim.id && p.photo.id === params.photo_id,
+      );
+      if (!entry) return problem(404, "not_found");
+      backend.db.photos = db().photos.filter((p) => p !== entry);
+      record(ready.claim.id, ready.seen.person, "photos", "photo_deleted", "Deleted a photo");
+      return undefined;
+    }),
+    api.get(`${ORG}/photo-tags`, ({ request, params, query }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const prefix = (query.get("prefix") ?? "").trim().toLowerCase();
+      const limit = Number(query.get("limit") ?? 20);
+      const claims = new Set(
+        db()
+          .claims.filter((c) => c.organizationId === params.organization_id)
+          .map((c) => c.claim.id),
+      );
+      const counts = new Map<string, number>();
+      for (const { claimId, photo } of db().photos) {
+        if (!claims.has(claimId)) continue;
+        for (const tag of photo.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+      }
+      return [...counts]
+        .filter(([tag]) => tag.startsWith(prefix))
+        .sort(([a, x], [b, y]) => y - x || a.localeCompare(b))
+        .slice(0, limit)
+        .map(([tag, photos]) => ({ tag, photos }));
     }),
 
     // ─── Tasks ───────────────────────────────────────────────────────────────
