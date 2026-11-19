@@ -256,7 +256,10 @@ type Assignment = RequestBody<
   "post"
 >;
 
-/** Put someone on a claim in a role (one role per person). */
+/**
+ * Put someone on a claim in a role (one role per person). A claim has one adjuster: a new
+ * one replaces the last, in the cache as the API does it.
+ */
 export function useAssignClaim(organizationId: string, claimId: string) {
   const api = useApi();
   const queryClient = useQueryClient();
@@ -270,7 +273,11 @@ export function useAssignClaim(organizationId: string, claimId: string) {
       editClaim(queryClient, organizationId, claimId, (claim) => ({
         ...claim,
         assignments: [
-          ...claim.assignments.filter((a) => a.user.id !== assignment.user.id),
+          ...claim.assignments.filter(
+            (a) =>
+              a.user.id !== assignment.user.id &&
+              !(assignment.role === "adjuster" && a.role === "adjuster"),
+          ),
           assignment,
         ],
       }));

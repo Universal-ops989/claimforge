@@ -9,6 +9,7 @@ import { fullTime } from "../../format/relative-time";
 import { LOSS_TYPE_LABEL, PROPERTY_TYPE_LABEL, READ_ONLY_STATUSES, STATUS_LABEL } from "../status";
 import { EditLossDialog } from "./edit-loss-dialog";
 import { useClaimOfPage } from "./tabs";
+import { TeamCard } from "./team-card";
 
 /** The claim's details, a card for each part: the loss, the property, the insurance. */
 export function OverviewTab() {
@@ -51,6 +52,7 @@ export function OverviewTab() {
             ["Description", claim.description],
           ]}
         />
+        <TeamCard claim={claim} canChange={canEdit} />
         <FactsCard
           title="Property"
           facts={[

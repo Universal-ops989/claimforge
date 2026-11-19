@@ -5,3 +5,8 @@
 export function calendarDate(date: string, locale?: string): string {
   return new Date(`${date}T00:00:00`).toLocaleDateString(locale, { dateStyle: "medium" });
 }
+
+/** The day a moment (`2026-11-10T15:00:00Z`) fell on, where the browser is: "Nov 10, 2026". */
+export function dayOf(when: string | Date, locale?: string): string {
+  return new Date(when).toLocaleDateString(locale, { dateStyle: "medium" });
+}
