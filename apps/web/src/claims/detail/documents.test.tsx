@@ -89,10 +89,14 @@ describe("attaching documents", () => {
     await waitFor(() => {
       expect(attaching.getAllByText("Attached")).toHaveLength(2);
     });
-    expect(added().map((d) => [d.document.title, d.document.category])).toEqual([
-      ["Invoice 7", "invoice"],
-      ["Scope", "invoice"],
-    ]);
+    // They go up side by side, so either may land first.
+    expect(added().map((d) => [d.document.title, d.document.category])).toEqual(
+      expect.arrayContaining([
+        ["Invoice 7", "invoice"],
+        ["Scope", "invoice"],
+      ]),
+    );
+    expect(added()).toHaveLength(2);
     await waitFor(async () => {
       expect(await titles()).toHaveLength(3);
     });
@@ -136,6 +140,28 @@ describe("changing a document", () => {
       title: "WA-1042",
       category: "policy",
     });
+  });
+
+  test("a refused delete says why in the dialog, and the document stays", async () => {
+    server.use(
+      mock.delete(
+        "/v1/organizations/{organization_id}/claims/{claim_id}/documents/{document_id}",
+        () => problem(409, "claim_locked", { detail: "The claim is closed" }),
+      ),
+    );
+    const user = userEvent.setup();
+    await open();
+
+    await change(user, "Signed work authorization", "Delete");
+    const dialog = within(
+      await screen.findByRole("alertdialog", { name: "Delete “Signed work authorization”?" }),
+    );
+    await user.click(dialog.getByRole("button", { name: "Delete" }));
+
+    expect(await dialog.findByRole("alert")).toHaveTextContent(
+      "The claim was closed or cancelled.",
+    );
+    expect(backend.db.documents).toHaveLength(1);
   });
 
   test("deleting asks first, then it's gone", async () => {

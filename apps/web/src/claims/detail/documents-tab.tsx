@@ -78,7 +78,6 @@ export function DocumentsTab() {
   );
   const [now] = useState(() => new Date());
   const [editing, setEditing] = useState<Document | null>(null);
-  const [failure, setFailure] = useState<string | null>(null);
 
   return (
     <Stack gap={4}>
@@ -99,11 +98,6 @@ export function DocumentsTab() {
           </FormField>
         </div>
       </Inline>
-      {failure && (
-        <Text as="p" role="alert" tone="danger" style={{ margin: 0 }}>
-          {failure}
-        </Text>
-      )}
       <QueryView query={documents} loading={<SkeletonText lines={4} />}>
         {(data) => {
           const shown = allItems(data);
@@ -149,7 +143,6 @@ export function DocumentsTab() {
                       onEdit={() => {
                         setEditing(document);
                       }}
-                      onFailure={setFailure}
                     />
                   </li>
                 ))}
@@ -195,18 +188,29 @@ export function DocumentsTab() {
   );
 }
 
+/**
+ * One document in the list: its title (a link that opens it in a new tab when a browser
+ * can show the file, plain text when it can only be downloaded), its category, what the
+ * file is, and who attached it when. Download is always offered; renaming,
+ * recategorizing and deleting are behind a menu, for people who may change documents.
+ *
+ * Deleting asks first. If the API refuses, the refusal is shown in that confirm dialog
+ * (ConfirmDialog shows the message of an error `onConfirm` throws), so the row needs no
+ * error state of its own.
+ */
 function DocumentRow({
   document,
   now,
   canFile,
   onEdit,
-  onFailure,
 }: {
   document: Document;
+  /** When the page was opened: "Attached …, 2 hours ago" is counted from it. */
   now: Date;
+  /** Whether this person may change documents here (`field_data:write`, open claim). */
   canFile: boolean;
+  /** Open the rename/recategorize form for this document; the tab owns that dialog. */
   onEdit: () => void;
-  onFailure: (text: string | null) => void;
 }) {
   const claim = useClaimOfPage();
   const organization = useOrganization();
@@ -281,7 +285,6 @@ function DocumentRow({
         confirmLabel="Delete"
         cancelLabel="Keep it"
         onConfirm={async () => {
-          onFailure(null);
           try {
             await remove.mutateAsync(document.id);
           } catch (error) {
