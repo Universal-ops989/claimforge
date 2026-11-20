@@ -11,6 +11,7 @@ export const CLAIM_TABS = [
   { id: "overview", path: "", label: "Overview" },
   { id: "rooms", path: "rooms", label: "Rooms" },
   { id: "photos", path: "photos", label: "Photos" },
+  { id: "documents", path: "documents", label: "Documents" },
   { id: "moisture", path: "moisture", label: "Moisture" },
   { id: "equipment", path: "equipment", label: "Equipment" },
   { id: "notes", path: "notes", label: "Notes" },
