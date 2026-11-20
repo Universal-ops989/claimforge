@@ -10,7 +10,7 @@ import {
   type QueryParams,
   type RequestBody,
 } from "../index";
-import { dewPointF, equipmentDays, grainsPerPound } from "./backend";
+import { defaultTitle, dewPointF, equipmentDays, grainsPerPound, REPORT_MS } from "./backend";
 import { createMockBackend, MOCK_PASSWORD } from "./index";
 
 let clock = Date.parse("2026-11-16T12:00:00Z");
@@ -1510,5 +1510,310 @@ describe("estimates", () => {
     expect(all.items[0]?.code).toBe("ANT-APPL");
     expect(found.items.map((i) => i.code)).toEqual(["DRY-INST", "DRY-RMVF"]);
     expect(lists[0]).toMatchObject({ is_default: true, item_count: 7 });
+  });
+});
+
+const TIMELINE = "/v1/organizations/{organization_id}/claims/{claim_id}/timeline" as const;
+const lastEvent = async (api: ApiClient) =>
+  (await api.get(TIMELINE, { path: CLAIM })).items[0]?.summary;
+
+/** Morgan, made a member of a second organization too: its id, for paths that mix the two. */
+function alsoElsewhere(): string {
+  const id = fixtureId("organization", 2);
+  const morgan = backend.db.accounts.find((a) => a.email === "morgan@example.com");
+  const [membership] = morgan?.user.memberships ?? [];
+  if (morgan && membership) {
+    morgan.user.memberships.push({
+      ...membership,
+      organization: { id, name: "Elsewhere", slug: "elsewhere" },
+    });
+  }
+  return id;
+}
+
+describe("documents", () => {
+  const UPLOADS = "/v1/organizations/{organization_id}/claims/{claim_id}/document-uploads" as const;
+  const DOCUMENTS = "/v1/organizations/{organization_id}/claims/{claim_id}/documents" as const;
+  const DOCUMENT = `${DOCUMENTS}/{document_id}` as const;
+  const pdf = (size = 900) => new Blob([new Uint8Array(size)], { type: "application/pdf" });
+
+  async function attach(
+    api: ApiClient,
+    file: Blob,
+    details: Partial<RequestBody<typeof UPLOADS, "post">> = {},
+  ) {
+    const started = await api.post(UPLOADS, {
+      path: CLAIM,
+      body: {
+        filename: "Carrier letter.pdf",
+        content_type: "application/pdf",
+        size_bytes: file.size,
+        ...details,
+      },
+    });
+    await api.sendFile(started.upload, file);
+    const complete = () =>
+      api.post(`${UPLOADS}/{upload_id}/complete`, { path: { ...CLAIM, upload_id: started.id } });
+    return { document: await complete(), complete };
+  }
+
+  test("an upload becomes a document titled from its name, its file served", async () => {
+    const api = await signedIn("riley@example.com");
+
+    const { document, complete } = await attach(api, pdf(), { category: "correspondence" });
+    const again = await complete();
+    const file = await fetch(document.view_url ?? "");
+
+    expect(document).toMatchObject({
+      title: "Carrier letter",
+      category: "correspondence",
+      uploaded_by: people.riley,
+      size_bytes: 900,
+    });
+    expect(again.id).toBe(document.id);
+    expect((await file.blob()).size).toBe(900);
+    expect(await lastEvent(api)).toBe("Attached correspondence “Carrier letter”");
+  });
+
+  test("lists newest first, filtered by any of the categories given", async () => {
+    const api = await signedIn();
+    const { document } = await attach(api, pdf(), { category: "invoice", title: "Invoice 7" });
+
+    const all = await api.get(DOCUMENTS, { path: CLAIM });
+    const some = await api.get(DOCUMENTS, {
+      path: CLAIM,
+      query: { category: ["authorization", "policy"] },
+    });
+
+    expect(all.items.map((d) => d.id)).toEqual([document.id, ids.document]);
+    expect(some.items.map((d) => d.title)).toEqual(["Signed work authorization"]);
+  });
+
+  test("what a browser can't show is only downloaded; too large or a closed claim is refused", async () => {
+    const api = await signedIn();
+    const word = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+    const { document } = await attach(api, new Blob([new Uint8Array(40)], { type: word }), {
+      filename: "Scope.docx",
+      content_type: word,
+    });
+    const big = await refusal(
+      api.post(UPLOADS, {
+        path: CLAIM,
+        body: { filename: "a.pdf", content_type: "application/pdf", size_bytes: 51 * 1024 * 1024 },
+      }),
+    );
+    const claim = backend.db.claims.find((c) => c.claim.id === ids.claim);
+    if (claim) claim.claim.status = "closed";
+    const closed = await refusal(attach(api, pdf()));
+
+    expect(document.view_url).toBeNull();
+    expect(document.download_url).toMatch(/download=1$/);
+    expect([big.code, closed.code]).toEqual(["document_too_large", "claim_locked"]);
+  });
+
+  test("completing answers 201 the first time, 200 for a repeat", async () => {
+    const { api, tokens } = client();
+    await api.login({ email: "morgan@example.com", password: MOCK_PASSWORD });
+    const started = await api.post(UPLOADS, {
+      path: CLAIM,
+      body: { filename: "a.pdf", content_type: "application/pdf", size_bytes: 9 },
+    });
+    await api.sendFile(started.upload, pdf(9));
+    const complete = async () =>
+      (
+        await fetch(
+          `https://api.test/v1/organizations/${ids.organization}/claims/${ids.claim}/document-uploads/${started.id}/complete`,
+          {
+            method: "POST",
+            headers: { Authorization: `Bearer ${(await tokens.get())?.accessToken ?? ""}` },
+          },
+        )
+      ).status;
+
+    expect([await complete(), await complete()]).toEqual([201, 200]);
+  });
+
+  test("is found only through a claim of the organization in the path", async () => {
+    const api = await signedIn();
+    const elsewhere = { organization_id: alsoElsewhere(), claim_id: ids.claim };
+
+    const document = await refusal(
+      api.get(DOCUMENT, { path: { ...elsewhere, document_id: ids.document } }),
+    );
+
+    expect(document.status).toBe(404);
+  });
+
+  test("a change to both fields names the other; neither can be null", async () => {
+    const api = await signedIn();
+    const path = { ...CLAIM, document_id: ids.document };
+
+    await api.patch(DOCUMENT, { path, body: { title: "WA-1042", category: "policy" } });
+    const cleared = await refusal(api.patch(DOCUMENT, { path, body: { title: null } }));
+
+    expect(await lastEvent(api)).toBe(
+      "Renamed document “Signed work authorization” to “WA-1042”: category",
+    );
+    expect(cleared.status).toBe(422);
+  });
+
+  test("is retitled, recategorized and deleted, each on the timeline", async () => {
+    const api = await signedIn();
+    const path = { ...CLAIM, document_id: ids.document };
+
+    const renamed = await api.patch(DOCUMENT, { path, body: { title: "WA-1042" } });
+    const renaming = await lastEvent(api);
+    await api.patch(DOCUMENT, { path, body: { category: "policy" } });
+    const recategorizing = await lastEvent(api);
+    await api.delete(DOCUMENT, { path });
+    const gone = await refusal(api.get(DOCUMENT, { path }));
+
+    expect(renamed.title).toBe("WA-1042");
+    expect(renaming).toBe("Renamed document “Signed work authorization” to “WA-1042”");
+    expect(recategorizing).toBe("Recategorized document “WA-1042” as policy");
+    expect(await lastEvent(api)).toBe("Deleted document “WA-1042”");
+    expect(gone.status).toBe(404);
+  });
+
+  test("a title from a file's name drops its extension, and only that", () => {
+    expect(defaultTitle("WA-1042 signed.pdf")).toBe("WA-1042 signed");
+    expect(defaultTitle("C:\\scans\\estimate.v2.pdf")).toBe("estimate.v2");
+    expect(defaultTitle(".pdf")).toBe(".pdf");
+  });
+});
+
+describe("reports", () => {
+  const REPORTS = "/v1/organizations/{organization_id}/claims/{claim_id}/reports" as const;
+  const REPORT = `${REPORTS}/{job_id}` as const;
+  const SHARES = `${REPORT}/shares` as const;
+
+  /** The answer itself, headers and all, as a signed-in browser would get it. */
+  async function raw(
+    tokens: ReturnType<typeof client>["tokens"],
+    path: string,
+    init?: RequestInit,
+  ) {
+    return fetch(`https://api.test${path}`, {
+      ...init,
+      headers: {
+        Authorization: `Bearer ${(await tokens.get())?.accessToken ?? ""}`,
+        "Content-Type": "application/json",
+      },
+    });
+  }
+
+  test("a request is queued, polled, and made a moment later as a PDF", async () => {
+    const { api, tokens } = client();
+    await api.login({ email: "morgan@example.com", password: MOCK_PASSWORD });
+    const base = `/v1/organizations/${ids.organization}/claims/${ids.claim}/reports`;
+
+    const asked = await raw(tokens, base, {
+      method: "POST",
+      body: JSON.stringify({ kind: "photo_report" }),
+    });
+    const queued = (await asked.json()) as { id: string; status: string };
+    const polled = await raw(tokens, `${base}/${queued.id}`);
+    clock += REPORT_MS;
+    const ready = await api.get(REPORT, { path: { ...CLAIM, job_id: queued.id } });
+    const listed = await api.get(REPORTS, { path: CLAIM });
+    const file = await (await fetch(ready.download_url ?? "")).text();
+
+    expect(asked.status).toBe(202);
+    expect(asked.headers.get("Location")).toBe(`${base}/${queued.id}`);
+    expect(asked.headers.get("Retry-After")).toBe("2");
+    expect(queued.status).toBe("queued");
+    expect(polled.headers.get("Retry-After")).toBe("2");
+    expect(ready).toMatchObject({ status: "ready", requested_by: people.morgan });
+    expect(ready.size_bytes).toBe(file.length);
+    expect(file).toMatch(/^%PDF-1\.4/);
+    expect(file).toContain("(Photo Report 2026-00042)");
+    expect(file).toContain("(1 photo)");
+    expect(listed.map((r) => r.id)).toEqual([queued.id, ids.report]);
+    expect(await lastEvent(api)).toBe("Generated the photo report");
+  });
+
+  test("needs reports:generate; a closed claim can still have one; deleting takes its links", async () => {
+    const api = await signedIn();
+    const riley = await signedIn("riley@example.com");
+    const claim = backend.db.claims.find((c) => c.claim.id === ids.claim);
+    if (claim) claim.claim.status = "closed";
+
+    await api.post(REPORTS, { path: CLAIM, body: { kind: "drying_report" } });
+    const denied = await refusal(
+      riley.post(REPORTS, { path: CLAIM, body: { kind: "drying_report" } }),
+    );
+    const path = { ...CLAIM, job_id: ids.report };
+    await api.post(SHARES, { path, body: {} });
+    await api.delete(REPORT, { path });
+
+    expect(denied.status).toBe(403);
+    expect(backend.db.shares).toEqual([]);
+    expect((await api.get(REPORTS, { path: CLAIM })).map((r) => r.kind)).toEqual(["drying_report"]);
+    expect(await lastEvent(api)).toBe("Deleted a photo report");
+  });
+
+  test("a link is made for a ready report only, shown once, and counts its opens", async () => {
+    const api = await signedIn();
+    const queued = await api.post(REPORTS, { path: CLAIM, body: { kind: "photo_report" } });
+    const path = { ...CLAIM, job_id: ids.report };
+
+    const early = await refusal(
+      api.post(SHARES, { path: { ...CLAIM, job_id: queued.id }, body: {} }),
+    );
+    const made = await api.post(SHARES, {
+      path,
+      body: { label: "For Lone Star Mutual", expires_in_days: 3 },
+    });
+    const opened = await fetch(made.url, { redirect: "manual" });
+    const pdf = await (await fetch(opened.headers.get("Location") ?? "")).text();
+    const [listed] = await api.get(SHARES, { path });
+
+    expect(early.code).toBe("report_not_ready");
+    expect(made.url).toMatch(/^https:\/\/api\.test\/v1\/shared-reports\/[0-9a-f]{64}$/);
+    expect(made.expires_at).toBe("2026-11-19T12:00:00.000Z");
+    expect(opened.status).toBe(302);
+    expect(pdf).toMatch(/^%PDF/);
+    expect(listed).toMatchObject({ active: true, open_count: 1, label: "For Lone Star Mutual" });
+    expect(listed).not.toHaveProperty("url");
+    expect(await lastEvent(api)).toBe("Shared a report by link for For Lone Star Mutual");
+  });
+
+  test("are found only through a claim of the organization in the path", async () => {
+    const api = await signedIn();
+    const elsewhere = { organization_id: alsoElsewhere(), claim_id: ids.claim };
+    const path = { ...elsewhere, job_id: ids.report };
+
+    const refused = await Promise.all([
+      refusal(api.get(REPORT, { path })),
+      refusal(api.get(SHARES, { path })),
+      refusal(api.post(SHARES, { path, body: {} })),
+      refusal(api.post(`${SHARES}/{share_id}/revoke`, { path: { ...path, share_id: ids.share } })),
+      refusal(api.delete(REPORT, { path })),
+    ]);
+
+    expect(refused.map((r) => r.status)).toEqual([404, 404, 404, 404, 404]);
+    expect(backend.db.reports).toHaveLength(1);
+  });
+
+  test("a revoked or expired link stops working", async () => {
+    const api = await signedIn();
+    const path = { ...CLAIM, job_id: ids.report };
+    const revoked = await api.post(SHARES, { path, body: { label: "Adjuster" } });
+    const expiring = await api.post(SHARES, { path, body: { expires_in_days: 1 } });
+
+    const stopped = await api.post(`${SHARES}/{share_id}/revoke`, {
+      path: { ...path, share_id: revoked.id },
+    });
+    const revokedOpen = await fetch(revoked.url, { redirect: "manual" });
+    clock += 25 * 3_600_000;
+    const expiredOpen = await fetch(expiring.url, { redirect: "manual" });
+    const shares = await api.get(SHARES, { path });
+
+    expect(stopped.active).toBe(false);
+    expect(await lastEvent(api)).toBe("Revoked a report link for Adjuster");
+    expect([revokedOpen.status, expiredOpen.status]).toEqual([404, 404]);
+    expect(((await expiredOpen.json()) as { code: string }).code).toBe("share_not_found");
+    expect(shares.map((share) => share.active)).toEqual([false, false]);
   });
 });
