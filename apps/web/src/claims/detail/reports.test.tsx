@@ -13,6 +13,12 @@ const open = (as: "morgan@example.com" | "riley@example.com" = "morgan@example.c
   renderApp(REPORTS, { signedInAs: as });
 const rows = async () =>
   within(await screen.findByRole("list", { name: "Reports" })).getAllByRole("group");
+/** The report listed at `index` (0 is the newest), to look inside; missing fails the test. */
+const reportRow = async (index: number) => {
+  const found = (await rows())[index];
+  if (!found) throw new Error(`no report at position ${String(index)}`);
+  return within(found);
+};
 const seeded = () => {
   const entry = backend.db.reports[0];
   if (!entry) throw new Error("no report");
@@ -23,8 +29,7 @@ describe("the reports", () => {
   test("are listed with who asked, how big they are, and a download", async () => {
     await open();
 
-    const [report] = await rows();
-    const row = within(report ?? document.body);
+    const row = await reportRow(0);
 
     expect(row.getByText("Photo report")).toBeInTheDocument();
     expect(row.getByText("Ready")).toBeInTheDocument();
@@ -43,8 +48,7 @@ describe("the reports", () => {
     await user.click(screen.getByRole("button", { name: "Make drying report" }));
 
     expect(await screen.findByText("Making the drying report…")).toHaveAttribute("role", "status");
-    const [newest] = await rows();
-    expect(within(newest ?? document.body).getByText("Being made")).toBeInTheDocument();
+    expect((await reportRow(0)).getByText("Being made")).toBeInTheDocument();
     const queued = backend.db.reports.find((r) => r.report.status === "queued");
     if (queued) queued.readyAt = 0;
 
@@ -62,7 +66,7 @@ describe("the reports", () => {
     });
     await open();
 
-    const row = within((await rows())[0] ?? document.body);
+    const row = await reportRow(0);
     expect(row.getByText("Failed")).toBeInTheDocument();
     expect(row.getByText(/^Storage unavailable Make it again/)).toBeInTheDocument();
     expect(row.queryByRole("link", { name: "Download" })).not.toBeInTheDocument();
@@ -71,7 +75,7 @@ describe("the reports", () => {
   test("someone not allowed to make reports can still download them", async () => {
     await open("riley@example.com");
 
-    const row = within((await rows())[0] ?? document.body);
+    const row = await reportRow(0);
     expect(row.getByRole("link", { name: "Download" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Make/ })).not.toBeInTheDocument();
     expect(row.queryByRole("button", { name: "Share" })).not.toBeInTheDocument();
