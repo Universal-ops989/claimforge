@@ -1234,8 +1234,14 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
     return { ...share, active: !share.revoked_at && Date.parse(share.expires_at) > now() };
   }
 
-  function claimReport(claimId: string, reportId: string) {
-    return db().reports.find((r) => r.claimId === claimId && r.report.id === reportId);
+  /** A report of a claim of the organization, or the API's 404 (claim or report unknown). */
+  function claimReport(organizationId: string, claimId: string, reportId: string) {
+    const claim = claimOr404(organizationId, claimId);
+    if (claim instanceof Response) return claim;
+    return (
+      db().reports.find((r) => r.claimId === claim.id && r.report.id === reportId) ??
+      problem(404, "not_found", { detail: "Report not found" })
+    );
   }
 
   /** A stored photo as the API answers it: its room as the layout has it now. */
@@ -1988,7 +1994,7 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
         "photo_uploaded",
         `Added a photo${entry.roomId ? ` of the ${photoNow(entry).room?.name ?? "room"}` : ""}`,
       );
-      return photoNow(entry);
+      return respond(201, photoNow(entry));
     }),
     api.get(`${CLAIM}/photos`, ({ request, params, query }) => {
       const seen = member(request, params.organization_id);
@@ -2141,7 +2147,7 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
         "document_attached",
         `Attached ${category === "other" ? "document" : category} “${document.title}”`,
       );
-      return document;
+      return respond(201, document);
     }),
     api.get(`${CLAIM}/documents`, ({ request, params, query }) => {
       const seen = member(request, params.organization_id);
@@ -2161,8 +2167,10 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
     api.get(`${CLAIM}/documents/{document_id}`, ({ request, params }) => {
       const seen = member(request, params.organization_id);
       if (seen instanceof Response) return seen;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
       const entry = db().documents.find(
-        (d) => d.claimId === params.claim_id && d.document.id === params.document_id,
+        (d) => d.claimId === claim.id && d.document.id === params.document_id,
       );
       return entry ? entry.document : problem(404, "not_found");
     }),
@@ -2173,8 +2181,22 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
         (d) => d.claimId === ready.claim.id && d.document.id === params.document_id,
       );
       if (!entry) return problem(404, "not_found");
+      const nulls = (["title", "category"] as const).filter((f) => f in body && body[f] === null);
+      if (nulls.length > 0) {
+        return problem(422, "validation_failed", {
+          title: "Invalid request",
+          detail: "1 field(s) failed validation",
+          errors: [
+            {
+              loc: ["body"],
+              message: `Value error, ${nulls[0] ?? ""} cannot be null`,
+              type: "value_error",
+            },
+          ],
+        });
+      }
       const { document } = entry;
-      const before = document.title;
+      const before = { title: document.title, category: document.category };
       const title = body.title ?? document.title;
       const category = body.category ?? document.category;
       if (title === document.title && category === document.category) return document;
@@ -2184,8 +2206,8 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
         ready.seen.person,
         "documents",
         "document_updated",
-        title !== before
-          ? `Renamed document “${before}” to “${title}”`
+        title !== before.title
+          ? `Renamed document “${before.title}” to “${title}”${category !== before.category ? ": category" : ""}`
           : `Recategorized document “${title}” as ${category}`,
       );
       return document;
@@ -2259,8 +2281,8 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
     api.get(`${CLAIM}/reports/{job_id}`, ({ request, params, respond }) => {
       const seen = member(request, params.organization_id);
       if (seen instanceof Response) return seen;
-      const entry = claimReport(params.claim_id, params.job_id);
-      if (!entry) return problem(404, "not_found", { detail: "Report not found" });
+      const entry = claimReport(params.organization_id, params.claim_id, params.job_id);
+      if (entry instanceof Response) return entry;
       const report = reportNow(entry);
       if (report.status !== "queued") return report;
       const waiting = respond(200, report);
@@ -2272,8 +2294,8 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
       if (seen instanceof Response) return seen;
       const denied = allowed(seen.membership, "reports:generate");
       if (denied) return denied;
-      const entry = claimReport(params.claim_id, params.job_id);
-      if (!entry) return problem(404, "not_found", { detail: "Report not found" });
+      const entry = claimReport(params.organization_id, params.claim_id, params.job_id);
+      if (entry instanceof Response) return entry;
       const key = reportKey(entry.report.id);
       backend.db.reports = db().reports.filter((r) => r !== entry);
       backend.db.shares = db().shares.filter((s) => s.share.report_id !== entry.report.id);
@@ -2290,8 +2312,8 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
     api.get(`${CLAIM}/reports/{job_id}/shares`, ({ request, params }) => {
       const seen = member(request, params.organization_id);
       if (seen instanceof Response) return seen;
-      const entry = claimReport(params.claim_id, params.job_id);
-      if (!entry) return problem(404, "not_found", { detail: "Report not found" });
+      const entry = claimReport(params.organization_id, params.claim_id, params.job_id);
+      if (entry instanceof Response) return entry;
       return newestFirst(
         db()
           .shares.filter((s) => s.share.report_id === entry.report.id)
@@ -2303,8 +2325,8 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
       if (seen instanceof Response) return seen;
       const denied = allowed(seen.membership, "reports:generate");
       if (denied) return denied;
-      const entry = claimReport(params.claim_id, params.job_id);
-      if (!entry) return problem(404, "not_found", { detail: "Report not found" });
+      const entry = claimReport(params.organization_id, params.claim_id, params.job_id);
+      if (entry instanceof Response) return entry;
       const report = reportNow(entry);
       if (report.status !== "ready") {
         return problem(409, "report_not_ready", {
@@ -2344,9 +2366,11 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
       if (seen instanceof Response) return seen;
       const denied = allowed(seen.membership, "reports:generate");
       if (denied) return denied;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
       const link = db().shares.find(
         (s) =>
-          s.claimId === params.claim_id &&
+          s.claimId === claim.id &&
           s.share.report_id === params.job_id &&
           s.share.id === params.share_id,
       );

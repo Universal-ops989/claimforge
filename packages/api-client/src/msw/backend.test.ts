@@ -1517,6 +1517,20 @@ const TIMELINE = "/v1/organizations/{organization_id}/claims/{claim_id}/timeline
 const lastEvent = async (api: ApiClient) =>
   (await api.get(TIMELINE, { path: CLAIM })).items[0]?.summary;
 
+/** Morgan, made a member of a second organization too: its id, for paths that mix the two. */
+function alsoElsewhere(): string {
+  const id = fixtureId("organization", 2);
+  const morgan = backend.db.accounts.find((a) => a.email === "morgan@example.com");
+  const [membership] = morgan?.user.memberships ?? [];
+  if (morgan && membership) {
+    morgan.user.memberships.push({
+      ...membership,
+      organization: { id, name: "Elsewhere", slug: "elsewhere" },
+    });
+  }
+  return id;
+}
+
 describe("documents", () => {
   const UPLOADS = "/v1/organizations/{organization_id}/claims/{claim_id}/document-uploads" as const;
   const DOCUMENTS = "/v1/organizations/{organization_id}/claims/{claim_id}/documents" as const;
@@ -1596,6 +1610,52 @@ describe("documents", () => {
     expect(document.view_url).toBeNull();
     expect(document.download_url).toMatch(/download=1$/);
     expect([big.code, closed.code]).toEqual(["document_too_large", "claim_locked"]);
+  });
+
+  test("completing answers 201 the first time, 200 for a repeat", async () => {
+    const { api, tokens } = client();
+    await api.login({ email: "morgan@example.com", password: MOCK_PASSWORD });
+    const started = await api.post(UPLOADS, {
+      path: CLAIM,
+      body: { filename: "a.pdf", content_type: "application/pdf", size_bytes: 9 },
+    });
+    await api.sendFile(started.upload, pdf(9));
+    const complete = async () =>
+      (
+        await fetch(
+          `https://api.test/v1/organizations/${ids.organization}/claims/${ids.claim}/document-uploads/${started.id}/complete`,
+          {
+            method: "POST",
+            headers: { Authorization: `Bearer ${(await tokens.get())?.accessToken ?? ""}` },
+          },
+        )
+      ).status;
+
+    expect([await complete(), await complete()]).toEqual([201, 200]);
+  });
+
+  test("is found only through a claim of the organization in the path", async () => {
+    const api = await signedIn();
+    const elsewhere = { organization_id: alsoElsewhere(), claim_id: ids.claim };
+
+    const document = await refusal(
+      api.get(DOCUMENT, { path: { ...elsewhere, document_id: ids.document } }),
+    );
+
+    expect(document.status).toBe(404);
+  });
+
+  test("a change to both fields names the other; neither can be null", async () => {
+    const api = await signedIn();
+    const path = { ...CLAIM, document_id: ids.document };
+
+    await api.patch(DOCUMENT, { path, body: { title: "WA-1042", category: "policy" } });
+    const cleared = await refusal(api.patch(DOCUMENT, { path, body: { title: null } }));
+
+    expect(await lastEvent(api)).toBe(
+      "Renamed document “Signed work authorization” to “WA-1042”: category",
+    );
+    expect(cleared.status).toBe(422);
   });
 
   test("is retitled, recategorized and deleted, each on the timeline", async () => {
@@ -1717,6 +1777,23 @@ describe("reports", () => {
     expect(listed).toMatchObject({ active: true, open_count: 1, label: "For Lone Star Mutual" });
     expect(listed).not.toHaveProperty("url");
     expect(await lastEvent(api)).toBe("Shared a report by link for For Lone Star Mutual");
+  });
+
+  test("are found only through a claim of the organization in the path", async () => {
+    const api = await signedIn();
+    const elsewhere = { organization_id: alsoElsewhere(), claim_id: ids.claim };
+    const path = { ...elsewhere, job_id: ids.report };
+
+    const refused = await Promise.all([
+      refusal(api.get(REPORT, { path })),
+      refusal(api.get(SHARES, { path })),
+      refusal(api.post(SHARES, { path, body: {} })),
+      refusal(api.post(`${SHARES}/{share_id}/revoke`, { path: { ...path, share_id: ids.share } })),
+      refusal(api.delete(REPORT, { path })),
+    ]);
+
+    expect(refused.map((r) => r.status)).toEqual([404, 404, 404, 404, 404]);
+    expect(backend.db.reports).toHaveLength(1);
   });
 
   test("a revoked or expired link stops working", async () => {
