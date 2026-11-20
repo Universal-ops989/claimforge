@@ -43,6 +43,8 @@ const KINDS = {
   damage: "20",
   equipment: "21",
   placement: "22",
+  priceList: "23",
+  priceItem: "24",
 } as const;
 
 /** A fixed UUIDv7-shaped id per kind and number; ids of one kind sort by `n`. */
@@ -70,6 +72,8 @@ export const ids = {
   damage: fixtureId("damage"),
   equipment: fixtureId("equipment"),
   placement: fixtureId("placement"),
+  priceList: fixtureId("priceList"),
+  priceItem: fixtureId("priceItem"),
 } as const;
 
 export const CLAIM_NUMBER = "2026-00042";
@@ -590,7 +594,8 @@ export function estimateLine(changes: Overrides<"LineRead"> = {}): Schema<"LineR
 
 /**
  * A draft estimate whose totals are worked out from its lines and rates, as the API does:
- * tax on taxable lines, overhead and profit on the subtotal.
+ * tax on taxable lines, then overhead and profit on the subtotal plus tax, each rounded to
+ * the cent.
  */
 export function estimate(changes: Overrides<"EstimateRead"> = {}): Schema<"EstimateRead"> {
   const lines = changes.lines ?? [estimateLine()];
@@ -601,8 +606,8 @@ export function estimate(changes: Overrides<"EstimateRead"> = {}): Schema<"Estim
   const subtotal = lines.reduce((sum, line) => sum + cents(line.total), 0);
   const taxable = lines.filter((line) => line.taxable).reduce((s, l) => s + cents(l.total), 0);
   const tax = Math.round(taxable * rate(tax_percent));
-  const overhead = Math.round(subtotal * rate(overhead_percent));
-  const profit = Math.round(subtotal * rate(profit_percent));
+  const overhead = Math.round((subtotal + tax) * rate(overhead_percent));
+  const profit = Math.round((subtotal + tax) * rate(profit_percent));
   const total = subtotal + tax + overhead + profit;
   const byRoom = new Map<
     string | null,
@@ -644,6 +649,36 @@ export function estimate(changes: Overrides<"EstimateRead"> = {}): Schema<"Estim
     created_by: people.morgan,
     created_at: TODAY,
     updated_at: TODAY,
+    ...changes,
+  };
+}
+
+/** The organization's default price list. */
+export function priceList(changes: Overrides<"PriceListRead"> = {}): Schema<"PriceListRead"> {
+  return {
+    id: ids.priceList,
+    name: "Lone Star 2026",
+    description: "Water mitigation and rebuild rates for central Texas",
+    effective_on: "2026-01-01",
+    is_default: true,
+    item_count: 1,
+    imported_at: null,
+    created_at: CREATED,
+    updated_at: CREATED,
+    ...changes,
+  };
+}
+
+/** An item on the default price list: a dehumidifier, per day. */
+export function priceItem(changes: Overrides<"PriceItemRead"> = {}): Schema<"PriceItemRead"> {
+  return {
+    id: ids.priceItem,
+    code: "WTR-DEHU",
+    description: "Dehumidifier, per day",
+    unit: "DA",
+    unit_price: "85.00",
+    category: "Water mitigation",
+    updated_at: CREATED,
     ...changes,
   };
 }

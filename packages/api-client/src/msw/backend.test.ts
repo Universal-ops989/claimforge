@@ -1375,3 +1375,140 @@ describe("properties", () => {
     expect([taken.code, notAllowed.status]).toEqual(["property_exists", 403]);
   });
 });
+
+describe("estimates", () => {
+  const ESTIMATES = "/v1/organizations/{organization_id}/claims/{claim_id}/estimates" as const;
+  const ESTIMATE = `${ESTIMATES}/{estimate_id}` as const;
+  const LINES = `${ESTIMATE}/lines` as const;
+  const LINE = `${LINES}/{line_id}` as const;
+  const STATUS = `${ESTIMATE}/status` as const;
+  const seeded = { ...CLAIM, estimate_id: ids.estimate };
+  const move = (
+    api: ApiClient,
+    status: "draft" | "submitted" | "approved" | "rejected",
+    estimate_id = ids.estimate,
+  ) => api.post(STATUS, { path: { ...CLAIM, estimate_id }, body: { status } });
+
+  test("the seeded draft is priced as the API prices it", async () => {
+    const api = await signedIn();
+
+    const estimate = await api.get(ESTIMATE, { path: seeded });
+
+    // 3 × 85.00 + 6 × 28.00 = 423.00, untaxed; overhead and profit 10 % each.
+    expect(estimate.totals).toEqual({
+      subtotal: "423.00",
+      taxable_subtotal: "0.00",
+      tax: "0.00",
+      overhead: "42.30",
+      profit: "42.30",
+      total: "507.60",
+    });
+    expect(estimate.rooms).toEqual([
+      { room: { id: ids.room, name: "Kitchen" }, lines: 2, subtotal: "423.00" },
+    ]);
+    expect(estimate.price_list?.name).toBe("Lone Star 2026");
+  });
+
+  test("a new estimate is numbered on, with the organization's rates and default list", async () => {
+    const api = await signedIn();
+
+    const created = await api.post(ESTIMATES, { path: CLAIM, body: { title: "Rebuild" } });
+    const listed = await api.get(ESTIMATES, { path: CLAIM });
+
+    expect(created).toMatchObject({
+      number: 2,
+      status: "draft",
+      tax_percent: "8.25",
+      price_list: { id: ids.priceList },
+      lines: [],
+    });
+    expect(listed.map((e) => e.title)).toEqual(["Mitigation", "Rebuild"]);
+  });
+
+  test("lines come from a price item or by hand, placed where asked, and move", async () => {
+    const api = await signedIn();
+
+    await api.post(LINES, {
+      path: seeded,
+      body: { price_item_id: fixtureId("priceItem", 4), quantity: "24", room_id: ids.room },
+    });
+    const byHand = await api.post(LINES, {
+      path: seeded,
+      body: {
+        description: "Haul-off",
+        unit: "EA",
+        unit_price: "150.00",
+        quantity: "1",
+        position: 1,
+      },
+    });
+    const third = byHand.lines[2];
+    const moved = await api.patch(LINE, {
+      path: { ...seeded, line_id: third?.id ?? "" },
+      body: { position: 4, quantity: "2.5" },
+    });
+
+    expect(byHand.lines.map((l) => l.code ?? l.description)).toEqual([
+      "Haul-off",
+      "WTR-DEHU",
+      "WTR-AIRM",
+      "DRY-RMVF",
+    ]);
+    expect(byHand.lines[3]).toMatchObject({
+      unit: "LF",
+      unit_price: "3.10",
+      total: "74.40",
+      taxable: true,
+    });
+    expect(moved.lines.map((l) => [l.position, l.code ?? l.description])).toEqual([
+      [1, "Haul-off"],
+      [2, "WTR-DEHU"],
+      [3, "DRY-RMVF"],
+      [4, "WTR-AIRM"],
+    ]);
+    expect(moved.lines[3]?.total).toBe("70.00");
+  });
+
+  test("only drafts change; submitting needs a line; approving takes the right to approve", async () => {
+    const api = await signedIn();
+    const riley = await signedIn("riley@example.com");
+    const empty = await api.post(ESTIMATES, { path: CLAIM, body: { title: "Empty" } });
+
+    const noLines = await refusal(move(api, "submitted", empty.id));
+    const submitted = await move(api, "submitted");
+    const frozen = await refusal(
+      api.post(LINES, {
+        path: seeded,
+        body: { description: "X", unit: "EA", unit_price: "1.00", quantity: "1" },
+      }),
+    );
+    const skipped = await refusal(
+      move(api, "draft", empty.id).then(() => move(api, "approved", empty.id)),
+    );
+    const notYours = await refusal(move(riley, "approved"));
+    const approved = await move(api, "approved");
+
+    expect(submitted.next_statuses).toEqual(["draft", "approved", "rejected"]);
+    expect([noLines.code, frozen.code, skipped.code]).toEqual([
+      "estimate_transition",
+      "estimate_not_draft",
+      "estimate_transition",
+    ]);
+    expect(notYours.status).toBe(403);
+    expect(approved.status).toBe("approved");
+  });
+
+  test("price items are listed by code and searched by code or description", async () => {
+    const api = await signedIn();
+    const ITEMS = "/v1/organizations/{organization_id}/price-lists/{list_id}/items" as const;
+    const path = { ...ORG, list_id: ids.priceList };
+
+    const all = await api.get(ITEMS, { path });
+    const found = await api.get(ITEMS, { path, query: { q: "drywall" } });
+    const lists = await api.get("/v1/organizations/{organization_id}/price-lists", { path: ORG });
+
+    expect(all.items[0]?.code).toBe("ANT-APPL");
+    expect(found.items.map((i) => i.code)).toEqual(["DRY-INST", "DRY-RMVF"]);
+    expect(lists[0]).toMatchObject({ is_default: true, item_count: 7 });
+  });
+});

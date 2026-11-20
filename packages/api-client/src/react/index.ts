@@ -31,6 +31,7 @@ export {
 } from "./claims";
 export { contactsQuery, useContacts, useCreateContact, useUpdateContact } from "./contacts";
 export { useUpdateProperty, type PropertyChange } from "./properties";
+export { priceItemsQuery, priceListsQuery, usePriceItems, usePriceLists } from "./pricing";
 export {
   equipmentDaysQuery,
   equipmentQuery,

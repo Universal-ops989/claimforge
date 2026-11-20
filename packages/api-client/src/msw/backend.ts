@@ -8,6 +8,7 @@
  * claims (lists, filters, pages, create, edit, the status workflow, assignments, contacts,
  * history, timeline), the address book, the layout and damage, photos (with a pretend file
  * store behind their upload links), moisture mapping and drying, equipment and its placements,
+ * estimates and the price lists they're priced from,
  * tasks, notes, and the layout to read. It behaves like the API where tests can tell:
  * the same status codes and error codes, refresh tokens that rotate with reuse detection,
  * the workflow the contract publishes (`workflows`), permissions by role, locked claims.
@@ -86,6 +87,22 @@ export interface MockDb {
     placed_by: Person | null;
     removed_by: Person | null;
   }[];
+  /** Price lists and their items; one list per organization is the default. */
+  priceLists: {
+    organizationId: string;
+    list: Omit<Schema<"PriceListRead">, "item_count">;
+    items: Schema<"PriceItemRead">[];
+  }[];
+  /** Estimates, their lines in order; totals are worked out as the API does. */
+  estimates: {
+    claimId: string;
+    estimate: Omit<
+      Schema<"EstimateRead">,
+      "totals" | "rooms" | "total" | "next_statuses" | "lines"
+    >;
+    lines: Omit<Schema<"LineRead">, "total" | "position" | "room">[];
+    roomIds: (string | null)[];
+  }[];
   /** Damage recorded in the claims' rooms; it goes with its room. */
   damage: { claimId: string; item: Schema<"DamageItemRead"> }[];
   tasks: Schema<"TaskRead">[];
@@ -145,6 +162,75 @@ export function seedDb(): MockDb {
     timeline: [],
     structures: [{ claimId: fx.ids.claim, structure: fx.structure() }],
     damage: [{ claimId: fx.ids.claim, item: fx.damageItem() }],
+    priceLists: [
+      {
+        organizationId: fx.ids.organization,
+        list: (({ item_count: _, ...list }) => list)(fx.priceList()),
+        items: [
+          ["WTR-DEHU", "Dehumidifier, per day", "DA", "85.00", "Water mitigation"],
+          ["WTR-AIRM", "Air mover, per day", "DA", "28.00", "Water mitigation"],
+          ["WTR-EXTR", "Water extraction from carpet", "SF", "0.45", "Water mitigation"],
+          ["DRY-RMVF", "Drywall, flood cut to 2 ft", "LF", "3.10", "Demolition"],
+          ["DRY-INST", "Drywall, hang, tape and finish", "SF", "2.85", "Rebuild"],
+          ["FLR-LAMN", "Laminate flooring, install", "SF", "4.60", "Rebuild"],
+          ["ANT-APPL", "Antimicrobial, apply", "SF", "0.32", "Water mitigation"],
+        ].map(([code, description, unit, unit_price, category], i) =>
+          fx.priceItem({
+            id: fx.fixtureId("priceItem", i + 1),
+            code,
+            description,
+            unit,
+            unit_price,
+            category,
+          }),
+        ),
+      },
+    ],
+    estimates: [
+      {
+        claimId: fx.ids.claim,
+        estimate: {
+          id: fx.ids.estimate,
+          claim_id: fx.ids.claim,
+          number: 1,
+          title: "Mitigation",
+          status: "draft",
+          notes: null,
+          price_list: { id: fx.ids.priceList, name: "Lone Star 2026" },
+          tax_percent: "8.25",
+          overhead_percent: "10",
+          profit_percent: "10",
+          created_by: fx.people.morgan,
+          created_at: "2026-11-15T16:00:00Z",
+          updated_at: "2026-11-15T16:00:00Z",
+        },
+        lines: [
+          {
+            id: fx.fixtureId("line", 1),
+            code: "WTR-DEHU",
+            description: "Dehumidifier, per day",
+            unit: "DA",
+            quantity: "3",
+            unit_price: "85.00",
+            taxable: false,
+            notes: null,
+            price_item_id: fx.fixtureId("priceItem", 1),
+          },
+          {
+            id: fx.fixtureId("line", 2),
+            code: "WTR-AIRM",
+            description: "Air mover, per day",
+            unit: "DA",
+            quantity: "6",
+            unit_price: "28.00",
+            taxable: false,
+            notes: null,
+            price_item_id: fx.fixtureId("priceItem", 2),
+          },
+        ],
+        roomIds: [fx.ids.room, fx.ids.room],
+      },
+    ],
     photos: [{ claimId: fx.ids.claim, photo: fx.photo(), roomId: fx.ids.room }],
     moisturePoints: [{ claimId: fx.ids.claim, point: fx.moisturePoint(), roomId: fx.ids.room }],
     equipment: [
@@ -842,6 +928,50 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
     problem(422, "time_in_future", {
       detail: "Equipment can't be placed or removed in the future",
     });
+
+  type EstimateEntry = MockDb["estimates"][number];
+
+  /** An estimate as the API answers it: its lines numbered and priced, its totals worked out. */
+  function estimateNow(entry: EstimateEntry): Schema<"EstimateRead"> {
+    const lines = entry.lines.map((line, i) =>
+      fx.estimateLine({ ...line, position: i + 1, room: roomRef(entry.roomIds[i]) }),
+    );
+    // The fixture works totals, room subtotals and next statuses out as the API does.
+    return fx.estimate({ ...entry.estimate, lines });
+  }
+
+  function summaryOf(entry: EstimateEntry): Schema<"EstimateSummary"> {
+    const { id, claim_id, number, title, status, total, created_at, updated_at } =
+      estimateNow(entry);
+    return { id, claim_id, number, title, status, total, created_at, updated_at };
+  }
+
+  function estimateOf(claimId: string, estimateId: string) {
+    return db().estimates.find((e) => e.claimId === claimId && e.estimate.id === estimateId);
+  }
+
+  /** `estimate_not_draft` unless the estimate can still be changed. */
+  function notDraft(entry: EstimateEntry): Response | null {
+    return entry.estimate.status === "draft"
+      ? null
+      : problem(409, "estimate_not_draft", {
+          detail: `Estimate ${String(entry.estimate.number)} is ${entry.estimate.status}; move it back to draft first`,
+          estimate_status: entry.estimate.status,
+        });
+  }
+
+  function priceListOf(organizationId: string, listId: string) {
+    return db().priceLists.find((l) => l.organizationId === organizationId && l.list.id === listId);
+  }
+
+  /** Estimate work on a claim: `estimates:write`, an open claim; or the refusal. */
+  function estimateWork(request: Request, organizationId: string, claimId: string) {
+    const seen = member(request, organizationId);
+    if (seen instanceof Response) return seen;
+    const claim = claimOr404(organizationId, claimId);
+    if (claim instanceof Response) return claim;
+    return allowed(seen.membership, "estimates:write") ?? locked(claim) ?? { seen, claim };
+  }
 
   /** A stored point as the API answers it: its room as the layout has it now. */
   function pointNow(entry: { point: Schema<"MoisturePointRead">; roomId: string }) {
@@ -2260,6 +2390,303 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
       if ("longitude" in body) changed.longitude = body.longitude ?? null;
       for (const holder of holders) holder.claim = { ...holder.claim, property: changed };
       return changed;
+    }),
+
+    // ─── Price lists ─────────────────────────────────────────────────────────
+    api.get(`${ORG}/price-lists`, ({ request, params }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      return db()
+        .priceLists.filter((l) => l.organizationId === params.organization_id)
+        .sort(
+          (a, b) =>
+            Number(b.list.is_default) - Number(a.list.is_default) ||
+            a.list.name.localeCompare(b.list.name),
+        )
+        .map((l) => ({ ...l.list, item_count: l.items.length }));
+    }),
+    api.get(`${ORG}/price-lists/{list_id}`, ({ request, params }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const entry = priceListOf(params.organization_id, params.list_id);
+      return entry ? { ...entry.list, item_count: entry.items.length } : problem(404, "not_found");
+    }),
+    api.get(`${ORG}/price-lists/{list_id}/items`, ({ request, params, query }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const entry = priceListOf(params.organization_id, params.list_id);
+      if (!entry) return problem(404, "not_found");
+      const q = (query.get("q") ?? "").trim().toLowerCase();
+      const category = query.get("category");
+      const found = entry.items
+        .filter(
+          (item) =>
+            (!q ||
+              item.code.toLowerCase().includes(q) ||
+              item.description.toLowerCase().includes(q)) &&
+            (!category || item.category === category),
+        )
+        .sort((a, b) => a.code.localeCompare(b.code));
+      return paginate(found, query);
+    }),
+
+    // ─── Estimates ───────────────────────────────────────────────────────────
+    api.get(`${CLAIM}/estimates`, ({ request, params }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
+      return db()
+        .estimates.filter((e) => e.claimId === claim.id)
+        .sort((a, b) => a.estimate.number - b.estimate.number)
+        .map(summaryOf);
+    }),
+    api.get(`${CLAIM}/estimates/{estimate_id}`, ({ request, params }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const entry = estimateOf(params.claim_id, params.estimate_id);
+      return entry ? estimateNow(entry) : problem(404, "not_found");
+    }),
+    api.post(`${CLAIM}/estimates`, ({ request, params, body }) => {
+      const ready = estimateWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const lists = db().priceLists.filter((l) => l.organizationId === params.organization_id);
+      const list = body.price_list_id
+        ? lists.find((l) => l.list.id === body.price_list_id)
+        : lists.find((l) => l.list.is_default);
+      if (body.price_list_id && !list) {
+        return problem(422, "unknown_price_list", {
+          detail: "No such price list",
+          price_list_id: body.price_list_id,
+        });
+      }
+      const org = db().organizations.find((o) => o.id === params.organization_id);
+      const numbers = db()
+        .estimates.filter((e) => e.claimId === ready.claim.id)
+        .map((e) => e.estimate.number);
+      const entry: EstimateEntry = {
+        claimId: ready.claim.id,
+        estimate: {
+          id: newId(),
+          claim_id: ready.claim.id,
+          number: Math.max(0, ...numbers) + 1,
+          title: body.title.trim(),
+          status: "draft",
+          notes: textOrNull(body.notes),
+          price_list: list ? { id: list.list.id, name: list.list.name } : null,
+          tax_percent: body.tax_percent ?? org?.default_tax_percent ?? "0",
+          overhead_percent: body.overhead_percent ?? org?.default_overhead_percent ?? "0",
+          profit_percent: body.profit_percent ?? org?.default_profit_percent ?? "0",
+          created_by: ready.seen.person,
+          created_at: iso(),
+          updated_at: iso(),
+        },
+        lines: [],
+        roomIds: [],
+      };
+      db().estimates.push(entry);
+      record(
+        ready.claim.id,
+        ready.seen.person,
+        "estimates",
+        "estimate_created",
+        `Started estimate ${String(entry.estimate.number)}, ${entry.estimate.title}`,
+      );
+      return estimateNow(entry);
+    }),
+    api.patch(`${CLAIM}/estimates/{estimate_id}`, ({ request, params, body }) => {
+      const ready = estimateWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const entry = estimateOf(ready.claim.id, params.estimate_id);
+      if (!entry) return problem(404, "not_found");
+      const refused = notDraft(entry);
+      if (refused) return refused;
+      if (body.price_list_id) {
+        const list = priceListOf(params.organization_id, body.price_list_id);
+        if (!list)
+          return problem(422, "unknown_price_list", {
+            detail: "No such price list",
+            price_list_id: body.price_list_id,
+          });
+        entry.estimate.price_list = { id: list.list.id, name: list.list.name };
+      }
+      if (body.title != null) entry.estimate.title = body.title.trim();
+      if ("notes" in body) entry.estimate.notes = textOrNull(body.notes);
+      if (body.tax_percent != null) entry.estimate.tax_percent = body.tax_percent;
+      if (body.overhead_percent != null) entry.estimate.overhead_percent = body.overhead_percent;
+      if (body.profit_percent != null) entry.estimate.profit_percent = body.profit_percent;
+      entry.estimate.updated_at = iso();
+      return estimateNow(entry);
+    }),
+    api.delete(`${CLAIM}/estimates/{estimate_id}`, ({ request, params }) => {
+      const ready = estimateWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const entry = estimateOf(ready.claim.id, params.estimate_id);
+      if (!entry) return problem(404, "not_found");
+      const refused = notDraft(entry);
+      if (refused) return refused;
+      backend.db.estimates = db().estimates.filter((e) => e !== entry);
+      return undefined;
+    }),
+    api.post(`${CLAIM}/estimates/{estimate_id}/lines`, ({ request, params, body }) => {
+      const ready = estimateWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const entry = estimateOf(ready.claim.id, params.estimate_id);
+      if (!entry) return problem(404, "not_found");
+      const refused = notDraft(entry);
+      if (refused) return refused;
+      if (body.room_id && !claimRoom(ready.claim.id, body.room_id))
+        return unknownRoom(body.room_id);
+      let priced: Pick<
+        Schema<"LineRead">,
+        "code" | "description" | "unit" | "unit_price" | "price_item_id"
+      >;
+      if (body.price_item_id) {
+        const item = db()
+          .priceLists.filter((l) => l.organizationId === params.organization_id)
+          .flatMap((l) => l.items)
+          .find((i) => i.id === body.price_item_id);
+        if (!item) {
+          return problem(422, "unknown_price_item", {
+            detail: "No such price item",
+            price_item_id: body.price_item_id,
+          });
+        }
+        priced = {
+          code: body.code ?? item.code,
+          description: body.description ?? item.description,
+          unit: body.unit ?? item.unit,
+          unit_price: body.unit_price ?? item.unit_price,
+          price_item_id: item.id,
+        };
+      } else {
+        if (!body.description || !body.unit || !body.unit_price) {
+          return problem(422, "validation_failed", {
+            detail: "A line by hand needs a description, unit and unit price",
+            errors: [
+              {
+                loc: ["body"],
+                message: "A line by hand needs a description, unit and unit price",
+                type: "value_error",
+              },
+            ],
+          });
+        }
+        priced = {
+          code: body.code ?? null,
+          description: body.description,
+          unit: body.unit,
+          unit_price: body.unit_price,
+          price_item_id: null,
+        };
+      }
+      const line = {
+        id: newId(),
+        ...priced,
+        quantity: body.quantity,
+        taxable: body.taxable ?? true,
+        notes: textOrNull(body.notes),
+      };
+      const at = Math.min(
+        Math.max((body.position ?? entry.lines.length + 1) - 1, 0),
+        entry.lines.length,
+      );
+      entry.lines.splice(at, 0, line);
+      entry.roomIds.splice(at, 0, body.room_id ?? null);
+      entry.estimate.updated_at = iso();
+      return estimateNow(entry);
+    }),
+    api.patch(`${CLAIM}/estimates/{estimate_id}/lines/{line_id}`, ({ request, params, body }) => {
+      const ready = estimateWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const entry = estimateOf(ready.claim.id, params.estimate_id);
+      if (!entry) return problem(404, "not_found");
+      const refused = notDraft(entry);
+      if (refused) return refused;
+      const index = entry.lines.findIndex((l) => l.id === params.line_id);
+      const line = entry.lines[index];
+      if (!line) return problem(404, "not_found");
+      if (body.room_id && !claimRoom(ready.claim.id, body.room_id))
+        return unknownRoom(body.room_id);
+      const changed = { ...line };
+      for (const field of [
+        "code",
+        "description",
+        "unit",
+        "quantity",
+        "unit_price",
+        "taxable",
+      ] as const) {
+        if (body[field] != null) Object.assign(changed, { [field]: body[field] });
+      }
+      if ("notes" in body) changed.notes = textOrNull(body.notes);
+      let roomId = entry.roomIds[index] ?? null;
+      if ("room_id" in body) roomId = body.room_id ?? null;
+      entry.lines.splice(index, 1);
+      entry.roomIds.splice(index, 1);
+      const at =
+        body.position != null
+          ? Math.min(Math.max(body.position - 1, 0), entry.lines.length)
+          : index;
+      entry.lines.splice(at, 0, changed);
+      entry.roomIds.splice(at, 0, roomId);
+      entry.estimate.updated_at = iso();
+      return estimateNow(entry);
+    }),
+    api.delete(`${CLAIM}/estimates/{estimate_id}/lines/{line_id}`, ({ request, params }) => {
+      const ready = estimateWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const entry = estimateOf(ready.claim.id, params.estimate_id);
+      if (!entry) return problem(404, "not_found");
+      const refused = notDraft(entry);
+      if (refused) return refused;
+      const index = entry.lines.findIndex((l) => l.id === params.line_id);
+      if (index < 0) return problem(404, "not_found");
+      entry.lines.splice(index, 1);
+      entry.roomIds.splice(index, 1);
+      entry.estimate.updated_at = iso();
+      return estimateNow(entry);
+    }),
+    api.post(`${CLAIM}/estimates/{estimate_id}/status`, ({ request, params, body }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
+      const lockedClaim = locked(claim);
+      if (lockedClaim) return lockedClaim;
+      const entry = estimateOf(claim.id, params.estimate_id);
+      if (!entry) return problem(404, "not_found");
+      const from = entry.estimate.status;
+      const allowedNext: readonly string[] = workflows.EstimateStatus.transitions[from];
+      if (!allowedNext.includes(body.status)) {
+        return problem(422, "estimate_transition", {
+          detail: `A ${from} estimate can't become ${body.status}`,
+          allowed: [...allowedNext],
+        });
+      }
+      // Approving, rejecting and reopening an approved one take the right to approve.
+      const needs =
+        body.status === "approved" || body.status === "rejected" || from === "approved"
+          ? "estimates:approve"
+          : "estimates:write";
+      const refused = allowed(seen.membership, needs);
+      if (refused) return refused;
+      if (body.status === "submitted" && entry.lines.length === 0) {
+        return problem(422, "estimate_transition", {
+          detail: "An estimate needs at least one line to be submitted",
+          allowed: [...allowedNext],
+        });
+      }
+      entry.estimate.status = body.status;
+      entry.estimate.updated_at = iso();
+      record(
+        claim.id,
+        seen.person,
+        "estimates",
+        "estimate_status_changed",
+        `Estimate ${String(entry.estimate.number)} ${body.status === "draft" ? "back to draft" : body.status}`,
+      );
+      return estimateNow(entry);
     }),
 
     // ─── Equipment ───────────────────────────────────────────────────────────

@@ -30,6 +30,8 @@ import {
   page,
   photo,
   placement,
+  priceItem,
+  priceList,
   report,
   room,
   share,
@@ -90,6 +92,8 @@ const FIXTURES: [string, SchemaName, unknown][] = [
   ["damageItem()", "DamageItemRead", damageItem()],
   ["equipment()", "EquipmentRead", equipment()],
   ["placement()", "PlacementRead", placement()],
+  ["priceList()", "PriceListRead", priceList()],
+  ["priceItem()", "PriceItemRead", priceItem()],
   ["agentContact()", "ContactRead", agentContact()],
   ["claimContact()", "ClaimContactRead", claimContact()],
   ["claim()", "ClaimRead", claim()],
@@ -193,11 +197,12 @@ describe("the data hangs together", () => {
       subtotal: "335.00",
       taxable_subtotal: "80.00",
       tax: "6.60",
-      overhead: "33.50",
-      profit: "33.50",
-      total: "408.60",
+      // On the subtotal plus tax: 341.60 at 10 %, as the API's own arithmetic has it.
+      overhead: "34.16",
+      profit: "34.16",
+      total: "409.92",
     });
-    expect(priced.total).toBe("408.60");
+    expect(priced.total).toBe("409.92");
     expect(priced.rooms).toEqual([
       { room: { id: ids.room, name: "Kitchen" }, lines: 1, subtotal: "255.00" },
       { room: null, lines: 1, subtotal: "80.00" },
