@@ -8,7 +8,8 @@
  * claims (lists, filters, pages, create, edit, the status workflow, assignments, contacts,
  * history, timeline), the address book, the layout and damage, photos (with a pretend file
  * store behind their upload links), moisture mapping and drying, equipment and its placements,
- * estimates and the price lists they're priced from,
+ * estimates and the price lists they're priced from, documents (in the same pretend store),
+ * reports (made a moment after they're asked for) and the links that share them,
  * tasks, notes, and the layout to read. It behaves like the API where tests can tell:
  * the same status codes and error codes, refresh tokens that rotate with reuse detection,
  * the workflow the contract publishes (`workflows`), permissions by role, locked claims.
@@ -59,6 +60,19 @@ export interface MockDb {
   }[];
   /** The pretend file store behind upload links: what was sent, by key. */
   files: Record<string, Blob>;
+  /** Documents attached to claims; a document's id is its upload's, and its file's key. */
+  documents: { claimId: string; document: Schema<"DocumentRead"> }[];
+  /** Document uploads started (completed once a document has their id). */
+  documentUploads: {
+    id: string;
+    claimId: string;
+    body: Schema<"DocumentUploadCreate">;
+    by: Person;
+  }[];
+  /** Reports; a queued one is made once the mock's clock reaches `readyAt`. */
+  reports: { claimId: string; report: Schema<"ReportJobRead">; readyAt: number }[];
+  /** Report links; `token` is what the link carries (the API keeps only its hash). */
+  shares: { claimId: string; share: Omit<Schema<"ShareRead">, "active">; token: string }[];
   /** Moisture points; a point's `room` is read from the layout. */
   moisturePoints: { claimId: string; point: Schema<"MoisturePointRead">; roomId: string }[];
   /** Monitoring visits: the readings and air as entered; labels and air figures are worked out. */
@@ -287,6 +301,10 @@ export function seedDb(): MockDb {
     })),
     photoUploads: [],
     files: {},
+    documents: [{ claimId: fx.ids.claim, document: fx.document() }],
+    documentUploads: [],
+    reports: [{ claimId: fx.ids.claim, report: fx.report(), readyAt: 0 }],
+    shares: [],
     tasks: [fx.task()],
     notes: [fx.note()],
     contacts: [
@@ -446,6 +464,64 @@ function progress(
 const PHOTO_MAX_BYTES = 25 * 1024 * 1024;
 /** How long an upload link works. */
 const UPLOAD_LINK_MS = 30 * 60_000;
+/** The largest document the API takes (its `document_max_bytes`). */
+const DOCUMENT_MAX_BYTES = 50 * 1024 * 1024;
+/** Documents a browser can show, which get a `view_url`; the rest are downloaded. */
+const VIEWABLE: Schema<"DocumentType">[] = [
+  "application/pdf",
+  "text/plain",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+];
+/** How long the mock takes to make a report, by its clock. */
+export const REPORT_MS = 1_500;
+/** The seconds the API asks pollers of a queued report to wait. */
+const POLL_SECONDS = "2";
+const REPORT_TITLES: Record<Schema<"ReportKind">, string> = {
+  photo_report: "Photo Report",
+  drying_report: "Drying Report",
+};
+/** "photo report", as the timeline names one. */
+const reportName = (kind: Schema<"ReportKind">) => REPORT_TITLES[kind].toLowerCase();
+
+/** A file's name without its extension, as the API titles documents ("WA-1042 signed"). */
+export function defaultTitle(filename: string): string {
+  const name = filename.replaceAll("\\", "/").split("/").at(-1) ?? filename;
+  const dot = name.lastIndexOf(".");
+  const stem = (dot > 0 ? name.slice(0, dot) : name).trim();
+  return (stem || filename).slice(0, 200);
+}
+
+/** A one-page PDF of plain lines, the first as its heading: what the mock's reports are. */
+export function simplePdf(lines: string[]): Blob {
+  const plain = (text: string) =>
+    text.replace(/[^\x20-\x7e]/g, "-").replace(/[\\()]/g, (c) => `\\${c}`);
+  const content = lines
+    .map(
+      (line, i) =>
+        `BT /F1 ${i === 0 ? "20" : "12"} Tf 72 ${String(720 - i * 28)} Td (${plain(line)}) Tj ET`,
+    )
+    .join("\n");
+  const objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    `<< /Length ${String(content.length)} >>\nstream\n${content}\nendstream`,
+  ];
+  let pdf = "%PDF-1.4\n";
+  const offsets = objects.map((body, i) => {
+    const at = pdf.length;
+    pdf += `${String(i + 1)} 0 obj\n${body}\nendobj\n`;
+    return at;
+  });
+  const xref = pdf.length;
+  pdf += `xref\n0 ${String(objects.length + 1)}\n0000000000 65535 f \n`;
+  pdf += offsets.map((at) => `${String(at).padStart(10, "0")} 00000 n \n`).join("");
+  pdf += `trailer\n<< /Size ${String(objects.length + 1)} /Root 1 0 R >>\nstartxref\n${String(xref)}\n%%EOF\n`;
+  return new Blob([pdf], { type: "application/pdf" });
+}
 
 /** Tags as the API keeps them: lowercase, single-spaced, without repeats, alphabetical. */
 function normalTags(tags: readonly string[]): string[] {
@@ -459,6 +535,28 @@ function oneLine(address: Schema<"AddressInput">): string {
   const street = [address.line1, address.line2].filter(Boolean).join(" ");
   const place = [address.region, address.postal_code].filter(Boolean).join(" ");
   return [street, address.city, place].filter(Boolean).join(", ");
+}
+
+/** Where a report's PDF is kept in the pretend store. */
+const reportKey = (reportId: string) => `report-${reportId}`;
+
+/** The mock's stand-in for a report: what it covers, on one page. */
+function reportPdf(data: MockDb, entry: MockDb["reports"][number], claim: Claim | undefined): Blob {
+  const { kind } = entry.report;
+  const count = (n: number, what: string) => `${String(n)} ${what}${n === 1 ? "" : "s"}`;
+  const covers =
+    kind === "photo_report"
+      ? count(data.photos.filter((p) => p.claimId === entry.claimId).length, "photo")
+      : `${count(
+          data.moisturePoints.filter((p) => p.claimId === entry.claimId).length,
+          "moisture point",
+        )}, ${count(data.moistureLogs.filter((l) => l.claimId === entry.claimId).length, "visit")}`;
+  return simplePdf([
+    `${REPORT_TITLES[kind]} ${claim?.number ?? ""}`.trim(),
+    claim ? oneLine(claim.property.address) : "",
+    covers,
+    "A stand-in made by the mock backend; the API makes the real report.",
+  ]);
 }
 
 /** What makes two addresses the same place: case and spacing aside. */
@@ -524,8 +622,10 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
   const now = options.now ?? (() => Date.now());
   const api = mockApi(options.baseUrl);
 
+  /** The API's origin ("" for any), as links it hands out start. */
+  const API_ORIGIN = (options.baseUrl ?? "").replace(/\/+$/, "");
   /** Where the pretend file store answers: next to the API. */
-  const STORAGE = `${(options.baseUrl ?? "").replace(/\/+$/, "")}/__mock-storage`;
+  const STORAGE = `${API_ORIGIN}/__mock-storage`;
   const fileUrl = (key: string) => `${STORAGE}/files/${key}`;
   /** The seed, its photos' links pointing at the pretend store (which draws them). */
   const seeded = (): MockDb => {
@@ -543,6 +643,25 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
         },
       };
     });
+    data.documents = data.documents.map((entry) => {
+      const { id, title, content_type } = entry.document;
+      data.files[id] ??= simplePdf([title, "A stand-in document from the mock backend."]);
+      return {
+        ...entry,
+        document: {
+          ...entry.document,
+          download_url: `${fileUrl(id)}?download=1`,
+          view_url: VIEWABLE.includes(content_type) ? fileUrl(id) : null,
+        },
+      };
+    });
+    for (const entry of data.reports) {
+      if (entry.report.status !== "ready") continue;
+      const claim = data.claims.find((c) => c.claim.id === entry.claimId)?.claim;
+      const file = (data.files[reportKey(entry.report.id)] ??= reportPdf(data, entry, claim));
+      entry.report.download_url = `${fileUrl(reportKey(entry.report.id))}?download=1`;
+      entry.report.size_bytes = file.size;
+    }
     return data;
   };
 
@@ -1081,6 +1200,42 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
       });
     }
     return null;
+  }
+
+  /** A report as the API answers it now: a queued one is made once its moment has come. */
+  function reportNow(entry: MockDb["reports"][number]): Schema<"ReportJobRead"> {
+    const { report } = entry;
+    if (report.status === "queued" && now() >= entry.readyAt) {
+      const claim = db().claims.find((c) => c.claim.id === entry.claimId)?.claim;
+      const file = reportPdf(db(), entry, claim);
+      db().files[reportKey(report.id)] = file;
+      Object.assign(report, {
+        status: "ready",
+        size_bytes: file.size,
+        finished_at: new Date(entry.readyAt).toISOString(),
+        download_url: `${fileUrl(reportKey(report.id))}?download=1`,
+      });
+      if (report.requested_by) {
+        const name = reportName(report.kind);
+        record(
+          entry.claimId,
+          report.requested_by,
+          "reports",
+          "report_ready",
+          `Generated the ${name}`,
+        );
+      }
+    }
+    return { ...report };
+  }
+
+  /** A share link as listed: active while neither revoked nor expired. */
+  function shareNow({ share }: MockDb["shares"][number]): Schema<"ShareRead"> {
+    return { ...share, active: !share.revoked_at && Date.parse(share.expires_at) > now() };
+  }
+
+  function claimReport(claimId: string, reportId: string) {
+    return db().reports.find((r) => r.claimId === claimId && r.report.id === reportId);
   }
 
   /** A stored photo as the API answers it: its room as the layout has it now. */
@@ -1910,6 +2065,318 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
         .sort(([a, x], [b, y]) => y - x || a.localeCompare(b))
         .slice(0, limit)
         .map(([tag, photos]) => ({ tag, photos }));
+    }),
+
+    // ─── Documents ───────────────────────────────────────────────────────────
+    api.post(`${CLAIM}/document-uploads`, ({ request, params, body }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      if (body.size_bytes > DOCUMENT_MAX_BYTES) {
+        return problem(422, "document_too_large", {
+          title: "Document too large",
+          detail: `Documents can be up to ${String(DOCUMENT_MAX_BYTES / 1024 / 1024)} MB`,
+          limit: DOCUMENT_MAX_BYTES,
+        });
+      }
+      const id = newId();
+      db().documentUploads.push({ id, claimId: ready.claim.id, body, by: ready.seen.person });
+      return {
+        id,
+        upload: {
+          url: `${STORAGE}/uploads/${id}`,
+          method: "PUT" as const,
+          headers: { "Content-Type": body.content_type },
+          expires_at: new Date(Math.max(now(), Date.now()) + UPLOAD_LINK_MS).toISOString(),
+        },
+      };
+    }),
+    api.post(`${CLAIM}/document-uploads/{upload_id}/complete`, ({ request, params, respond }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const upload = db().documentUploads.find(
+        (u) => u.claimId === ready.claim.id && u.id === params.upload_id,
+      );
+      if (!upload) return problem(404, "not_found");
+      // Completing again is safe: the same document, with 200.
+      const done = db().documents.find((d) => d.document.id === upload.id);
+      if (done) return respond(200, done.document);
+      const file = db().files[upload.id];
+      if (!file) {
+        return problem(409, "upload_not_received", { detail: "The file hasn't been sent yet" });
+      }
+      if (
+        file.size !== upload.body.size_bytes ||
+        (file.type && file.type !== upload.body.content_type)
+      ) {
+        backend.db.files = Object.fromEntries(
+          Object.entries(db().files).filter(([key]) => key !== upload.id),
+        );
+        return problem(422, "upload_mismatch", {
+          detail: "The file sent isn't the one described; send it again",
+          expected_size: upload.body.size_bytes,
+          received_size: file.size,
+        });
+      }
+      const { filename, content_type, size_bytes } = upload.body;
+      const category = upload.body.category ?? "other";
+      const document: Schema<"DocumentRead"> = {
+        id: upload.id,
+        claim_id: upload.claimId,
+        title: upload.body.title ?? defaultTitle(filename),
+        filename,
+        category,
+        content_type,
+        size_bytes,
+        uploaded_by: upload.by,
+        created_at: iso(),
+        updated_at: iso(),
+        download_url: `${fileUrl(upload.id)}?download=1`,
+        view_url: VIEWABLE.includes(content_type) ? fileUrl(upload.id) : null,
+      };
+      db().documents.push({ claimId: upload.claimId, document });
+      record(
+        upload.claimId,
+        upload.by,
+        "documents",
+        "document_attached",
+        `Attached ${category === "other" ? "document" : category} “${document.title}”`,
+      );
+      return document;
+    }),
+    api.get(`${CLAIM}/documents`, ({ request, params, query }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
+      const categories = query.getAll("category");
+      const found = db()
+        .documents.filter(
+          (d) =>
+            d.claimId === claim.id &&
+            (categories.length === 0 || categories.includes(d.document.category)),
+        )
+        .map((d) => d.document);
+      return paginate(newestFirst(found), query);
+    }),
+    api.get(`${CLAIM}/documents/{document_id}`, ({ request, params }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const entry = db().documents.find(
+        (d) => d.claimId === params.claim_id && d.document.id === params.document_id,
+      );
+      return entry ? entry.document : problem(404, "not_found");
+    }),
+    api.patch(`${CLAIM}/documents/{document_id}`, ({ request, params, body }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const entry = db().documents.find(
+        (d) => d.claimId === ready.claim.id && d.document.id === params.document_id,
+      );
+      if (!entry) return problem(404, "not_found");
+      const { document } = entry;
+      const before = document.title;
+      const title = body.title ?? document.title;
+      const category = body.category ?? document.category;
+      if (title === document.title && category === document.category) return document;
+      Object.assign(document, { title, category, updated_at: iso() });
+      record(
+        ready.claim.id,
+        ready.seen.person,
+        "documents",
+        "document_updated",
+        title !== before
+          ? `Renamed document “${before}” to “${title}”`
+          : `Recategorized document “${title}” as ${category}`,
+      );
+      return document;
+    }),
+    api.delete(`${CLAIM}/documents/{document_id}`, ({ request, params }) => {
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
+      const entry = db().documents.find(
+        (d) => d.claimId === ready.claim.id && d.document.id === params.document_id,
+      );
+      if (!entry) return problem(404, "not_found");
+      backend.db.documents = db().documents.filter((d) => d !== entry);
+      backend.db.files = Object.fromEntries(
+        Object.entries(db().files).filter(([key]) => key !== entry.document.id),
+      );
+      record(
+        ready.claim.id,
+        ready.seen.person,
+        "documents",
+        "document_deleted",
+        `Deleted document “${entry.document.title}”`,
+      );
+      return undefined;
+    }),
+
+    // ─── Reports ─────────────────────────────────────────────────────────────
+    api.get(`${CLAIM}/reports`, ({ request, params }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
+      return newestFirst(
+        db()
+          .reports.filter((r) => r.claimId === claim.id)
+          .map(reportNow),
+      );
+    }),
+    // Closed claims can have reports: no lock here.
+    api.post(`${CLAIM}/reports`, ({ request, params, body, respond }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const denied = allowed(seen.membership, "reports:generate");
+      if (denied) return denied;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
+      const report: Schema<"ReportJobRead"> = {
+        id: newId(),
+        claim_id: claim.id,
+        kind: body.kind,
+        status: "queued",
+        download_url: null,
+        size_bytes: null,
+        error: null,
+        requested_by: seen.person,
+        created_at: iso(),
+        finished_at: null,
+      };
+      db().reports.push({ claimId: claim.id, report, readyAt: now() + REPORT_MS });
+      record(
+        claim.id,
+        seen.person,
+        "reports",
+        "report_requested",
+        `Requested a ${reportName(body.kind)}`,
+      );
+      const queued = respond(202, { ...report });
+      queued.headers.set("Location", `${new URL(request.url).pathname}/${report.id}`);
+      queued.headers.set("Retry-After", POLL_SECONDS);
+      return queued;
+    }),
+    api.get(`${CLAIM}/reports/{job_id}`, ({ request, params, respond }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const entry = claimReport(params.claim_id, params.job_id);
+      if (!entry) return problem(404, "not_found", { detail: "Report not found" });
+      const report = reportNow(entry);
+      if (report.status !== "queued") return report;
+      const waiting = respond(200, report);
+      waiting.headers.set("Retry-After", POLL_SECONDS);
+      return waiting;
+    }),
+    api.delete(`${CLAIM}/reports/{job_id}`, ({ request, params }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const denied = allowed(seen.membership, "reports:generate");
+      if (denied) return denied;
+      const entry = claimReport(params.claim_id, params.job_id);
+      if (!entry) return problem(404, "not_found", { detail: "Report not found" });
+      const key = reportKey(entry.report.id);
+      backend.db.reports = db().reports.filter((r) => r !== entry);
+      backend.db.shares = db().shares.filter((s) => s.share.report_id !== entry.report.id);
+      backend.db.files = Object.fromEntries(Object.entries(db().files).filter(([k]) => k !== key));
+      record(
+        entry.claimId,
+        seen.person,
+        "reports",
+        "report_deleted",
+        `Deleted a ${reportName(entry.report.kind)}`,
+      );
+      return undefined;
+    }),
+    api.get(`${CLAIM}/reports/{job_id}/shares`, ({ request, params }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const entry = claimReport(params.claim_id, params.job_id);
+      if (!entry) return problem(404, "not_found", { detail: "Report not found" });
+      return newestFirst(
+        db()
+          .shares.filter((s) => s.share.report_id === entry.report.id)
+          .map(shareNow),
+      );
+    }),
+    api.post(`${CLAIM}/reports/{job_id}/shares`, ({ request, params, body }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const denied = allowed(seen.membership, "reports:generate");
+      if (denied) return denied;
+      const entry = claimReport(params.claim_id, params.job_id);
+      if (!entry) return problem(404, "not_found", { detail: "Report not found" });
+      const report = reportNow(entry);
+      if (report.status !== "ready") {
+        return problem(409, "report_not_ready", {
+          title: "Only a ready report can be shared",
+          report_status: report.status,
+        });
+      }
+      const token = `${crypto.randomUUID()}${crypto.randomUUID()}`.replaceAll("-", "");
+      const label = body.label ?? null;
+      const link = {
+        claimId: entry.claimId,
+        token,
+        share: {
+          id: newId(),
+          report_id: report.id,
+          label,
+          expires_at: new Date(now() + (body.expires_in_days ?? 7) * DAY_MS).toISOString(),
+          revoked_at: null,
+          open_count: 0,
+          last_opened_at: null,
+          created_by: seen.person,
+          created_at: iso(),
+        },
+      };
+      db().shares.push(link);
+      record(
+        entry.claimId,
+        seen.person,
+        "reports",
+        "report_shared",
+        `Shared a report by link${label ? ` for ${label}` : ""}`,
+      );
+      return { ...shareNow(link), url: `${API_ORIGIN}/v1/shared-reports/${token}` };
+    }),
+    api.post(`${CLAIM}/reports/{job_id}/shares/{share_id}/revoke`, ({ request, params }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const denied = allowed(seen.membership, "reports:generate");
+      if (denied) return denied;
+      const link = db().shares.find(
+        (s) =>
+          s.claimId === params.claim_id &&
+          s.share.report_id === params.job_id &&
+          s.share.id === params.share_id,
+      );
+      if (!link) return problem(404, "not_found", { detail: "Link not found" });
+      if (!link.share.revoked_at) {
+        link.share.revoked_at = iso();
+        const { label } = link.share;
+        record(
+          link.claimId,
+          seen.person,
+          "reports",
+          "share_revoked",
+          `Revoked a report link${label ? ` for ${label}` : ""}`,
+        );
+      }
+      return shareNow(link);
+    }),
+    // No sign-in: whoever has the link. It counts the open and sends them to the PDF.
+    api.get("/v1/shared-reports/{token}", ({ params }) => {
+      const link = db().shares.find((s) => s.token === params.token);
+      const report = link && db().reports.find((r) => r.report.id === link.share.report_id);
+      if (!link || !report || !shareNow(link).active || report.report.status !== "ready") {
+        return problem(404, "share_not_found", { title: "This link doesn't work" });
+      }
+      link.share.open_count += 1;
+      link.share.last_opened_at = iso();
+      return new HttpResponse(null, {
+        status: 302,
+        headers: { Location: `${fileUrl(reportKey(report.report.id))}?download=1` },
+      });
     }),
 
     // ─── Moisture ────────────────────────────────────────────────────────────
