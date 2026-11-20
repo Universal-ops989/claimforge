@@ -97,6 +97,11 @@ export const queryKeys = {
     [...queryKeys.organization(organizationId), "equipment"] as const,
   equipmentList: (organizationId: string, query: FleetQuery = {}) =>
     [...queryKeys.equipment(organizationId), "list", query] as const,
+  /** The organization's price lists, and their items by list and search. */
+  priceLists: (organizationId: string) =>
+    [...queryKeys.organization(organizationId), "price-lists"] as const,
+  priceItems: (organizationId: string, listId: string, query: object = {}) =>
+    [...queryKeys.priceLists(organizationId), listId, "items", query] as const,
   /** The address book: every contact list in the organization. */
   contacts: (organizationId: string) =>
     [...queryKeys.organization(organizationId), "contacts"] as const,
