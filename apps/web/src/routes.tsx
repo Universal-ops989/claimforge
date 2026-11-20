@@ -114,6 +114,14 @@ export const routes: RouteObject[] = [
                     ),
                   },
                   {
+                    path: "notes",
+                    handle: { tab: "notes" } satisfies ClaimTabHandle,
+                    lazy: page(
+                      () => import("./claims/detail/notes-tab"),
+                      (module) => module.NotesTab,
+                    ),
+                  },
+                  {
                     path: "timeline",
                     handle: { tab: "timeline" } satisfies ClaimTabHandle,
                     lazy: page(
