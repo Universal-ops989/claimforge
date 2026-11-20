@@ -146,6 +146,14 @@ export const routes: RouteObject[] = [
                     ),
                   },
                   {
+                    path: "documents",
+                    handle: { tab: "documents" } satisfies ClaimTabHandle,
+                    lazy: page(
+                      () => import("./claims/detail/documents-tab"),
+                      (module) => module.DocumentsTab,
+                    ),
+                  },
+                  {
                     path: "reports",
                     handle: { tab: "reports" } satisfies ClaimTabHandle,
                     lazy: page(
