@@ -52,6 +52,7 @@ import {
   type Estimate,
   type Line,
 } from "../estimates";
+import { EstimateWorkflow } from "./estimate-workflow";
 import { message, useCanEstimate } from "./estimates-tab";
 import { useClaimOfPage } from "./tabs";
 
@@ -113,6 +114,7 @@ export function EstimateEditor() {
                   </Inline>
                 )}
               </Inline>
+              <EstimateWorkflow estimate={data} />
               {canEstimate && data.status !== "draft" && (
                 <Text as="p" tone="muted">
                   {`This estimate is ${ESTIMATE_STATUS_LABEL[data.status].toLowerCase()}, so its lines can't change. Move it back to draft to change it.`}
