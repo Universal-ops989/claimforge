@@ -12,6 +12,7 @@ export const CLAIM_TABS = [
   { id: "rooms", path: "rooms", label: "Rooms" },
   { id: "photos", path: "photos", label: "Photos" },
   { id: "moisture", path: "moisture", label: "Moisture" },
+  { id: "equipment", path: "equipment", label: "Equipment" },
   { id: "timeline", path: "timeline", label: "Timeline" },
 ] as const;
 
