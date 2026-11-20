@@ -128,13 +128,16 @@ describe("a claim that isn't there", () => {
   });
 });
 
+/** The timeline's entries, across its days. */
+const timelineItems = async () =>
+  within(await screen.findByRole("tabpanel")).findAllByRole("listitem");
+
 describe("the timeline", () => {
   test("lists what happened, newest first, and who did it", async () => {
     addTimeline(2);
     await open(`${CLAIM}/timeline`);
 
-    const list = await screen.findByRole("list", { name: "Timeline" });
-    const items = within(list).getAllByRole("listitem");
+    const items = await timelineItems();
     expect(items.map((item) => within(item).getByText(/^Change/).textContent)).toEqual([
       "Change 2",
       "Change 1",
@@ -158,13 +161,12 @@ describe("the timeline", () => {
     addTimeline(30);
     await open(`${CLAIM}/timeline`);
 
-    const list = await screen.findByRole("list", { name: "Timeline" });
-    expect(within(list).getAllByRole("listitem")).toHaveLength(25);
+    expect(await timelineItems()).toHaveLength(25);
 
     await user.click(screen.getByRole("button", { name: "Show earlier" }));
 
-    await waitFor(() => {
-      expect(within(list).getAllByRole("listitem")).toHaveLength(30);
+    await waitFor(async () => {
+      expect(await timelineItems()).toHaveLength(30);
     });
     expect(screen.queryByRole("button", { name: "Show earlier" })).not.toBeInTheDocument();
   });
