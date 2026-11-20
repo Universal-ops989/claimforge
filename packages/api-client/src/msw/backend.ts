@@ -368,6 +368,19 @@ function normalTags(tags: readonly string[]): string[] {
     .sort();
 }
 
+/** An address on one line, as the API writes it: "123 N Main St Apt 4B, Austin, TX 78701". */
+function oneLine(address: Schema<"AddressInput">): string {
+  const street = [address.line1, address.line2].filter(Boolean).join(" ");
+  const place = [address.region, address.postal_code].filter(Boolean).join(" ");
+  return [street, address.city, place].filter(Boolean).join(", ");
+}
+
+/** What makes two addresses the same place: case and spacing aside. */
+const addressKey = (address: Schema<"AddressInput">) =>
+  [address.line1, address.line2, address.city, address.region, address.postal_code, address.country]
+    .map((part) => (part ?? "").trim().toLowerCase().split(/\s+/).join(" "))
+    .join("|");
+
 /** Text, trimmed; blank (or none) is `null`, as the API stores it. */
 function textOrNull(text: string | null | undefined): string | null {
   const trimmed = text?.trim();
@@ -2200,6 +2213,53 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
         },
         alerts,
       };
+    }),
+
+    // ─── Properties ──────────────────────────────────────────────────────────
+    api.patch(`${ORG}/properties/{property_id}`, ({ request, params, body }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const refused = allowed(seen.membership, "claims:write");
+      if (refused) return refused;
+      // Properties live on claims here: every claim at this property shows the change.
+      const holders = db().claims.filter(
+        (c) =>
+          c.organizationId === params.organization_id && c.claim.property.id === params.property_id,
+      );
+      const current = holders[0]?.claim.property;
+      if (!current) return problem(404, "not_found");
+      const changed: Schema<"PropertyRead"> = { ...current, updated_at: iso() };
+      if (body.address) {
+        const address = { ...body.address, country: body.address.country ?? "US" };
+        const elsewhere = db().claims.find(
+          (c) =>
+            c.organizationId === params.organization_id &&
+            c.claim.property.id !== current.id &&
+            addressKey(c.claim.property.address) === addressKey(address),
+        );
+        if (elsewhere) {
+          return problem(409, "property_exists", {
+            detail: "Another property already has this address",
+            property_id: elsewhere.claim.property.id,
+          });
+        }
+        changed.address = {
+          line1: address.line1.trim(),
+          line2: textOrNull(address.line2),
+          city: address.city.trim(),
+          region: textOrNull(address.region),
+          postal_code: textOrNull(address.postal_code),
+          country: address.country,
+          formatted: oneLine(address),
+        };
+      }
+      if (body.property_type != null) changed.property_type = body.property_type;
+      if ("year_built" in body) changed.year_built = body.year_built ?? null;
+      if ("access_notes" in body) changed.access_notes = textOrNull(body.access_notes);
+      if ("latitude" in body) changed.latitude = body.latitude ?? null;
+      if ("longitude" in body) changed.longitude = body.longitude ?? null;
+      for (const holder of holders) holder.claim = { ...holder.claim, property: changed };
+      return changed;
     }),
 
     // ─── Equipment ───────────────────────────────────────────────────────────

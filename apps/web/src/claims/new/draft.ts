@@ -124,6 +124,10 @@ export const draftResolver: Resolver<ClaimDraft> = (values) => resolve(values, (
 export const lossResolver: Resolver<ClaimDraft> = (values) =>
   resolve(values, (field) => field.startsWith("loss."));
 
+/** The resolver for editing only the property (`PropertyStep` on an existing claim). */
+export const propertyResolver: Resolver<ClaimDraft> = (values) =>
+  resolve(values, (field) => field.startsWith("property."));
+
 function resolve(values: ClaimDraft, checks: (field: DraftField) => boolean) {
   const now = new Date();
   const problems = Object.entries(draftProblems(values, localToday(now), now.getFullYear())).filter(
@@ -195,6 +199,66 @@ export function toClaimUpdate(loss: ClaimDraft["loss"]): ClaimUpdate {
     policy_number: cleared(loss.policy_number),
     carrier_claim_number: cleared(loss.carrier_claim_number),
   };
+}
+
+type PropertyUpdate = RequestBody<
+  "/v1/organizations/{organization_id}/properties/{property_id}",
+  "patch"
+>;
+
+/** A claim's property, as the property step's fields hold it. */
+export function propertyOf(property: Schema<"PropertyRead">): ClaimDraft["property"] {
+  const { address } = property;
+  return {
+    line1: address.line1,
+    line2: address.line2 ?? "",
+    city: address.city,
+    region: address.region ?? "",
+    postal_code: address.postal_code ?? "",
+    property_type: property.property_type,
+    year_built: property.year_built === null ? "" : String(property.year_built),
+    access_notes: property.access_notes ?? "",
+  };
+}
+
+/** The API's body for an edited property: every field, a cleared one as `null`. */
+export function toPropertyUpdate(
+  property: ClaimDraft["property"],
+  country: string,
+): PropertyUpdate {
+  const cleared = (value: string) => value.trim() || null;
+  const year = property.year_built.trim();
+  return {
+    address: {
+      line1: property.line1.trim(),
+      line2: cleared(property.line2),
+      city: property.city.trim(),
+      region: cleared(property.region),
+      postal_code: cleared(property.postal_code),
+      country,
+    },
+    property_type: property.property_type || null,
+    year_built: year ? Number(year) : null,
+    access_notes: cleared(property.access_notes),
+  };
+}
+
+/**
+ * The property fields a refusal of a property update is about: its 422 `errors[]`
+ * (`["body", "address", "line1"]`, `["body", "year_built"]`) and an address another
+ * property has (`property_exists`).
+ */
+export function refusedPropertyFields(error: unknown): { field: DraftField; message: string }[] {
+  if (!isApiError(error)) return [];
+  if (error.code === "property_exists") {
+    return [{ field: "property.line1", message: "Another property already has this address." }];
+  }
+  return error.fieldErrors.flatMap(({ loc, message }) => {
+    const [where, first, second] = loc;
+    if (where !== "body") return [];
+    const field = `property.${String(first === "address" ? second : first)}`;
+    return field in FIELD_NAMES ? [{ field: field as DraftField, message }] : [];
+  });
 }
 
 /**

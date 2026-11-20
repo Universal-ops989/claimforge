@@ -30,6 +30,7 @@ export {
   useUpdateContactLink,
 } from "./claims";
 export { contactsQuery, useContacts, useCreateContact, useUpdateContact } from "./contacts";
+export { useUpdateProperty, type PropertyChange } from "./properties";
 export {
   equipmentDaysQuery,
   equipmentQuery,

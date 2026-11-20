@@ -1,3 +1,4 @@
+import { ApiError } from "@claimforge/api-client";
 import { claim } from "@claimforge/api-client/fixtures";
 import { describe, expect, test } from "vitest";
 
@@ -6,8 +7,11 @@ import {
   EMPTY_DRAFT,
   fieldFor,
   lossOf,
+  propertyOf,
+  refusedPropertyFields,
   toClaimCreate,
   toClaimUpdate,
+  toPropertyUpdate,
   type ClaimDraft,
 } from "./draft";
 
@@ -164,5 +168,63 @@ describe("lossOf and toClaimUpdate", () => {
       description: null,
       policy_number: "HO-9",
     });
+  });
+});
+
+describe("propertyOf and toPropertyUpdate", () => {
+  test("a property round-trips; blanks clear, the country is kept", () => {
+    const fields = propertyOf(claim().property);
+
+    expect(fields).toMatchObject({ line1: "100 Congress Ave", line2: "", year_built: "1998" });
+    expect(toPropertyUpdate({ ...fields, line2: " Unit 4 ", year_built: "" }, "US")).toEqual({
+      address: {
+        line1: "100 Congress Ave",
+        line2: "Unit 4",
+        city: "Austin",
+        region: "TX",
+        postal_code: "78701",
+        country: "US",
+      },
+      property_type: "residential",
+      year_built: null,
+      access_notes: null,
+    });
+  });
+});
+
+describe("refusedPropertyFields", () => {
+  const refusal = (
+    code: string,
+    errors: { loc: (string | number)[]; message: string; type: string }[] = [],
+  ) =>
+    new ApiError({
+      type: "about:blank",
+      title: "x",
+      status: 422,
+      code,
+      detail: "x",
+      instance: "/",
+      errors,
+    });
+
+  test("reads the address and other fields back into the form", () => {
+    expect(
+      refusedPropertyFields(
+        refusal("validation_failed", [
+          { loc: ["body", "address", "city"], message: "Too long", type: "string_too_long" },
+          { loc: ["body", "year_built"], message: "Too early", type: "greater_than_equal" },
+          { loc: ["body", "latitude"], message: "Not shown", type: "x" },
+        ]),
+      ),
+    ).toEqual([
+      { field: "property.city", message: "Too long" },
+      { field: "property.year_built", message: "Too early" },
+    ]);
+  });
+
+  test("an address another property has lands on the street", () => {
+    expect(refusedPropertyFields(refusal("property_exists"))).toEqual([
+      { field: "property.line1", message: "Another property already has this address." },
+    ]);
   });
 });

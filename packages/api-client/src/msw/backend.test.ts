@@ -1305,3 +1305,73 @@ describe("equipment", () => {
     ]);
   });
 });
+
+describe("properties", () => {
+  const PROPERTY = "/v1/organizations/{organization_id}/properties/{property_id}" as const;
+  const claims = (api: ApiClient) =>
+    api.get("/v1/organizations/{organization_id}/claims", { path: ORG });
+
+  test("a change shows on every claim at the property, the address rebuilt", async () => {
+    const api = await signedIn();
+
+    const changed = await api.patch(PROPERTY, {
+      path: { ...ORG, property_id: ids.property },
+      body: {
+        address: {
+          line1: "100 Congress Ave",
+          line2: "Unit 4",
+          city: "Austin",
+          region: "TX",
+          postal_code: "78701",
+        },
+        year_built: null,
+        access_notes: "  Lockbox 1234 ",
+      },
+    });
+    const listed = await claims(api);
+
+    expect(changed.address.formatted).toBe("100 Congress Ave Unit 4, Austin, TX 78701");
+    expect(changed).toMatchObject({ year_built: null, access_notes: "Lockbox 1234" });
+    expect(listed.items.map((c) => c.property.address.formatted)).toEqual([
+      "100 Congress Ave Unit 4, Austin, TX 78701",
+      "100 Congress Ave Unit 4, Austin, TX 78701",
+    ]);
+  });
+
+  test("another property's address is refused; changing it takes claims:write", async () => {
+    const api = await signedIn();
+    const other = backend.db.claims.find((c) => c.claim.number === "2026-00041");
+    if (other) {
+      other.claim = {
+        ...other.claim,
+        property: {
+          ...other.claim.property,
+          id: fixtureId("property", 2),
+          address: {
+            ...other.claim.property.address,
+            line1: "5 Elm St",
+            formatted: "5 Elm St, Austin, TX 78701",
+          },
+        },
+      };
+    }
+
+    const taken = await refusal(
+      api.patch(PROPERTY, {
+        path: { ...ORG, property_id: ids.property },
+        body: {
+          address: { line1: "5 elm st", city: "Austin", region: "TX", postal_code: "78701" },
+        },
+      }),
+    );
+    const riley = await signedIn("riley@example.com");
+    const notAllowed = await refusal(
+      riley.patch(PROPERTY, {
+        path: { ...ORG, property_id: ids.property },
+        body: { year_built: 2000 },
+      }),
+    );
+
+    expect([taken.code, notAllowed.status]).toEqual(["property_exists", 403]);
+  });
+});

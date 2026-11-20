@@ -9,6 +9,7 @@ import { fullTime } from "../../format/relative-time";
 import { LOSS_TYPE_LABEL, PROPERTY_TYPE_LABEL, READ_ONLY_STATUSES, STATUS_LABEL } from "../status";
 import { ContactsCard } from "./contacts-card";
 import { EditLossDialog } from "./edit-loss-dialog";
+import { EditPropertyDialog } from "./edit-property-dialog";
 import { useClaimOfPage } from "./tabs";
 import { TeamCard } from "./team-card";
 
@@ -17,6 +18,7 @@ export function OverviewTab() {
   const claim = useClaimOfPage();
   const organization = useOrganization();
   const [editing, setEditing] = useState(false);
+  const [editingProperty, setEditingProperty] = useState(false);
   const { property } = claim;
   const readOnly = READ_ONLY_STATUSES.includes(claim.status);
   const canEdit = organization.permissions.includes("claims:write") && !readOnly;
@@ -43,6 +45,7 @@ export function OverviewTab() {
         </Text>
       )}
       <EditLossDialog claim={claim} open={editing} onOpenChange={setEditing} />
+      <EditPropertyDialog claim={claim} open={editingProperty} onOpenChange={setEditingProperty} />
       <Grid minChildWidth="20rem" gap={4}>
         <FactsCard
           title="What happened"
@@ -57,6 +60,20 @@ export function OverviewTab() {
         <ContactsCard claim={claim} canChange={canEdit} />
         <FactsCard
           title="Property"
+          action={
+            canEdit ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label="Edit property"
+                onClick={() => {
+                  setEditingProperty(true);
+                }}
+              >
+                Edit
+              </Button>
+            ) : null
+          }
           facts={[
             ["Address", addressLines(property.address)],
             ["Type", PROPERTY_TYPE_LABEL[property.property_type]],
