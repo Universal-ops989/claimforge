@@ -16,8 +16,6 @@ import {
   CardHeader,
   ConfirmDialog,
   Dialog,
-  DialogClose,
-  DialogContent,
   EmptyState,
   FormField,
   Grid,
@@ -35,8 +33,9 @@ import {
   Textarea,
 } from "@claimforge/ui";
 import { MoreHorizontal } from "lucide-react";
-import { useId, useState, type ReactNode } from "react";
+import { useState } from "react";
 
+import { FormDialog } from "../../app/form-dialog";
 import { useOrganization } from "../../app/organization";
 import { errorCopy, QueryView } from "../../app/states";
 import { fullTime } from "../../format/relative-time";
@@ -595,62 +594,6 @@ function DeletePoint({ point, onClose }: { point: LogPoint | null; onClose: () =
         }
       }}
     />
-  );
-}
-
-/** A dialog around a form: the fields, a failure above them, Cancel and submit below. */
-function FormDialog({
-  title,
-  submitLabel,
-  pending,
-  failure,
-  onSubmit,
-  size = "md",
-  children,
-}: {
-  title: string;
-  submitLabel: string;
-  pending: boolean;
-  failure: string | null;
-  onSubmit: () => Promise<void>;
-  size?: "md" | "lg";
-  children: ReactNode;
-}) {
-  const formId = useId();
-  return (
-    <DialogContent
-      title={title}
-      size={size}
-      footer={
-        <>
-          <DialogClose asChild>
-            <Button variant="secondary">Cancel</Button>
-          </DialogClose>
-          <Button type="submit" form={formId} variant="primary" loading={pending}>
-            {submitLabel}
-          </Button>
-        </>
-      }
-    >
-      <form
-        id={formId}
-        noValidate
-        aria-label={title}
-        onSubmit={(event) => {
-          event.preventDefault();
-          void onSubmit();
-        }}
-      >
-        <Stack gap={4}>
-          {failure && (
-            <Text as="p" role="alert" tone="danger">
-              {failure}
-            </Text>
-          )}
-          {children}
-        </Stack>
-      </form>
-    </DialogContent>
   );
 }
 
