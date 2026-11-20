@@ -130,6 +130,22 @@ export const routes: RouteObject[] = [
                     ),
                   },
                   {
+                    path: "estimates",
+                    handle: { tab: "estimates" } satisfies ClaimTabHandle,
+                    lazy: page(
+                      () => import("./claims/detail/estimates-tab"),
+                      (module) => module.EstimatesTab,
+                    ),
+                  },
+                  {
+                    path: "estimates/:estimateId",
+                    handle: { tab: "estimates" } satisfies ClaimTabHandle,
+                    lazy: page(
+                      () => import("./claims/detail/estimate-editor"),
+                      (module) => module.EstimateEditor,
+                    ),
+                  },
+                  {
                     path: "timeline",
                     handle: { tab: "timeline" } satisfies ClaimTabHandle,
                     lazy: page(
