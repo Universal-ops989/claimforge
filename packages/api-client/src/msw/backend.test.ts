@@ -10,7 +10,14 @@ import {
   type QueryParams,
   type RequestBody,
 } from "../index";
-import { defaultTitle, dewPointF, equipmentDays, grainsPerPound, REPORT_MS } from "./backend";
+import {
+  defaultTitle,
+  dewPointF,
+  equipmentDays,
+  grainsPerPound,
+  percentText,
+  REPORT_MS,
+} from "./backend";
 import { createMockBackend, MOCK_PASSWORD } from "./index";
 
 let clock = Date.parse("2026-11-16T12:00:00Z");
@@ -1867,5 +1874,120 @@ describe("reading one item of a claim", () => {
     );
 
     expect(closed.code).toBe("claim_locked");
+  });
+});
+
+describe("organization settings", () => {
+  const ORGANIZATION = "/v1/organizations/{organization_id}" as const;
+
+  test("are changed field by field; a new name shows in everyone's /v1/me", async () => {
+    const api = await signedIn();
+    const riley = await signedIn("riley@example.com");
+
+    const changed = await api.patch(ORGANIZATION, {
+      path: ORG,
+      body: {
+        name: "  Lone Star Restoration & Dry-Out ",
+        default_tax_percent: "8.250",
+        timezone: null,
+      },
+    });
+    const me = await riley.get("/v1/me");
+
+    expect(changed).toMatchObject({
+      name: "Lone Star Restoration & Dry-Out",
+      default_tax_percent: "8.25",
+      default_overhead_percent: "10",
+      timezone: "America/Chicago",
+    });
+    expect(me.memberships[0]?.organization.name).toBe("Lone Star Restoration & Dry-Out");
+  });
+
+  test("refuse an unknown time zone, a rate over 100, a blank name, and a technician", async () => {
+    const api = await signedIn();
+    const riley = await signedIn("riley@example.com");
+    const change = (body: RequestBody<typeof ORGANIZATION, "patch">, as = api) =>
+      refusal(as.patch(ORGANIZATION, { path: ORG, body }));
+
+    const zone = await change({ timezone: "Mars/Olympus_Mons" });
+    const rate = await change({ default_profit_percent: "120" });
+    const blank = await change({ name: "   " });
+    const technician = await change({ name: "Riley's" }, riley);
+
+    expect([zone.status, rate.status, blank.status]).toEqual([422, 422, 422]);
+    expect(technician.status).toBe(403);
+    expect(backend.db.organizations[0]?.name).toBe("Lone Star Restoration");
+  });
+
+  test("percents are written back as the API writes them", () => {
+    expect([
+      percentText("8.250"),
+      percentText("10.000"),
+      percentText("0"),
+      percentText("7.125"),
+    ]).toEqual(["8.25", "10", "0", "7.125"]);
+  });
+});
+
+describe("invitations", () => {
+  const INVITATIONS = "/v1/organizations/{organization_id}/invitations" as const;
+
+  test("are listed newest first, and re-inviting re-issues the pending one", async () => {
+    const api = await signedIn();
+
+    const made = await api.post(INVITATIONS, {
+      path: ORG,
+      body: { email: "Avery@Example.com", role: "adjuster" },
+    });
+    const again = await api.post(INVITATIONS, {
+      path: ORG,
+      body: { email: "sam@example.com", role: "viewer" },
+    });
+    const pending = await api.get(INVITATIONS, { path: ORG });
+
+    expect(made).toMatchObject({ email: "avery@example.com", role: "adjuster" });
+    expect(made.expires_at).toBe("2026-11-23T12:00:00.000Z");
+    expect(again.id).toBe(fixtureId("invitation"));
+    expect(pending.map((i) => [i.email, i.role])).toEqual([
+      ["avery@example.com", "adjuster"],
+      ["sam@example.com", "viewer"],
+    ]);
+  });
+
+  test("never hand out more than the inviter holds, nor invite a member", async () => {
+    const api = await signedIn();
+    const morgan = backend.db.accounts.find((a) => a.email === "morgan@example.com");
+    const membership = morgan?.user.memberships[0];
+    if (membership) {
+      membership.role = "admin";
+      membership.permissions = rolePermissions.admin;
+    }
+
+    const owner = await refusal(
+      api.post(INVITATIONS, { path: ORG, body: { email: "new@example.com", role: "owner" } }),
+    );
+    const member = await refusal(
+      api.post(INVITATIONS, {
+        path: ORG,
+        body: { email: "riley@example.com", role: "technician" },
+      }),
+    );
+
+    expect(owner.status).toBe(403);
+    expect(member.code).toBe("already_member");
+  });
+
+  test("are revoked, once; and need members:manage", async () => {
+    const api = await signedIn();
+    const riley = await signedIn("riley@example.com");
+    const path = { ...ORG, invitation_id: fixtureId("invitation") };
+
+    await api.delete(`${INVITATIONS}/{invitation_id}`, { path });
+    const again = await refusal(api.delete(`${INVITATIONS}/{invitation_id}`, { path }));
+    const technician = await refusal(riley.get(INVITATIONS, { path: ORG }));
+
+    expect(await api.get(INVITATIONS, { path: ORG })).toEqual([]);
+    expect(again.status).toBe(404);
+    expect(technician.status).toBe(403);
   });
 });

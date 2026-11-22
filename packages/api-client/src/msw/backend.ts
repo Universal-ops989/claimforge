@@ -4,7 +4,8 @@
  *     const backend = createMockBackend({ baseUrl: "https://api.test" });
  *     const server = setupServer(...backend.handlers);   // or setupWorker in a browser
  *
- * It covers what the web app's first screens need: sessions, `/v1/me`, organizations,
+ * It covers what the web app's first screens need: sessions, `/v1/me`, organizations (and
+ * their settings and invitations),
  * claims (lists, filters, pages, create, edit, the status workflow, assignments, contacts,
  * history, timeline), the address book, the layout and damage, photos (with a pretend file
  * store behind their upload links), moisture mapping and drying, equipment and its placements,
@@ -121,6 +122,8 @@ export interface MockDb {
   damage: { claimId: string; item: Schema<"DamageItemRead"> }[];
   tasks: Schema<"TaskRead">[];
   notes: Schema<"NoteRead">[];
+  /** Invitations still waiting to be accepted (a revoked one is gone). */
+  invitations: { organizationId: string; invitation: Schema<"InvitationRead"> }[];
   /** The address book; a deleted contact stays on the claims it's linked to. */
   contacts: { organizationId: string; contact: Contact; deleted: boolean }[];
 }
@@ -307,6 +310,18 @@ export function seedDb(): MockDb {
     shares: [],
     tasks: [fx.task()],
     notes: [fx.note()],
+    invitations: [
+      {
+        organizationId: fx.ids.organization,
+        invitation: {
+          id: fx.fixtureId("invitation"),
+          email: "sam@example.com",
+          role: "technician",
+          created_at: "2026-11-15T15:00:00Z",
+          expires_at: "2026-11-22T15:00:00Z",
+        },
+      },
+    ],
     contacts: [
       { organizationId: fx.ids.organization, contact: fx.contact(), deleted: false },
       { organizationId: fx.ids.organization, contact: fx.agentContact(), deleted: false },
@@ -557,6 +572,33 @@ function reportPdf(data: MockDb, entry: MockDb["reports"][number], claim: Claim 
     covers,
     "A stand-in made by the mock backend; the API makes the real report.",
   ]);
+}
+
+/** How long an invitation can be accepted for, as the API gives it. */
+const INVITATION_MS = 7 * 86_400_000;
+
+/** A percent as the API writes it back: to a thousandth, without trailing zeros ("8.25"). */
+export function percentText(value: string): string {
+  return Number(value).toFixed(3).replace(/0+$/, "").replace(/\.$/, "");
+}
+
+/** Whether `zone` is a time zone name the API knows (IANA, like America/Chicago). */
+function knownTimeZone(zone: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: zone });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** The API's 422 for one field that fails its check. */
+function invalidField(field: string, message: string): Response {
+  return problem(422, "validation_failed", {
+    title: "Invalid request",
+    detail: "1 field(s) failed validation",
+    errors: [{ loc: ["body", field], message: `Value error, ${message}`, type: "value_error" }],
+  });
 }
 
 /** What makes two addresses the same place: case and spacing aside. */
@@ -1345,6 +1387,119 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
         db().organizations.find((org) => org.id === params.organization_id) ??
         problem(404, "not_found")
       );
+    }),
+
+    api.patch(ORG, ({ request, params, body }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const denied = allowed(seen.membership, "org:update");
+      if (denied) return denied;
+      const organization = db().organizations.find((org) => org.id === params.organization_id);
+      if (!organization) return problem(404, "not_found");
+      if (body.timezone != null && !knownTimeZone(body.timezone)) {
+        return invalidField(
+          "timezone",
+          `Unknown time zone '${body.timezone}'. Use an IANA name like America/Chicago.`,
+        );
+      }
+      const rates = [
+        "default_tax_percent",
+        "default_overhead_percent",
+        "default_profit_percent",
+      ] as const;
+      for (const rate of rates) {
+        const value = body[rate];
+        if (value != null && Number(value) > 100) {
+          return invalidField(rate, "Input should be less than or equal to 100");
+        }
+      }
+      const name = body.name?.trim();
+      if (body.name != null && !name) {
+        return invalidField("name", "String should have at least 1 character");
+      }
+      // Only the fields sent change; null leaves one alone, as the API does.
+      if (name) organization.name = name;
+      if (body.timezone != null) organization.timezone = body.timezone;
+      for (const rate of rates) {
+        const value = body[rate];
+        if (value != null) organization[rate] = percentText(value);
+      }
+      organization.updated_at = iso();
+      // Everyone's memberships name it anew.
+      for (const account of db().accounts) {
+        for (const membership of account.user.memberships) {
+          if (membership.organization.id === organization.id) {
+            membership.organization = { ...membership.organization, name: organization.name };
+          }
+        }
+      }
+      return organization;
+    }),
+
+    // ─── Invitations ─────────────────────────────────────────────────────────
+    api.get(`${ORG}/invitations`, ({ request, params }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const denied = allowed(seen.membership, "members:manage");
+      if (denied) return denied;
+      return newestFirst(
+        db()
+          .invitations.filter((i) => i.organizationId === params.organization_id)
+          .map((i) => i.invitation),
+      );
+    }),
+    api.post(`${ORG}/invitations`, ({ request, params, body }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const denied = allowed(seen.membership, "members:manage");
+      if (denied) return denied;
+      // Nobody can hand out more power than they hold (admins can't make owners).
+      const held = new Set(seen.membership.permissions);
+      if (!fx.rolePermissions[body.role].every((p) => held.has(p))) {
+        return problem(403, "permission_denied", {
+          title: "Permission denied",
+          detail: `A ${seen.membership.role} cannot invite someone as ${body.role}`,
+          requested_role: body.role,
+        });
+      }
+      const email = body.email.trim().toLowerCase();
+      const already = db().accounts.some(
+        (a) =>
+          a.email.toLowerCase() === email &&
+          a.user.memberships.some((m) => m.organization.id === params.organization_id),
+      );
+      if (already) {
+        return problem(409, "already_member", {
+          title: "Already a member",
+          detail: `${email} is already a member`,
+          email,
+        });
+      }
+      const expires_at = new Date(now() + INVITATION_MS).toISOString();
+      // Inviting again re-issues the pending invitation: its role, and 7 more days.
+      const pending = db().invitations.find(
+        (i) => i.organizationId === params.organization_id && i.invitation.email === email,
+      );
+      if (pending) {
+        Object.assign(pending.invitation, { role: body.role, expires_at });
+        return pending.invitation;
+      }
+      const invitation = { id: newId(), email, role: body.role, created_at: iso(), expires_at };
+      db().invitations.push({ organizationId: params.organization_id, invitation });
+      return invitation;
+    }),
+    api.delete(`${ORG}/invitations/{invitation_id}`, ({ request, params }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const denied = allowed(seen.membership, "members:manage");
+      if (denied) return denied;
+      const entry = db().invitations.find(
+        (i) =>
+          i.organizationId === params.organization_id && i.invitation.id === params.invitation_id,
+      );
+      if (!entry) return problem(404, "not_found", { detail: "Invitation not found" });
+      backend.db.invitations = db().invitations.filter((i) => i !== entry);
+      return undefined;
     }),
 
     // ─── Claims ──────────────────────────────────────────────────────────────
