@@ -14,6 +14,9 @@ LOGIN_PER_IP = Limit(capacity=20, period_seconds=60)
 LOGIN_PER_EMAIL = Limit(capacity=5, period_seconds=60)
 REFRESH_PER_IP = Limit(capacity=60, period_seconds=60)
 INVITATION_ACCEPT_PER_IP = Limit(capacity=10, period_seconds=60)
+# Changing a password checks the current one: as tight as signing in.
+PASSWORD_CHANGE_PER_IP = Limit(capacity=20, period_seconds=60)
+PASSWORD_CHANGE_PER_USER = Limit(capacity=5, period_seconds=60)
 
 
 def get_rate_limiter(request: Request) -> RateLimiter:
