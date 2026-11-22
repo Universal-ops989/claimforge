@@ -29,6 +29,13 @@ class PasswordPolicyError(BusinessRuleError):
     title = "Password does not meet the policy"
 
 
+class WrongPasswordError(BusinessRuleError):
+    """422, not 401: the person is signed in; a 401 would read as an expired session."""
+
+    code = "wrong_password"
+    title = "The current password is wrong"
+
+
 def normalize_email(email: str) -> str:
     return email.strip().lower()
 
@@ -75,6 +82,28 @@ async def set_password(session: AsyncSession, user_id: UUID, password: str) -> N
     if user is None or user.is_deleted:
         raise InvalidCredentialsError()
     _apply_password(user, password)
+    await session.commit()
+
+
+async def rename(session: AsyncSession, user: User, full_name: str) -> User:
+    """Change the name the user goes by everywhere (assignments, notes, the timeline)."""
+    user.full_name = full_name
+    await session.commit()
+    return user
+
+
+async def change_password(
+    session: AsyncSession, user: User, *, current_password: str, new_password: str
+) -> None:
+    """Replace the user's password, given the one they have now.
+
+    Signing out elsewhere is up to the caller (see ``refresh_tokens.revoke_all_for_user``).
+    """
+    if user.password_hash is None or not passwords.hasher.verify(
+        current_password, user.password_hash
+    ):
+        raise WrongPasswordError("That isn't your current password")
+    _apply_password(user, new_password)
     await session.commit()
 
 

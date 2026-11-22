@@ -129,6 +129,7 @@ const MembershipOrganization = z.object({ id: z.uuid(), name: z.string(), slug: 
 const Permission = z.enum(["org:read","org:update","org:delete","members:read","members:manage","claims:read","claims:write","claims:delete","claims:reopen","contacts:read","contacts:write","field_data:write","estimates:write","estimates:approve","reports:generate","audit:read"]);
 const MembershipRead = z.object({ organization: MembershipOrganization, permissions: z.array(Permission), role: Role });
 const MeResponse = z.object({ email: z.string(), full_name: z.string(), id: z.uuid(), memberships: z.array(MembershipRead) });
+const MeUpdate = z.strictObject({ full_name: z.string().min(1).max(200) });
 const MemberPerson = z.object({ full_name: z.string(), id: z.uuid() });
 const MemberRead = z.object({ joined_at: z.iso.datetime({ offset: true }), permissions: z.array(Permission), role: Role, user: MemberPerson });
 const ReadingIn = z.strictObject({ point_id: z.uuid(), value: z.number().min(0).max(9999.9) });
@@ -143,6 +144,7 @@ const NoteCreate = z.strictObject({ body: z.string().min(1).max(10000) });
 const NoteUpdate = z.strictObject({ body: z.string().min(1).max(10000) });
 const OrganizationCreate = z.strictObject({ name: z.string().min(1).max(200), slug: z.string().max(63).regex(new RegExp("^[a-z0-9]+(-[a-z0-9]+)*$")).nullable().optional(), timezone: z.string().optional() });
 const OrganizationUpdate = z.strictObject({ default_overhead_percent: z.string().regex(new RegExp("^\\d{1,3}(\\.\\d{1,3})?$")).nullable().optional(), default_profit_percent: z.string().regex(new RegExp("^\\d{1,3}(\\.\\d{1,3})?$")).nullable().optional(), default_tax_percent: z.string().regex(new RegExp("^\\d{1,3}(\\.\\d{1,3})?$")).nullable().optional(), name: z.string().min(1).max(200).nullable().optional(), timezone: z.string().nullable().optional() });
+const PasswordChange = z.strictObject({ current_password: z.string().min(1).max(128), new_password: z.string().min(1).max(128) });
 const PhotoReportOptions = z.strictObject({ group_by_room: z.boolean().optional(), photos_per_page: z.union([z.literal(1), z.literal(2), z.literal(4), z.literal(6)]).optional(), show_captions: z.boolean().optional(), show_tags: z.boolean().optional(), show_taken_at: z.boolean().optional() });
 const PhotoUpdate = z.strictObject({ caption: z.string().max(2000).nullable().optional(), room_id: z.uuid().nullable().optional(), tags: z.array(z.string().min(1).max(40)).max(20).nullable().optional() });
 const PhotoUploadCreate = z.strictObject({ caption: z.string().max(2000).nullable().optional(), content_type: PhotoType, filename: z.string().min(1).max(255), room_id: z.uuid().nullable().optional(), size_bytes: z.int().gt(0), tags: z.array(z.string().min(1).max(40)).max(20).optional(), taken_at: z.iso.datetime({ offset: true }).nullable().optional() });
@@ -312,6 +314,7 @@ export const schemas = {
   Permission,
   MembershipRead,
   MeResponse,
+  MeUpdate,
   MemberPerson,
   MemberRead,
   ReadingIn,
@@ -326,6 +329,7 @@ export const schemas = {
   NoteUpdate,
   OrganizationCreate,
   OrganizationUpdate,
+  PasswordChange,
   PhotoReportOptions,
   PhotoUpdate,
   PhotoUploadCreate,
@@ -376,6 +380,8 @@ export const responses = {
   "post /v1/auth/refresh": { 200: TokenResponse },
   "post /v1/invitations/accept": { 200: TokenResponse },
   "get /v1/me": { 200: MeResponse },
+  "patch /v1/me": { 200: MeResponse },
+  "post /v1/me/password": { 200: TokenResponse },
   "get /v1/organizations": { 200: CursorPage_OrganizationRead_ },
   "post /v1/organizations": { 201: OrganizationRead },
   "get /v1/organizations/{organization_id}": { 200: OrganizationRead },
@@ -490,6 +496,8 @@ export const requests = {
   "post /v1/auth/logout": RefreshRequest,
   "post /v1/auth/refresh": RefreshRequest,
   "post /v1/invitations/accept": InvitationAccept,
+  "patch /v1/me": MeUpdate,
+  "post /v1/me/password": PasswordChange,
   "post /v1/organizations": OrganizationCreate,
   "patch /v1/organizations/{organization_id}": OrganizationUpdate,
   "post /v1/organizations/{organization_id}/claims": ClaimCreate,
@@ -550,6 +558,8 @@ export const successStatuses: Record<string, readonly number[]> = {
   "post /v1/auth/refresh": [200],
   "post /v1/invitations/accept": [200],
   "get /v1/me": [200],
+  "patch /v1/me": [200],
+  "post /v1/me/password": [200],
   "get /v1/organizations": [200],
   "post /v1/organizations": [201],
   "delete /v1/organizations/{organization_id}": [204],
