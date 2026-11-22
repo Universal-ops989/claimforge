@@ -1362,6 +1362,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/organizations/{organization_id}/members/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove a member, or leave
+         * @description Needs `members:manage`, except to leave (your own id). Not someone who holds more than you; never the last owner (`last_owner`). Their claim assignments end; their tasks stay on the claims, unassigned.
+         */
+        delete: operations["remove_member"];
+        options?: never;
+        head?: never;
+        /**
+         * Change a member's role
+         * @description Needs `members:manage`. Nobody hands out more than they hold or changes someone who holds more (`permission_denied`: an admin can't touch an owner). The last owner stays an owner (`last_owner`). A role that can't do the member's claim assignments or open tasks is refused (`member_has_work`, with `assignments` and `open_tasks`): unassign them first.
+         */
+        patch: operations["change_member_role"];
+        trace?: never;
+    };
     "/v1/organizations/{organization_id}/notes/mentioning-me": {
         parameters: {
             query?: never;
@@ -3341,6 +3365,10 @@ export interface components {
             permissions: components["schemas"]["Permission"][];
             role: components["schemas"]["Role"];
             user: components["schemas"]["MemberPerson"];
+        };
+        /** MemberUpdate */
+        MemberUpdate: {
+            role: components["schemas"]["Role"];
         };
         /** MembershipOrganization */
         MembershipOrganization: {
@@ -13206,6 +13234,162 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MemberRead"][];
+                };
+            };
+            /** @description Bad request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed or business rule violated */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    remove_member: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: string;
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed or business rule violated */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    change_member_role: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: string;
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberRead"];
                 };
             };
             /** @description Bad request */

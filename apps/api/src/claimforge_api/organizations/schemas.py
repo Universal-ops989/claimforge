@@ -73,6 +73,12 @@ class MemberPerson(BaseModel):
     full_name: str
 
 
+class MemberUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    role: Role
+
+
 class MemberRead(BaseModel):
     """One member of an organization: who, their role, and what that role allows."""
 

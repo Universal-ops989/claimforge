@@ -9,14 +9,16 @@ from claimforge_api.api.problems import PROBLEM_RESPONSES
 from claimforge_api.auth.deps import CurrentUser
 from claimforge_api.auth.permissions import permissions_for
 from claimforge_api.db.pagination import CursorPage
-from claimforge_api.organizations import service
+from claimforge_api.organizations import members, service
 from claimforge_api.organizations.schemas import (
     MemberPerson,
     MemberRead,
+    MemberUpdate,
     OrganizationCreate,
     OrganizationRead,
     OrganizationUpdate,
 )
+from claimforge_api.users.models import Membership
 
 router = APIRouter(prefix="/organizations", tags=["organizations"], responses=PROBLEM_RESPONSES)
 
@@ -79,13 +81,50 @@ async def delete_organization(session: DbSession, user: CurrentUser, organizatio
 async def list_members(
     session: DbSession, user: CurrentUser, organization_id: UUID
 ) -> list[MemberRead]:
-    members = await service.list_members(session, user=user, organization_id=organization_id)
-    return [
-        MemberRead(
-            user=MemberPerson.model_validate(member.user),
-            role=member.role,
-            permissions=sorted(permissions_for(member.role)),
-            joined_at=member.created_at,
-        )
-        for member in members
-    ]
+    found = await service.list_members(session, user=user, organization_id=organization_id)
+    return [_member(member) for member in found]
+
+
+@router.patch(
+    "/{organization_id}/members/{user_id}",
+    summary="Change a member's role",
+    description=(
+        "Needs `members:manage`. Nobody hands out more than they hold or changes someone who "
+        "holds more (`permission_denied`: an admin can't touch an owner). The last owner stays "
+        "an owner (`last_owner`). A role that can't do the member's claim assignments or open "
+        "tasks is refused (`member_has_work`, with `assignments` and `open_tasks`): unassign "
+        "them first."
+    ),
+)
+async def change_member_role(
+    session: DbSession, user: CurrentUser, organization_id: UUID, user_id: UUID, body: MemberUpdate
+) -> MemberRead:
+    member = await members.change_role(
+        session, user=user, organization_id=organization_id, member_id=user_id, role=body.role
+    )
+    return _member(member)
+
+
+@router.delete(
+    "/{organization_id}/members/{user_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Remove a member, or leave",
+    description=(
+        "Needs `members:manage`, except to leave (your own id). Not someone who holds more "
+        "than you; never the last owner (`last_owner`). Their claim assignments end; their "
+        "tasks stay on the claims, unassigned."
+    ),
+)
+async def remove_member(
+    session: DbSession, user: CurrentUser, organization_id: UUID, user_id: UUID
+) -> None:
+    await members.remove(session, user=user, organization_id=organization_id, member_id=user_id)
+
+
+def _member(member: Membership) -> MemberRead:
+    return MemberRead(
+        user=MemberPerson.model_validate(member.user),
+        role=member.role,
+        permissions=sorted(permissions_for(member.role)),
+        joined_at=member.created_at,
+    )
