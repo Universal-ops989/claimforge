@@ -798,6 +798,15 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
     return allowed(seen.membership, "field_data:write") ?? locked(claim) ?? { seen, claim };
   }
 
+  /** Reading a claim's data: the member, and the organization's claim; or the API's 404. */
+  function claimRead(request: Request, organizationId: string, claimId: string) {
+    const seen = member(request, organizationId);
+    if (seen instanceof Response) return seen;
+    const claim = claimOr404(organizationId, claimId);
+    if (claim instanceof Response) return claim;
+    return { seen, claim };
+  }
+
   /** `name_taken` if one of `named` already has `name`, ignoring case. */
   function nameTaken(
     named: { name: string }[],
@@ -1613,12 +1622,10 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
         .map((s) => s.structure);
     }),
     api.get(`${CLAIM}/rooms/{room_id}`, ({ request, params }) => {
-      const seen = member(request, params.organization_id);
-      if (seen instanceof Response) return seen;
-      const claim = claimOr404(params.organization_id, params.claim_id);
-      if (claim instanceof Response) return claim;
+      const read = claimRead(request, params.organization_id, params.claim_id);
+      if (read instanceof Response) return read;
       const room = db()
-        .structures.filter((s) => s.claimId === claim.id)
+        .structures.filter((s) => s.claimId === read.claim.id)
         .flatMap((s) => s.structure.rooms)
         .find((r) => r.id === params.room_id);
       return room ?? problem(404, "not_found");
@@ -1813,12 +1820,10 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
         );
     }),
     api.get(`${CLAIM}/damage-items/{damage_item_id}`, ({ request, params }) => {
-      const seen = member(request, params.organization_id);
-      if (seen instanceof Response) return seen;
-      const claim = claimOr404(params.organization_id, params.claim_id);
-      if (claim instanceof Response) return claim;
+      const read = claimRead(request, params.organization_id, params.claim_id);
+      if (read instanceof Response) return read;
       const found = db().damage.find(
-        (d) => d.claimId === claim.id && d.item.id === params.damage_item_id,
+        (d) => d.claimId === read.claim.id && d.item.id === params.damage_item_id,
       );
       return found?.item ?? problem(404, "not_found");
     }),
@@ -2020,12 +2025,10 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
       return paginate(newestFirst(found), query);
     }),
     api.get(`${CLAIM}/photos/{photo_id}`, ({ request, params }) => {
-      const seen = member(request, params.organization_id);
-      if (seen instanceof Response) return seen;
-      const claim = claimOr404(params.organization_id, params.claim_id);
-      if (claim instanceof Response) return claim;
+      const read = claimRead(request, params.organization_id, params.claim_id);
+      if (read instanceof Response) return read;
       const entry = db().photos.find(
-        (p) => p.claimId === claim.id && p.photo.id === params.photo_id,
+        (p) => p.claimId === read.claim.id && p.photo.id === params.photo_id,
       );
       return entry ? photoNow(entry) : problem(404, "not_found");
     }),
@@ -2421,12 +2424,10 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
         .map(pointNow);
     }),
     api.get(`${CLAIM}/moisture-points/{point_id}`, ({ request, params }) => {
-      const seen = member(request, params.organization_id);
-      if (seen instanceof Response) return seen;
-      const claim = claimOr404(params.organization_id, params.claim_id);
-      if (claim instanceof Response) return claim;
+      const read = claimRead(request, params.organization_id, params.claim_id);
+      if (read instanceof Response) return read;
       const entry = db().moisturePoints.find(
-        (p) => p.claimId === claim.id && p.point.id === params.point_id,
+        (p) => p.claimId === read.claim.id && p.point.id === params.point_id,
       );
       return entry ? pointNow(entry) : problem(404, "not_found");
     }),
@@ -2542,11 +2543,11 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
       return paginate(visitsOf(claim.id).reverse().map(logNow), query);
     }),
     api.get(`${CLAIM}/moisture-logs/{log_id}`, ({ request, params }) => {
-      const seen = member(request, params.organization_id);
-      if (seen instanceof Response) return seen;
-      const claim = claimOr404(params.organization_id, params.claim_id);
-      if (claim instanceof Response) return claim;
-      const log = db().moistureLogs.find((l) => l.claimId === claim.id && l.id === params.log_id);
+      const read = claimRead(request, params.organization_id, params.claim_id);
+      if (read instanceof Response) return read;
+      const log = db().moistureLogs.find(
+        (l) => l.claimId === read.claim.id && l.id === params.log_id,
+      );
       return log ? logNow(log) : problem(404, "not_found");
     }),
     api.post(`${CLAIM}/moisture-logs`, ({ request, params, body }) => {
@@ -2941,11 +2942,9 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
         .map(summaryOf);
     }),
     api.get(`${CLAIM}/estimates/{estimate_id}`, ({ request, params }) => {
-      const seen = member(request, params.organization_id);
-      if (seen instanceof Response) return seen;
-      const claim = claimOr404(params.organization_id, params.claim_id);
-      if (claim instanceof Response) return claim;
-      const entry = estimateOf(claim.id, params.estimate_id);
+      const read = claimRead(request, params.organization_id, params.claim_id);
+      if (read instanceof Response) return read;
+      const entry = estimateOf(read.claim.id, params.estimate_id);
       return entry ? estimateNow(entry) : problem(404, "not_found");
     }),
     api.post(`${CLAIM}/estimates`, ({ request, params, body }) => {

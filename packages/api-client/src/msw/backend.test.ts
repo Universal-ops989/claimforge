@@ -1521,13 +1521,12 @@ const lastEvent = async (api: ApiClient) =>
 function alsoElsewhere(): string {
   const id = fixtureId("organization", 2);
   const morgan = backend.db.accounts.find((a) => a.email === "morgan@example.com");
-  const [membership] = morgan?.user.memberships ?? [];
-  if (morgan && membership) {
-    morgan.user.memberships.push({
-      ...membership,
-      organization: { id, name: "Elsewhere", slug: "elsewhere" },
-    });
-  }
+  const membership = morgan?.user.memberships[0];
+  if (!morgan || !membership) throw new Error("the seed has no membership for Morgan");
+  morgan.user.memberships.push({
+    ...membership,
+    organization: { id, name: "Elsewhere", slug: "elsewhere" },
+  });
   return id;
 }
 
