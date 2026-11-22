@@ -10,7 +10,7 @@
  * store behind their upload links), moisture mapping and drying, equipment and its placements,
  * estimates and the price lists they're priced from, documents (in the same pretend store),
  * reports (made a moment after they're asked for) and the links that share them,
- * tasks, notes, and the layout to read. It behaves like the API where tests can tell:
+ * tasks, notes, the search box (claims and contacts), and the layout to read. It behaves like the API where tests can tell:
  * the same status codes and error codes, refresh tokens that rotate with reuse detection,
  * the workflow the contract publishes (`workflows`), permissions by role, locked claims.
  * Every handler is a typed `mockApi` handler, so its answers are checked against the
@@ -558,6 +558,27 @@ function reportPdf(data: MockDb, entry: MockDb["reports"][number], claim: Claim 
     "A stand-in made by the mock backend; the API makes the real report.",
   ]);
 }
+
+/** A search's words, as the API takes them: word characters, lowercased, once, 8 at most. */
+export function searchWords(q: string): string[] {
+  return [...new Set((q.match(/[\p{L}\p{N}_]+/gu) ?? []).map((w) => w.toLowerCase()))].slice(0, 8);
+}
+
+/** The words a record is found by; punctuation splits them ("2026-00042" is 2026 and 00042). */
+function wordsOf(...texts: (string | null | undefined)[]): string[] {
+  return texts.flatMap((text) => (text ?? "").toLowerCase().match(/[\p{L}\p{N}_]+/gu) ?? []);
+}
+
+/** Whether `word` starts one of `found`: search matches prefixes, so results come while typing. */
+const hasPrefix = (found: string[], word: string) => found.some((w) => w.startsWith(word));
+
+/** How much a match in each place counts towards a claim's rank, as the API weighs them. */
+const SEARCH_WEIGHTS: Record<Schema<"MatchedIn">, number> = {
+  claim: 1,
+  property: 0.8,
+  contact: 0.8,
+  note: 0.4,
+};
 
 /** What makes two addresses the same place: case and spacing aside. */
 const addressKey = (address: Schema<"AddressInput">) =>
@@ -1242,6 +1263,47 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
       db().reports.find((r) => r.claimId === claim.id && r.report.id === reportId) ??
       problem(404, "not_found", { detail: "Report not found" })
     );
+  }
+
+  /** A contact's words: name, company, email (whole and in parts), phone with and without +1. */
+  function contactWords(contact: Contact): string[] {
+    const digits = (contact.phone ?? "").replace(/\D/g, "");
+    return wordsOf(
+      contact.full_name,
+      contact.company_name,
+      contact.email,
+      digits,
+      digits.startsWith("1") ? digits.slice(1) : null,
+      contact.notes,
+    );
+  }
+
+  /** Where on a claim each kind of match is looked for: the API's search documents. */
+  function claimPlaces(claim: Claim): Record<Schema<"MatchedIn">, string[]> {
+    const { address } = claim.property;
+    return {
+      claim: wordsOf(
+        claim.number,
+        claim.carrier_claim_number,
+        claim.policy_number,
+        claim.carrier_name,
+        claim.description,
+      ),
+      property: wordsOf(
+        address.line1,
+        address.line2,
+        address.city,
+        address.region,
+        address.postal_code,
+        claim.property.access_notes,
+      ),
+      contact: claim.contacts
+        .filter((link) => !db().contacts.find((c) => c.contact.id === link.contact.id)?.deleted)
+        .flatMap((link) => contactWords(link.contact)),
+      note: db()
+        .notes.filter((n) => n.claim.id === claim.id)
+        .flatMap((n) => wordsOf(n.body.replace(MENTION, " "))),
+    };
   }
 
   /** A stored photo as the API answers it: its room as the layout has it now. */
@@ -3522,6 +3584,59 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
       backend.db.tasks = db().tasks.filter((t) => t.id !== task.id);
       return undefined;
     }),
+    // ─── Search ──────────────────────────────────────────────────────────────
+    api.get(`${ORG}/search`, ({ request, params, query }) => {
+      const seen = member(request, params.organization_id);
+      if (seen instanceof Response) return seen;
+      const q = query.get("q") ?? "";
+      const limit = Math.max(1, Math.min(Number(query.get("limit") ?? 5), 25));
+      const words = searchWords(q);
+      const can = (permission: Permission) => seen.membership.permissions.includes(permission);
+      if (words.length === 0) return { claims: [], contacts: [] };
+
+      const typed = q.trim().toLowerCase();
+      const claims = can("claims:read")
+        ? db()
+            .claims.filter((c) => c.organizationId === params.organization_id)
+            .map(({ claim }) => {
+              const places = claimPlaces(claim);
+              const kinds = Object.keys(places) as Schema<"MatchedIn">[];
+              const all = kinds.flatMap((kind) => places[kind]);
+              if (!words.every((word) => hasPrefix(all, word))) return null;
+              const matchedIn = kinds.filter((kind) =>
+                words.some((word) => hasPrefix(places[kind], word)),
+              );
+              const exact =
+                claim.number.toLowerCase() === typed ||
+                claim.carrier_claim_number?.toLowerCase() === typed;
+              const score =
+                (exact ? 10 : 0) +
+                kinds.reduce(
+                  (sum, kind) =>
+                    sum +
+                    SEARCH_WEIGHTS[kind] *
+                      words.filter((word) => hasPrefix(places[kind], word)).length,
+                  0,
+                );
+              return { claim, matchedIn, score };
+            })
+            .filter((hit) => hit !== null)
+            .sort((a, b) => b.score - a.score || b.claim.id.localeCompare(a.claim.id))
+            .slice(0, limit)
+            .map((hit) => ({ claim: summarize(hit.claim), matched_in: hit.matchedIn }))
+        : [];
+      const contacts = can("contacts:read")
+        ? db()
+            .contacts.filter((c) => c.organizationId === params.organization_id && !c.deleted)
+            .map(({ contact }) => ({ contact, found: contactWords(contact) }))
+            .filter(({ found }) => words.every((word) => hasPrefix(found, word)))
+            .sort((a, b) => a.contact.full_name.localeCompare(b.contact.full_name))
+            .slice(0, limit)
+            .map(({ contact }) => ({ contact }))
+        : [];
+      return { claims, contacts };
+    }),
+
     // ─── Contacts ────────────────────────────────────────────────────────────
     api.get(`${ORG}/contacts`, ({ request, params, query }) => {
       const seen = member(request, params.organization_id);

@@ -32,6 +32,7 @@ export {
 export { contactsQuery, useContacts, useCreateContact, useUpdateContact } from "./contacts";
 export { useUpdateProperty, type PropertyChange } from "./properties";
 export { priceItemsQuery, priceListsQuery, usePriceItems, usePriceLists } from "./pricing";
+export { hasSearchWords, searchQuery, useSearch } from "./search";
 export {
   equipmentDaysQuery,
   equipmentQuery,
