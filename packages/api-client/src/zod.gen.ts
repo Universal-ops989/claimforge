@@ -131,6 +131,7 @@ const MembershipRead = z.object({ organization: MembershipOrganization, permissi
 const MeResponse = z.object({ email: z.string(), full_name: z.string(), id: z.uuid(), memberships: z.array(MembershipRead) });
 const MemberPerson = z.object({ full_name: z.string(), id: z.uuid() });
 const MemberRead = z.object({ joined_at: z.iso.datetime({ offset: true }), permissions: z.array(Permission), role: Role, user: MemberPerson });
+const MemberUpdate = z.strictObject({ role: Role });
 const ReadingIn = z.strictObject({ point_id: z.uuid(), value: z.number().min(0).max(9999.9) });
 const MoistureLogCreate = z.strictObject({ atmosphere: z.array(AtmosphereIn).max(500).optional(), notes: z.string().max(2000).nullable().optional(), readings: z.array(ReadingIn).max(500).optional(), taken_at: z.iso.datetime({ offset: true }).nullable().optional() });
 const ReadingChange = z.strictObject({ point_id: z.uuid(), value: z.number().min(0).max(9999.9).nullable() });
@@ -314,6 +315,7 @@ export const schemas = {
   MeResponse,
   MemberPerson,
   MemberRead,
+  MemberUpdate,
   ReadingIn,
   MoistureLogCreate,
   ReadingChange,
@@ -458,6 +460,7 @@ export const responses = {
   "get /v1/organizations/{organization_id}/invitations": { 200: z.array(InvitationRead) },
   "post /v1/organizations/{organization_id}/invitations": { 201: InvitationRead },
   "get /v1/organizations/{organization_id}/members": { 200: z.array(MemberRead) },
+  "patch /v1/organizations/{organization_id}/members/{user_id}": { 200: MemberRead },
   "get /v1/organizations/{organization_id}/notes/mentioning-me": { 200: CursorPage_NoteRead_ },
   "get /v1/organizations/{organization_id}/photo-tags": { 200: z.array(TagCount) },
   "get /v1/organizations/{organization_id}/price-lists": { 200: z.array(PriceListRead) },
@@ -531,6 +534,7 @@ export const requests = {
   "post /v1/organizations/{organization_id}/equipment": EquipmentCreate,
   "patch /v1/organizations/{organization_id}/equipment/{equipment_id}": EquipmentUpdate,
   "post /v1/organizations/{organization_id}/invitations": InvitationCreate,
+  "patch /v1/organizations/{organization_id}/members/{user_id}": MemberUpdate,
   "post /v1/organizations/{organization_id}/price-lists": PriceListCreate,
   "patch /v1/organizations/{organization_id}/price-lists/{list_id}": PriceListUpdate,
   "post /v1/organizations/{organization_id}/price-lists/{list_id}/items": PriceItemCreate,
@@ -650,6 +654,8 @@ export const successStatuses: Record<string, readonly number[]> = {
   "post /v1/organizations/{organization_id}/invitations": [201],
   "delete /v1/organizations/{organization_id}/invitations/{invitation_id}": [204],
   "get /v1/organizations/{organization_id}/members": [200],
+  "delete /v1/organizations/{organization_id}/members/{user_id}": [204],
+  "patch /v1/organizations/{organization_id}/members/{user_id}": [200],
   "get /v1/organizations/{organization_id}/notes/mentioning-me": [200],
   "get /v1/organizations/{organization_id}/photo-tags": [200],
   "get /v1/organizations/{organization_id}/price-lists": [200],
