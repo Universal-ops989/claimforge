@@ -1615,8 +1615,10 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
     api.get(`${CLAIM}/rooms/{room_id}`, ({ request, params }) => {
       const seen = member(request, params.organization_id);
       if (seen instanceof Response) return seen;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
       const room = db()
-        .structures.filter((s) => s.claimId === params.claim_id)
+        .structures.filter((s) => s.claimId === claim.id)
         .flatMap((s) => s.structure.rooms)
         .find((r) => r.id === params.room_id);
       return room ?? problem(404, "not_found");
@@ -1813,8 +1815,10 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
     api.get(`${CLAIM}/damage-items/{damage_item_id}`, ({ request, params }) => {
       const seen = member(request, params.organization_id);
       if (seen instanceof Response) return seen;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
       const found = db().damage.find(
-        (d) => d.claimId === params.claim_id && d.item.id === params.damage_item_id,
+        (d) => d.claimId === claim.id && d.item.id === params.damage_item_id,
       );
       return found?.item ?? problem(404, "not_found");
     }),
@@ -1937,10 +1941,10 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
       };
     }),
     api.post(`${CLAIM}/photo-uploads/{upload_id}/complete`, ({ request, params, respond }) => {
-      const seen = member(request, params.organization_id);
-      if (seen instanceof Response) return seen;
+      const ready = fieldWork(request, params.organization_id, params.claim_id);
+      if (ready instanceof Response) return ready;
       const upload = db().photoUploads.find(
-        (u) => u.claimId === params.claim_id && u.id === params.upload_id,
+        (u) => u.claimId === ready.claim.id && u.id === params.upload_id,
       );
       if (!upload) return problem(404, "not_found");
       const done = upload.photoId && db().photos.find((p) => p.photo.id === upload.photoId);
@@ -2018,8 +2022,10 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
     api.get(`${CLAIM}/photos/{photo_id}`, ({ request, params }) => {
       const seen = member(request, params.organization_id);
       if (seen instanceof Response) return seen;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
       const entry = db().photos.find(
-        (p) => p.claimId === params.claim_id && p.photo.id === params.photo_id,
+        (p) => p.claimId === claim.id && p.photo.id === params.photo_id,
       );
       return entry ? photoNow(entry) : problem(404, "not_found");
     }),
@@ -2417,8 +2423,10 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
     api.get(`${CLAIM}/moisture-points/{point_id}`, ({ request, params }) => {
       const seen = member(request, params.organization_id);
       if (seen instanceof Response) return seen;
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
       const entry = db().moisturePoints.find(
-        (p) => p.claimId === params.claim_id && p.point.id === params.point_id,
+        (p) => p.claimId === claim.id && p.point.id === params.point_id,
       );
       return entry ? pointNow(entry) : problem(404, "not_found");
     }),
@@ -2536,9 +2544,9 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
     api.get(`${CLAIM}/moisture-logs/{log_id}`, ({ request, params }) => {
       const seen = member(request, params.organization_id);
       if (seen instanceof Response) return seen;
-      const log = db().moistureLogs.find(
-        (l) => l.claimId === params.claim_id && l.id === params.log_id,
-      );
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
+      const log = db().moistureLogs.find((l) => l.claimId === claim.id && l.id === params.log_id);
       return log ? logNow(log) : problem(404, "not_found");
     }),
     api.post(`${CLAIM}/moisture-logs`, ({ request, params, body }) => {
@@ -2935,7 +2943,9 @@ export function createMockBackend(options: MockBackendOptions = {}): MockBackend
     api.get(`${CLAIM}/estimates/{estimate_id}`, ({ request, params }) => {
       const seen = member(request, params.organization_id);
       if (seen instanceof Response) return seen;
-      const entry = estimateOf(params.claim_id, params.estimate_id);
+      const claim = claimOr404(params.organization_id, params.claim_id);
+      if (claim instanceof Response) return claim;
+      const entry = estimateOf(claim.id, params.estimate_id);
       return entry ? estimateNow(entry) : problem(404, "not_found");
     }),
     api.post(`${CLAIM}/estimates`, ({ request, params, body }) => {

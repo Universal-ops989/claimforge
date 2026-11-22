@@ -1817,3 +1817,56 @@ describe("reports", () => {
     expect(shares.map((share) => share.active)).toEqual([false, false]);
   });
 });
+
+describe("reading one item of a claim", () => {
+  const BASE = "/v1/organizations/{organization_id}/claims/{claim_id}" as const;
+
+  test("goes through a claim of the organization in the path, as the API's reads do", async () => {
+    const api = await signedIn();
+    const here = CLAIM;
+    const elsewhere = { organization_id: alsoElsewhere(), claim_id: ids.claim };
+    const reads = (path: typeof here) => [
+      api.get(`${BASE}/rooms/{room_id}`, { path: { ...path, room_id: ids.room } }),
+      api.get(`${BASE}/damage-items/{damage_item_id}`, {
+        path: { ...path, damage_item_id: ids.damage },
+      }),
+      api.get(`${BASE}/photos/{photo_id}`, { path: { ...path, photo_id: ids.photo } }),
+      api.get(`${BASE}/moisture-points/{point_id}`, { path: { ...path, point_id: ids.point } }),
+      api.get(`${BASE}/moisture-logs/{log_id}`, { path: { ...path, log_id: ids.log } }),
+      api.get(`${BASE}/estimates/{estimate_id}`, {
+        path: { ...path, estimate_id: ids.estimate },
+      }),
+    ];
+
+    const found = await Promise.all(reads(here));
+    const refused = await Promise.all(reads(elsewhere).map(refusal));
+
+    expect(found.map((item) => item.id)).toEqual([
+      ids.room,
+      ids.damage,
+      ids.photo,
+      ids.point,
+      ids.log,
+      ids.estimate,
+    ]);
+    expect(refused.map((r) => r.status)).toEqual([404, 404, 404, 404, 404, 404]);
+  });
+
+  test("completing a photo upload is field work on an open claim", async () => {
+    const api = await signedIn();
+    const UPLOADS = `${BASE}/photo-uploads` as const;
+    const started = await api.post(UPLOADS, {
+      path: CLAIM,
+      body: { filename: "a.jpg", content_type: "image/jpeg", size_bytes: 4 },
+    });
+    await api.sendFile(started.upload, new Blob([new Uint8Array(4)], { type: "image/jpeg" }));
+    const claim = backend.db.claims.find((c) => c.claim.id === ids.claim);
+    if (claim) claim.claim.status = "closed";
+
+    const closed = await refusal(
+      api.post(`${UPLOADS}/{upload_id}/complete`, { path: { ...CLAIM, upload_id: started.id } }),
+    );
+
+    expect(closed.code).toBe("claim_locked");
+  });
+});
