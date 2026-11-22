@@ -10,7 +10,14 @@ import {
   type QueryParams,
   type RequestBody,
 } from "../index";
-import { defaultTitle, dewPointF, equipmentDays, grainsPerPound, REPORT_MS } from "./backend";
+import {
+  defaultTitle,
+  dewPointF,
+  equipmentDays,
+  grainsPerPound,
+  REPORT_MS,
+  searchWords,
+} from "./backend";
 import { createMockBackend, MOCK_PASSWORD } from "./index";
 
 let clock = Date.parse("2026-11-16T12:00:00Z");
@@ -1814,6 +1821,86 @@ describe("reports", () => {
     expect([revokedOpen.status, expiredOpen.status]).toEqual([404, 404]);
     expect(((await expiredOpen.json()) as { code: string }).code).toBe("share_not_found");
     expect(shares.map((share) => share.active)).toEqual([false, false]);
+  });
+});
+
+describe("the search box", () => {
+  const SEARCH = "/v1/organizations/{organization_id}/search" as const;
+  const search = async (q: string, limit?: number, api?: ApiClient) =>
+    (api ?? (await signedIn())).get(SEARCH, {
+      path: ORG,
+      query: { q, ...(limit === undefined ? {} : { limit }) },
+    });
+  const numbers = (found: Awaited<ReturnType<typeof search>>) =>
+    found.claims.map((hit) => hit.claim.number);
+
+  test("finds a claim when every word is somewhere on it, though no one record has both", async () => {
+    const found = await search("jordan AUST");
+
+    // Jordan is linked to 2026-00042 only; both claims are in Austin.
+    expect(numbers(found)).toEqual(["2026-00042"]);
+    expect(found.claims[0]?.matched_in).toEqual(["property", "contact"]);
+    expect((await search("austin")).claims).toHaveLength(2);
+  });
+
+  test("looks in claim numbers by their parts, and in notes without their mentions", async () => {
+    const byPart = await search("00041");
+    const byNote = await search("dryers");
+    const byMention = await search("morgan");
+
+    expect(numbers(byPart)).toEqual(["2026-00041"]);
+    expect(byNote.claims[0]?.matched_in).toEqual(["note"]);
+    expect(numbers(byMention)).toEqual([]);
+  });
+
+  test("ranks a match on the claim over one in its notes; an exact number goes first", async () => {
+    const older = backend.db.claims.find((c) => c.claim.number === "2026-00041");
+    if (older) {
+      older.claim.description = "Dryers left running after the fire";
+      // Its carrier's number holds the same words, so only the exact match tells them apart
+      // (on a tie, the newer claim, 2026-00041, would come first).
+      older.claim.carrier_claim_number = "2026-00042-B";
+    }
+
+    const byWords = await search("dryers");
+    const exact = await search("2026-00042");
+
+    expect(numbers(byWords)).toEqual(["2026-00041", "2026-00042"]);
+    expect(numbers(exact)).toEqual(["2026-00042", "2026-00041"]);
+  });
+
+  test("finds contacts by name, company, email or phone, alphabetically", async () => {
+    const byPhone = await search("512555");
+    const byCompany = await search("brooks agency");
+    const byEmail = await search("rivera");
+
+    expect(byPhone.contacts.map((hit) => hit.contact.full_name)).toEqual([
+      "Casey Brooks",
+      "Jordan Rivera",
+    ]);
+    expect(byCompany.contacts.map((hit) => hit.contact.full_name)).toEqual(["Casey Brooks"]);
+    expect(byEmail.contacts.map((hit) => hit.contact.full_name)).toEqual(["Jordan Rivera"]);
+  });
+
+  test("gives each section only what the person may read, up to the limit", async () => {
+    const api = await signedIn();
+    const morgan = backend.db.accounts.find((a) => a.email === "morgan@example.com");
+    const membership = morgan?.user.memberships[0];
+    if (membership) {
+      membership.permissions = membership.permissions.filter((p) => p !== "contacts:read");
+    }
+
+    const found = await search("512555", 1, api);
+    const limited = await search("austin", 1, api);
+
+    expect(found.contacts).toEqual([]);
+    expect(limited.claims).toHaveLength(1);
+    expect(await search("--", 5, api)).toEqual({ claims: [], contacts: [] });
+  });
+
+  test("takes words as the API does: lowercased, once each, eight at most", () => {
+    expect(searchWords(" Kitchen, kitchen-sink! ")).toEqual(["kitchen", "sink"]);
+    expect(searchWords("a b c d e f g h i j")).toHaveLength(8);
   });
 });
 

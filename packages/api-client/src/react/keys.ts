@@ -102,6 +102,9 @@ export const queryKeys = {
     [...queryKeys.organization(organizationId), "price-lists"] as const,
   priceItems: (organizationId: string, listId: string, query: object = {}) =>
     [...queryKeys.priceLists(organizationId), listId, "items", query] as const,
+  /** What the search box found for a search, by its words and how many per section. */
+  search: (organizationId: string, q: string, limit: number) =>
+    [...queryKeys.organization(organizationId), "search", { q, limit }] as const,
   /** The address book: every contact list in the organization. */
   contacts: (organizationId: string) =>
     [...queryKeys.organization(organizationId), "contacts"] as const,
